@@ -1,0 +1,873 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: AlGhareeb Card API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: settings
+    description: Site settings and exchange rates
+  - name: sections
+    description: Service sections
+  - name: items
+    description: Apps, games, and services
+  - name: packages
+    description: Item packages
+  - name: slider
+    description: Homepage slider images
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get site settings and exchange rates
+      responses:
+        "200":
+          description: Settings retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update settings (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSettingsBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+  /sections:
+    get:
+      operationId: listSections
+      tags: [sections]
+      summary: List all sections
+      responses:
+        "200":
+          description: Sections list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Section"
+    post:
+      operationId: createSection
+      tags: [sections]
+      summary: Create a new section (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSectionBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+
+  /sections/{id}:
+    get:
+      operationId: getSection
+      tags: [sections]
+      summary: Get section by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Section found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+    put:
+      operationId: updateSection
+      tags: [sections]
+      summary: Update section (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSectionBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+    delete:
+      operationId: deleteSection
+      tags: [sections]
+      summary: Delete section (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /sections/{sectionId}/items:
+    get:
+      operationId: listItems
+      tags: [items]
+      summary: List items in a section
+      parameters:
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Items list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Item"
+    post:
+      operationId: createItem
+      tags: [items]
+      summary: Create item in a section (admin only)
+      parameters:
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItemBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+
+  /items/{id}:
+    get:
+      operationId: getItem
+      tags: [items]
+      summary: Get item by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Item found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemWithPackages"
+    put:
+      operationId: updateItem
+      tags: [items]
+      summary: Update item (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+    delete:
+      operationId: deleteItem
+      tags: [items]
+      summary: Delete item (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /items/{itemId}/packages:
+    get:
+      operationId: listPackages
+      tags: [packages]
+      summary: List packages for an item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Packages list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Package"
+    post:
+      operationId: createPackage
+      tags: [packages]
+      summary: Create package for an item (admin only)
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackageBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+
+  /packages/{id}:
+    put:
+      operationId: updatePackage
+      tags: [packages]
+      summary: Update package (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePackageBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+    delete:
+      operationId: deletePackage
+      tags: [packages]
+      summary: Delete package (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /slider:
+    get:
+      operationId: listSliderImages
+      tags: [slider]
+      summary: List slider images
+      responses:
+        "200":
+          description: Slider images list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SliderImage"
+    post:
+      operationId: createSliderImage
+      tags: [slider]
+      summary: Add slider image (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSliderImageBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SliderImage"
+
+  /slider/{id}:
+    delete:
+      operationId: deleteSliderImage
+      tags: [slider]
+      summary: Delete slider image (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [settings]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResult"
+        "401":
+          description: Unauthorized
+
+  /admin/logout:
+    post:
+      operationId: adminLogout
+      tags: [settings]
+      summary: Admin logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /admin/me:
+    get:
+      operationId: adminMe
+      tags: [settings]
+      summary: Check admin session
+      responses:
+        "200":
+          description: Admin info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMeResult"
+        "401":
+          description: Unauthorized
+
+  /upload:
+    post:
+      operationId: uploadImage
+      tags: [settings]
+      summary: Upload image (admin only)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Settings:
+      type: object
+      properties:
+        id:
+          type: integer
+        marqueeText:
+          type: string
+        usdToTry:
+          type: number
+        usdToSyp:
+          type: number
+        usdToEur:
+          type: number
+        usdToOmr:
+          type: number
+        usdToMad:
+          type: number
+        usdToDzd:
+          type: number
+        usdToIls:
+          type: number
+        usdToIqd:
+          type: number
+        usdToSar:
+          type: number
+        whatsappNumber:
+          type: string
+        moneyTransferCurrencies:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - marqueeText
+        - usdToTry
+        - usdToSyp
+        - usdToEur
+        - usdToOmr
+        - usdToMad
+        - usdToDzd
+        - usdToIls
+        - usdToIqd
+        - usdToSar
+        - whatsappNumber
+        - moneyTransferCurrencies
+        - updatedAt
+
+    UpdateSettingsBody:
+      type: object
+      properties:
+        marqueeText:
+          type: string
+        usdToTry:
+          type: number
+        usdToSyp:
+          type: number
+        usdToEur:
+          type: number
+        usdToOmr:
+          type: number
+        usdToMad:
+          type: number
+        usdToDzd:
+          type: number
+        usdToIls:
+          type: number
+        usdToIqd:
+          type: number
+        usdToSar:
+          type: number
+        whatsappNumber:
+          type: string
+        moneyTransferCurrencies:
+          type: string
+
+    Section:
+      type: object
+      properties:
+        id:
+          type: integer
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        logoUrl:
+          type: string
+        pricingType:
+          type: string
+          description: "packages or per_quantity"
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - nameAr
+        - nameEn
+        - pricingType
+        - sortOrder
+        - createdAt
+
+    CreateSectionBody:
+      type: object
+      properties:
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        logoUrl:
+          type: string
+        pricingType:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+        - nameAr
+        - nameEn
+
+    UpdateSectionBody:
+      type: object
+      properties:
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        logoUrl:
+          type: string
+        pricingType:
+          type: string
+        sortOrder:
+          type: integer
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: integer
+        sectionId:
+          type: integer
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        logoUrl:
+          type: string
+        currencyUnit:
+          type: string
+          description: "Unit label e.g. ماسات, شدات, كوينز"
+        pricePerUnit:
+          type: number
+          description: "Price in USD per single unit (for per_quantity pricing)"
+        minQuantity:
+          type: number
+        description:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - sectionId
+        - nameAr
+        - nameEn
+        - sortOrder
+        - isActive
+        - createdAt
+
+    ItemWithPackages:
+      type: object
+      properties:
+        id:
+          type: integer
+        sectionId:
+          type: integer
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        logoUrl:
+          type: string
+        currencyUnit:
+          type: string
+        pricePerUnit:
+          type: number
+        minQuantity:
+          type: number
+        description:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        sectionPricingType:
+          type: string
+          description: "pricing type inherited from the section"
+        packages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Package"
+      required:
+        - id
+        - sectionId
+        - nameAr
+        - nameEn
+        - sortOrder
+        - isActive
+        - createdAt
+        - sectionPricingType
+        - packages
+
+    CreateItemBody:
+      type: object
+      properties:
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        logoUrl:
+          type: string
+        currencyUnit:
+          type: string
+        pricePerUnit:
+          type: number
+        minQuantity:
+          type: number
+        description:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+        - nameAr
+        - nameEn
+
+    UpdateItemBody:
+      type: object
+      properties:
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        logoUrl:
+          type: string
+        currencyUnit:
+          type: string
+        pricePerUnit:
+          type: number
+        minQuantity:
+          type: number
+        description:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    Package:
+      type: object
+      properties:
+        id:
+          type: integer
+        itemId:
+          type: integer
+        label:
+          type: string
+        quantity:
+          type: number
+        priceUsd:
+          type: number
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - itemId
+        - label
+        - quantity
+        - priceUsd
+        - sortOrder
+        - createdAt
+
+    CreatePackageBody:
+      type: object
+      properties:
+        label:
+          type: string
+        quantity:
+          type: number
+        priceUsd:
+          type: number
+        sortOrder:
+          type: integer
+      required:
+        - label
+        - quantity
+        - priceUsd
+
+    UpdatePackageBody:
+      type: object
+      properties:
+        label:
+          type: string
+        quantity:
+          type: number
+        priceUsd:
+          type: number
+        sortOrder:
+          type: integer
+
+    SliderImage:
+      type: object
+      properties:
+        id:
+          type: integer
+        imageUrl:
+          type: string
+        title:
+          type: string
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - imageUrl
+        - sortOrder
+        - createdAt
+
+    CreateSliderImageBody:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+        title:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+        - imageUrl
+
+    AdminLoginBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AdminLoginResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    AdminMeResult:
+      type: object
+      properties:
+        isAdmin:
+          type: boolean
+      required:
+        - isAdmin
+
+    UploadResult:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    DeleteResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
