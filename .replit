@@ -11,6 +11,26 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "AlGhareeb Card Frontend"
+
+[[workflows.workflow]]
+name = "AlGhareeb Card Frontend"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/alghareeb-card run dev"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
@@ -26,3 +46,7 @@ externalPort = 8080
 [[ports]]
 localPort = 8081
 externalPort = 80
+
+[[ports]]
+localPort = 20907
+externalPort = 3000

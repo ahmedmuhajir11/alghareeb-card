@@ -1,8 +1,42 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import settingsRouter from "./settings";
+import sectionsRouter from "./sections";
+import itemsRouter from "./items";
+import packagesRouter from "./packages";
+import sliderRouter from "./slider";
+import adminRouter from "./admin";
+import uploadRouter from "./upload";
+import paymentMethodsRouter from "./payment-methods";
+import pushRouter from "./push";
+import tickerRouter from "./ticker";
+import userProfileRouter from "./user-profile";
+import authRouter from "./auth";
+import adminUsersRouter from "./admin-users";
+import depositsRouter from "./deposits";
+import walletRouter from "./wallet";
+import ordersUserRouter from "./orders-user";
+import levelRouter from "./level";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(settingsRouter);
+router.use(sectionsRouter);
+router.use(itemsRouter);
+router.use(packagesRouter);
+router.use(sliderRouter);
+router.use(adminRouter);
+router.use(uploadRouter);
+router.use(paymentMethodsRouter);
+router.use(pushRouter);
+router.use(tickerRouter);
+router.use(userProfileRouter);
+router.use(authRouter);
+router.use(adminUsersRouter);
+router.use(depositsRouter);
+router.use(walletRouter);
+router.use(ordersUserRouter);
+router.use(levelRouter);
 
 export default router;

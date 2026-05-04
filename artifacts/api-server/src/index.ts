@@ -1,5 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { seedIfEmpty, ensureCriticalSections } from "./seed";
+import { recoverDataIfNeeded, ensureItemLogos } from "./recoverData";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +24,21 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  ensureCriticalSections().catch((e) => {
+    logger.error({ err: e }, "ensureCriticalSections failed");
+  });
+
+  seedIfEmpty()
+    .then(async () => {
+      await recoverDataIfNeeded().catch((e) => {
+        logger.error({ err: e }, "Data recovery failed");
+      });
+      await ensureItemLogos().catch((e) => {
+        logger.error({ err: e }, "Logo restore failed");
+      });
+    })
+    .catch((e) => {
+      logger.error({ err: e }, "Seed failed");
+    });
 });

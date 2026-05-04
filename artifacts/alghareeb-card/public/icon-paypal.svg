@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <rect width="100" height="100" rx="20" fill="#1A3A8F"/>
+  <!-- First P (dark blue) -->
+  <path fill="#0070BA" d="M22 18h20c10 0 16 6 14 16-2 11-10 17-20 17H27L23 68H13L22 18z"/>
+  <path fill="#ffffff" d="M27 26h13c5.5 0 8 3 7 8.5C46.5 40 42 43 36.5 43H28.5L27 26z"/>
+  <!-- Second P (light blue, offset) -->
+  <path fill="#0070BA" d="M34 36h18c9.5 0 15 5.5 13 15.5-2 10.5-10 16-20 16H35L31.5 86H22L34 36z"/>
+  <path fill="#00A9E0" d="M39 44h12c5 0 7.5 2.8 6.5 8C56.5 57.5 52 60.5 46.5 60.5H40L39 44z"/>
+</svg>

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AlGhareeb Card"
+version = "1.0.0"
+id = "artifacts/alghareeb-card"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20907
+
+[services.development]
+run = "pnpm --filter @workspace/alghareeb-card run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/alghareeb-card", "run", "build" ]
+publicDir = "artifacts/alghareeb-card/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20907"
+BASE_PATH = "/"

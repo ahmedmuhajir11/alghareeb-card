@@ -1,0 +1,282 @@
+import { useState } from "react";
+import { useGetItem } from "@workspace/api-client-react";
+import type { Package } from "@workspace/api-client-react";
+import { useCurrency } from "@/lib/currency";
+import { useAuth } from "@/lib/auth";
+import { useLocation } from "wouter";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Send, LogIn } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
+
+export default function ItemPage({ id }: { id: number }) {
+  const { data: item, isLoading: itemLoading } = useGetItem(id);
+  const { formatPrice } = useCurrency();
+  const { toast } = useToast();
+  const { isSignedIn, isLoaded, user, refetch: refetchAuth } = useAuth();
+  const [, navigate] = useLocation();
+  const [submitting, setSubmitting] = useState(false);
+
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center space-y-5" dir="rtl">
+        <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
+          <LogIn className="w-8 h-8 text-purple-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-white mb-2">يجب تسجيل الدخول</h2>
+          <p className="text-muted-foreground text-sm">سجّل دخولك للوصول إلى هذا المنتج</p>
+        </div>
+        <div className="flex gap-3">
+          <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl px-6">
+            <Link href={`/sign-in?returnUrl=/item/${id}`}>تسجيل الدخول</Link>
+          </Button>
+          <Button asChild variant="outline" className="border-purple-500/30 text-purple-300 rounded-xl px-6">
+            <Link href="/sign-up">إنشاء حساب</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const isPerQuantity = item?.sectionPricingType === "per_quantity";
+  const minQuantity = (item as any)?.minQuantity ?? 1;
+
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+  const [userId, setUserId] = useState("");
+  const [quantity, setQuantity] = useState<string>("");
+  const parsedQty = parseFloat(quantity);
+  const isBelowMin = isPerQuantity && quantity !== "" && parsedQty > 0 && parsedQty < minQuantity;
+  const calculatedPrice = isPerQuantity && item?.pricePerUnit && parsedQty > 0 && !isBelowMin
+    ? parsedQty * item.pricePerUnit
+    : null;
+
+  const submitOrder = async (params: {
+    packageId?: number;
+    quantity?: number;
+  }) => {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/orders`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemId: item?.id,
+          packageId: params.packageId,
+          quantity: params.quantity,
+          targetId: userId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 400 && data?.code === "INSUFFICIENT_BALANCE") {
+          toast({
+            variant: "destructive",
+            title: "الرصيد غير كافي",
+            description: `يجب إضافة رصيد إلى حسابك قبل إتمام الطلب. سيتم نقلك الآن إلى صفحة شحن الرصيد.`,
+          });
+          setTimeout(() => navigate("/payment-methods"), 1200);
+          return;
+        }
+        throw new Error(data?.error || "فشلت العملية");
+      }
+
+      await refetchAuth();
+      const charged = data?.order?.amount ?? 0;
+      const chargedCur = data?.order?.currency ?? user?.currency ?? "USD";
+      toast({
+        title: "تم إرسال طلبك ✓",
+        description: `تم خصم ${charged.toFixed(2)} ${chargedCur} من رصيدك. يمكنك متابعة حالة الطلب من قسم "طلباتي".`,
+      });
+      setTimeout(() => navigate("/orders"), 900);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "خطأ", description: e?.message ?? "فشلت العملية" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOrder = () => {
+    if (!userId.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: item?.sectionId === 5 ? "الرجاء إدخال رقمك" : "الرجاء إدخال المعرف (ID) الخاص بك" });
+      return;
+    }
+
+    if (isPerQuantity) {
+      const qty = parseFloat(quantity);
+      if (!qty || qty <= 0) {
+        toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال الكمية المطلوبة" });
+        return;
+      }
+      if (qty < minQuantity) {
+        toast({ variant: "destructive", title: "كمية أقل من الحد الأدنى", description: `الحد الأدنى للطلب هو ${minQuantity} ${unitLabel}` });
+        return;
+      }
+      if (!calculatedPrice) return;
+      submitOrder({ quantity: qty });
+    } else {
+      if (!selectedPackageId) {
+        toast({ variant: "destructive", title: "خطأ", description: "الرجاء اختيار باقة أولاً" });
+        return;
+      }
+      const selectedPackage = item?.packages?.find((p: Package) => p.id === selectedPackageId);
+      if (!selectedPackage || !item) return;
+      submitOrder({ packageId: selectedPackage.id });
+    }
+  };
+
+  if (itemLoading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (!item) return <div className="text-center py-12">العنصر غير موجود</div>;
+
+  const unitLabel = item.currencyUnit || "وحدة";
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-8">
+      <div className="flex flex-col md:flex-row items-center gap-6 bg-card/30 p-6 rounded-2xl neon-border">
+        {item.logoUrl ? (
+          <img src={item.logoUrl} alt={item.nameAr} className="w-24 h-24 object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+        ) : (
+          <div className="w-24 h-24 rounded-2xl bg-primary/20 flex items-center justify-center">
+            <span className="text-4xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
+          </div>
+        )}
+        <div className="text-center md:text-right">
+          <h1 className="text-3xl font-bold neon-text mb-2">{item.nameAr}</h1>
+          <p className="text-muted-foreground">
+            {item.description || (isPerQuantity ? `أدخل الكمية المطلوبة من ${unitLabel}` : "اختر الباقة المناسبة")}
+          </p>
+          {isPerQuantity && item.pricePerUnit && (
+            <p className="text-sm text-primary/80 mt-1">
+              سعر كل {unitLabel}: {formatPrice(item.pricePerUnit)}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {isPerQuantity ? (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
+            أدخل الكمية المطلوبة
+          </h2>
+          <div className="bg-card/30 rounded-2xl neon-border p-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">عدد {unitLabel}</label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                placeholder={`مثال: ${minQuantity > 1 ? minQuantity : 1000} ${unitLabel}`}
+                className={`h-14 text-xl bg-background/50 focus-visible:border-primary text-center ${isBelowMin ? "border-red-500" : "border-primary/20"}`}
+                value={quantity}
+                onChange={e => setQuantity(e.target.value)}
+                dir="ltr"
+              />
+              {minQuantity > 1 && !isBelowMin && (
+                <p className="text-xs text-muted-foreground text-center">
+                  الحد الأدنى للطلب: {minQuantity} {unitLabel}
+                </p>
+              )}
+              {isBelowMin && (
+                <p className="text-sm text-red-500 font-bold text-center" data-testid="min-quantity-error">
+                  ⚠ الكمية أقل من الحد الأدنى. الحد الأدنى للطلب هو {minQuantity} {unitLabel}
+                </p>
+              )}
+            </div>
+            {calculatedPrice !== null && (
+              <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center">
+                <p className="text-sm text-muted-foreground mb-1">السعر الإجمالي لـ {quantity} {unitLabel}</p>
+                <p className="text-3xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
+            اختر الباقة
+          </h2>
+          {!item.packages || item.packages.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground bg-card/50 rounded-xl border border-border/50">
+              لا توجد باقات متاحة حالياً
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[...item.packages].sort((a: Package, b: Package) => a.priceUsd - b.priceUsd).map((pkg: Package) => (
+                <Card
+                  key={pkg.id}
+                  className={`cursor-pointer transition-all duration-200 overflow-hidden ${
+                    selectedPackageId === pkg.id
+                      ? "border-primary shadow-[0_0_20px_var(--color-primary)] bg-primary/10"
+                      : "border-border/50 bg-card/50 hover:border-primary/50"
+                  }`}
+                  onClick={() => setSelectedPackageId(pkg.id)}
+                >
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-lg">{pkg.label}</div>
+                      <div className="text-sm text-primary/80 font-medium">الكمية: {pkg.quantity}</div>
+                    </div>
+                    <div className="font-black text-xl text-primary drop-shadow-sm">
+                      {formatPrice(pkg.priceUsd)}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-4 bg-card/30 p-6 rounded-2xl neon-border">
+        <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+          <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
+          بيانات الشحن
+        </h2>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            {item.sectionId === 5 ? "رقم الهاتف" : "المعرف (ID) الخاص بك"}
+          </label>
+          <Input
+            placeholder={item.sectionId === 5 ? "أدخل رقمك" : "أدخل الـ ID هنا..."}
+            className="h-12 text-lg bg-background/50 border-primary/20 focus-visible:border-primary text-center md:text-right"
+            value={userId}
+            onChange={e => setUserId(e.target.value)}
+            dir="ltr"
+          />
+        </div>
+        <Button
+          className="w-full h-14 text-lg font-bold mt-6 shadow-[0_0_15px_var(--color-primary)] hover:shadow-[0_0_25px_var(--color-primary)] transition-all gap-2 bg-purple-600 hover:bg-purple-700 text-white border-none disabled:opacity-60"
+          onClick={handleOrder}
+          disabled={submitting}
+        >
+          <Send className="w-5 h-5" />
+          {submitting ? "جاري الإرسال..." : "إرسال الطلب"}
+        </Button>
+        {user && (
+          <p className="text-xs text-center text-muted-foreground mt-2">
+            رصيدك الحالي: <span className="text-primary font-bold">{user.balance.toFixed(2)} {user.currency}</span>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

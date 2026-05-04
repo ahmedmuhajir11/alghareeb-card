@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://alghareebcard.replit.app/sitemap.xml
