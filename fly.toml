@@ -1,36 +1,17 @@
-app = "alghareeb"
-primary_region = "fra"
+# fly.toml app configuration file for alghareeb-card
+app = 'alghareeb-card'
+primary_region = 'fra'
 
-[[services]]
+[http_service]
   internal_port = 8080
-  protocol = "tcp"
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
 
-  [[services.ports]]
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
-
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-
-  [[services.tcp_checks]]
-    grace_period = "10s"
-    interval = "15s"
-    restart_limit = 0
-    timeout = "2s"
-
-  [[services.http_checks]]
-    interval = "10s"
-    grace_period = "10s"
-    method = "get"
-    path = "/api/healthz"
-    protocol = "https"
-    timeout = "2s"
-
-[env]
-  NODE_ENV = "production"
-  PORT = "8080"
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
