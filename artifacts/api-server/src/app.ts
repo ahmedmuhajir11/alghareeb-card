@@ -99,7 +99,7 @@ if (process.env.NODE_ENV === "production") {
   const indexHtml = path.join(frontendDist, "index.html");
   logger.info({ frontendDist, indexHtml }, "Serving frontend static files");
   app.use(express.static(frontendDist));
-  app.get("*", (_req, res, next) => {
+  app.get("/{*splat}", (_req, res, next) => {
     res.sendFile(indexHtml, (err) => {
       if (err) {
         logger.warn({ err, indexHtml }, "Frontend index.html not found, returning 404");
