@@ -8,6 +8,7 @@ export const paymentMethodsTable = pgTable("payment_methods", {
   fields: json("fields").notNull().default([]),
   qrImageUrl: text("qr_image_url"),
   notes: json("notes").notNull().default([]),
+  requireSenderName: boolean("require_sender_name").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

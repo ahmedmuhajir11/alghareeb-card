@@ -7,6 +7,7 @@ export const depositRequestsTable = pgTable("deposit_requests", {
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).notNull().default("TRY"),
   receiptUrl: varchar("receipt_url", { length: 500 }),
+  senderName: varchar("sender_name", { length: 255 }),
   status: varchar("status", { length: 20 }).notNull().default("pending"),
   adminNote: varchar("admin_note", { length: 500 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

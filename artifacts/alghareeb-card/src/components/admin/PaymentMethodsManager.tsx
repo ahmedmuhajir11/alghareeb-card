@@ -18,6 +18,7 @@ type PaymentMethod = {
   fields: PaymentField[];
   qrImageUrl: string | null;
   notes: string[];
+  requireSenderName: boolean;
   isActive: boolean;
   sortOrder: number;
 };
@@ -37,11 +38,11 @@ function usePaymentMethods() {
 
 const emptyForm = (): {
   nameAr: string; nameEn: string; flagEmoji: string;
-  fields: PaymentField[]; qrImageUrl: string; notes: string[]; isActive: boolean; sortOrder: number;
+  fields: PaymentField[]; qrImageUrl: string; notes: string[]; requireSenderName: boolean; isActive: boolean; sortOrder: number;
 } => ({
   nameAr: "", nameEn: "", flagEmoji: "🌍",
   fields: [{ label: "", value: "", isCopyable: true }],
-  qrImageUrl: "", notes: [""], isActive: true, sortOrder: 0,
+  qrImageUrl: "", notes: [""], requireSenderName: false, isActive: true, sortOrder: 0,
 });
 
 export default function PaymentMethodsManager() {
@@ -139,6 +140,7 @@ export default function PaymentMethodsManager() {
       fields: m.fields.length ? m.fields : [{ label: "", value: "", isCopyable: true }],
       qrImageUrl: m.qrImageUrl ?? "",
       notes: m.notes.length ? m.notes : [""],
+      requireSenderName: m.requireSenderName ?? false,
       isActive: m.isActive, sortOrder: m.sortOrder,
     });
     setIsDialogOpen(true);
@@ -339,6 +341,14 @@ export default function PaymentMethodsManager() {
                     </Button>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-background/30 rounded-lg border border-blue-500/20">
+              <Switch checked={form.requireSenderName} onCheckedChange={v => setForm(f => ({ ...f, requireSenderName: v }))} id="requireSenderName" />
+              <div>
+                <label htmlFor="requireSenderName" className="text-sm font-medium cursor-pointer">طلب اسم المرسل</label>
+                <p className="text-xs text-muted-foreground">عند التفعيل سيُطلب من المستخدم كتابة اسم المرسل قبل رفع الإيصال</p>
               </div>
             </div>
 

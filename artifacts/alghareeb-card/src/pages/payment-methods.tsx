@@ -97,6 +97,7 @@ type PaymentMethod = {
   fields: PaymentField[];
   qrImageUrl: string | null;
   notes: string[];
+  requireSenderName: boolean;
   sortOrder: number;
 };
 
@@ -196,6 +197,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
     return SHAM_CASH_CURRENCIES.includes(userCurrency) ? userCurrency : "USD";
   });
   const [amount, setAmount] = useState("");
+  const [senderName, setSenderName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: settings } = useFetchSettings();
@@ -228,6 +230,10 @@ function DepositForm({ method }: { method: PaymentMethod }) {
       toast({ variant: "destructive", title: "خطأ", description: "أدخل مبلغاً صحيحاً" });
       return;
     }
+    if (method.requireSenderName && !senderName.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: "أدخل اسم المرسل الكامل" });
+      return;
+    }
     if (!file) {
       toast({ variant: "destructive", title: "خطأ", description: "أرفق صورة الإيصال" });
       return;
@@ -238,6 +244,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
       fd.append("paymentMethodName", methodName);
       fd.append("amount", String(amt));
       fd.append("currency", isShamCash ? sentCurrency : (user?.currency ?? "TRY"));
+      if (method.requireSenderName && senderName.trim()) fd.append("senderName", senderName.trim());
       fd.append("receipt", file);
       const res = await fetch(`${API_BASE}/api/deposits`, {
         method: "POST",
@@ -297,6 +304,20 @@ function DepositForm({ method }: { method: PaymentMethod }) {
           <p className="text-[11px] text-muted-foreground">
             شام كاش يدعم 3 عملات — اختر العملة التي أرسلتها فعلياً
           </p>
+        </div>
+      )}
+
+      {method.requireSenderName && (
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">اسم المرسل الكامل *</Label>
+          <Input
+            type="text"
+            placeholder="أدخل الاسم الكامل للمرسل"
+            value={senderName}
+            onChange={e => setSenderName(e.target.value)}
+            className="bg-background/60 h-10 font-bold"
+            dir="rtl"
+          />
         </div>
       )}
 

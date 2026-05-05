@@ -118,6 +118,7 @@ router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response):
       amount: parseFloat(r.amount),
       currency: r.currency,
       receiptUrl: r.receipt_url,
+      senderName: r.sender_name,
       status: r.status,
       adminNote: r.admin_note,
       createdAt: r.created_at,

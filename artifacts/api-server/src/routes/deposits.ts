@@ -40,7 +40,7 @@ async function saveFile(buffer: Buffer, mimetype: string, originalname: string):
 // Submit deposit request
 router.post("/deposits", requireUser, upload.single("receipt"), async (req: Request, res: Response): Promise<void> => {
   const user = (req as any).currentUser;
-  const { paymentMethodName, amount, currency } = req.body ?? {};
+  const { paymentMethodName, amount, currency, senderName } = req.body ?? {};
   if (!paymentMethodName || !amount) {
     res.status(400).json({ error: "اسم طريقة الدفع والمبلغ مطلوبان" });
     return;
@@ -70,9 +70,9 @@ router.post("/deposits", requireUser, upload.single("receipt"), async (req: Requ
     }
     const sentCurrency = currency || user.currency;
     const result = await pool.query(
-      `INSERT INTO deposit_requests (user_id, payment_method_name, amount, currency, receipt_url)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [user.id, paymentMethodName, parsedAmount, sentCurrency, receiptUrl]
+      `INSERT INTO deposit_requests (user_id, payment_method_name, amount, currency, receipt_url, sender_name)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [user.id, paymentMethodName, parsedAmount, sentCurrency, receiptUrl, senderName || null]
     );
     res.json({ success: true, deposit: result.rows[0] });
 

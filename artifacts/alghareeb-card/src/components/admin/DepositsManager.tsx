@@ -18,6 +18,7 @@ type DepositRow = {
   amount: number;
   currency: string;
   receiptUrl: string | null;
+  senderName: string | null;
   status: "pending" | "approved" | "rejected";
   adminNote: string | null;
   createdAt: string;
@@ -140,6 +141,11 @@ function DepositCard({ d, executor }: { d: DepositRow; executor: any }) {
             <div className="text-xs text-muted-foreground">
               طريقة الدفع: <span className="text-foreground font-semibold">{d.paymentMethodName}</span>
             </div>
+            {d.senderName && (
+              <div className="text-xs text-muted-foreground">
+                اسم المرسل: <span className="text-blue-300 font-semibold">{d.senderName}</span>
+              </div>
+            )}
             <div className="text-xs text-muted-foreground">
               التاريخ: {new Date(d.createdAt).toLocaleString("ar")}
             </div>
