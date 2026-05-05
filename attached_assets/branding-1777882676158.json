@@ -1,0 +1,149 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "Fricolage Grotesque",
+      "role": "heading"
+    },
+    {
+      "family": "Mackinac",
+      "role": "body"
+    }
+  ],
+  "colors": {
+    "primary": "#5A4F7A",
+    "secondary": "#281950",
+    "accent": "#7C3AED",
+    "background": "#F1F2F9",
+    "textPrimary": "#7C3AED",
+    "link": "#7C3AED"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Mackinac",
+      "heading": "Fricolage Grotesque"
+    },
+    "fontStacks": {
+      "heading": [
+        "Mackinac",
+        "ui-serif",
+        "Georgia",
+        "Cambria",
+        "Times New Roman",
+        "Times",
+        "serif"
+      ],
+      "body": [
+        "Fricolage Grotesque",
+        "ui-sans-serif",
+        "system-ui",
+        "sans-serif",
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "Noto Color Emoji"
+      ],
+      "paragraph": [
+        "Fricolage Grotesque",
+        "ui-sans-serif",
+        "system-ui",
+        "sans-serif",
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "Noto Color Emoji"
+      ]
+    },
+    "fontSizes": {
+      "h1": "64px",
+      "h2": "36px",
+      "body": "18px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "8px"
+  },
+  "components": {
+    "buttonPrimary": {
+      "background": "#7C3AED",
+      "textColor": "#FFFFFF",
+      "borderRadius": "9999px",
+      "borderRadiusCorners": {
+        "topLeft": "9999px",
+        "topRight": "9999px",
+        "bottomRight": "9999px",
+        "bottomLeft": "9999px"
+      },
+      "shadow": "rgba(67, 56, 202, 0.25) 0px 0px 0px 1px inset, rgba(0, 0, 0, 0) 0px 0px 0px 0px"
+    },
+    "buttonSecondary": {
+      "background": "#8B5CF6",
+      "textColor": "#FFFFFF",
+      "borderColor": "#F5F5FB",
+      "borderRadius": "9999px",
+      "borderRadiusCorners": {
+        "topLeft": "9999px",
+        "topRight": "9999px",
+        "bottomRight": "9999px",
+        "bottomLeft": "9999px"
+      },
+      "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(91, 33, 182, 0.1) 0px 5px 5px -2px, rgba(91, 33, 182, 0.1) 0px 2px 4px -2px"
+    }
+  },
+  "images": {
+    "favicon": "https://fly.io/phx/ui/images/favicon/favicon-595d1312b35dfe32838befdf8505515e.ico?vsn=d",
+    "ogImage": "https://fly.io/phx/images/preview/og-7ea9380853220ced249aaf88c2332937.jpg?vsn=d",
+    "logoHref": "File saved at: attached_assets/logoHref.html",
+    "logoAlt": "File saved at: attached_assets/logoAlt.html"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand 'Fly.io'.",
+    "confidence": 0.9,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 0,
+      "text": "Deploy your app",
+      "reasoning": "Button #0 'Deploy your app' is the primary CTA due to its vibrant brand color (#7C3AED) and action-oriented text, making it the most prominent call-to-action."
+    },
+    "secondary": {
+      "index": 5,
+      "text": "Learn More",
+      "reasoning": "Button #5 'Learn More' is selected as secondary because it has a different background color (#8B5CF6) and serves as a supportive action to the primary CTA."
+    },
+    "confidence": 0.95
+  },
+  "personality": {
+    "tone": "modern",
+    "energy": "high",
+    "targetAudience": "developers and tech startups"
+  },
+  "designSystem": {
+    "framework": "tailwind",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.95,
+    "colors": 0.9,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand 'Fly.io'.",
+        "confidence": 0.9
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}

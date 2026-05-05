@@ -1,0 +1,39 @@
+[build]
+  dockerfile = "artifacts/api-server/Dockerfile"
+
+app = "alghareeb-card"
+primary_region = "fra"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.tcp_checks]]
+    grace_period = "10s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
+
+  [[services.http_checks]]
+    interval = "10s"
+    grace_period = "10s"
+    method = "get"
+    path = "/api/healthz"
+    protocol = "https"
+    timeout = "2s"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
