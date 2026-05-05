@@ -253,7 +253,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-gradient-to-l from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-lg shadow-purple-900/30 transition-all"
                 >
                   <Wallet className="w-4 h-4" />
-                  <span className="text-sm font-bold">إضافة رصيد</span>
+                  <span className="text-sm font-bold whitespace-nowrap">إضافة رصيد</span>
                 </Link>
               )
             ) : (
@@ -262,12 +262,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-gradient-to-l from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-lg shadow-purple-900/30 transition-all"
               >
                 <Wallet className="w-4 h-4" />
-                <span className="text-sm font-bold">إضافة رصيد</span>
+                <span className="text-sm font-bold whitespace-nowrap">إضافة رصيد</span>
               </Link>
             )}
 
             <Link href="/">
-              <span className="font-black text-xl text-gradient-gold gold-glow">
+              <span className="font-black text-xl text-gradient-gold gold-glow whitespace-nowrap">
                 الغريب كارد
               </span>
             </Link>
@@ -276,7 +276,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Left side: logo */}
           <div className="flex items-center gap-3">
             <Link href="/">
-              <img src="/logo.png" alt="الغريب كارد" className="h-12 w-auto object-contain drop-shadow-[0_0_12px_hsl(var(--gold)/0.4)]" />
+              <img src="/logo.png" alt="الغريب كارد" className="h-16 w-auto object-contain drop-shadow-[0_0_12px_hsl(var(--gold)/0.4)]" />
             </Link>
           </div>
         </div>
