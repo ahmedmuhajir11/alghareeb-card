@@ -102,12 +102,11 @@ export default function Home() {
                         <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">{section.nameAr}</h3>
                       </div>
                     </div>
-                    <div className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-between text-xs font-bold text-gradient-gold">
+                    <div className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
                       <span className="flex items-center gap-1">
                         <span>تسوّق الآن</span>
                         <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
                       </span>
-                      <span className="text-[10px] text-[hsl(var(--gold-light))] opacity-90">⚡ سريع وآمن</span>
                     </div>
                   </CardContent>
                 </Card>

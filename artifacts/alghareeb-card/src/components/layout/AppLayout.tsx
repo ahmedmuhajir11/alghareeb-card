@@ -276,7 +276,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Left side: logo */}
           <div className="flex items-center gap-3">
             <Link href="/">
-              <img src="/logo.png" alt="الغريب كارد" className="h-16 w-auto object-contain drop-shadow-[0_0_12px_hsl(var(--gold)/0.4)]" />
+              <img src="/logo.png" alt="الغريب كارد" className="h-24 w-auto object-contain drop-shadow-[0_0_12px_hsl(var(--gold)/0.4)]" />
             </Link>
           </div>
         </div>
