@@ -27,8 +27,10 @@ export default function SectionPage({ id }: { id: number }) {
     }
   }, [sectionLoading, isPaymentSection, navigate]);
 
-  // Auth guard — redirect to sign-in if not logged in
-  if (isLoaded && !isSignedIn) {
+  const isPublicSection = isWithdrawalSection || isMoneyTransferSection;
+
+  // Auth guard — only for non-public sections
+  if (!isPublicSection && isLoaded && !isSignedIn) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center space-y-5" dir="rtl">
         <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
