@@ -1,7 +1,4 @@
-[build]
-  dockerfile = "artifacts/api-server/Dockerfile"
-
-app = "alghareeb-card"
+app = "alghareeb"
 primary_region = "fra"
 
 [[services]]
