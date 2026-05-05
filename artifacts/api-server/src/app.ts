@@ -93,11 +93,19 @@ app.get("/robots.txt", (_req, res) => {
 app.use("/api", router);
 
 if (process.env.NODE_ENV === "production") {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const frontendDist = path.resolve(__dirname, "../../../artifacts/alghareeb-card/dist/public");
+  const indexHtml = path.join(frontendDist, "index.html");
+  logger.info({ frontendDist, indexHtml }, "Serving frontend static files");
   app.use(express.static(frontendDist));
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(frontendDist, "index.html"));
+  app.get("*", (_req, res, next) => {
+    res.sendFile(indexHtml, (err) => {
+      if (err) {
+        logger.warn({ err, indexHtml }, "Frontend index.html not found, returning 404");
+        if (!res.headersSent) res.status(404).send("Frontend not built");
+      }
+    });
   });
 }
 
