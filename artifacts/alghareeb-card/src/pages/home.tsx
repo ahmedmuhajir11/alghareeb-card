@@ -71,6 +71,13 @@ function Slider() {
   );
 }
 
+function getSectionLabel(nameAr: string): string {
+  if (nameAr.includes("حوالة") || nameAr.includes("حوالات")) return "إرسال حوالة";
+  if (nameAr.includes("راتب") || nameAr.includes("رواتب")) return "طلب سحب الراتب";
+  if (nameAr.includes("إيداع") || nameAr.includes("ايداع") || nameAr.includes("الدفع")) return "شحن الرصيد";
+  return "تسوّق الآن";
+}
+
 export default function Home() {
   const { data: sections, isLoading } = useListSections();
 
@@ -119,7 +126,7 @@ export default function Home() {
                     </div>
                     <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
                       <span className="flex items-center gap-1">
-                        <span>تسوّق الآن</span>
+                        <span>{getSectionLabel(section.nameAr)}</span>
                         <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
                       </span>
                     </div>
