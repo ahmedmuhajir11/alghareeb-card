@@ -11,7 +11,7 @@ const router: IRouter = Router();
 const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || "";
 const USE_OBJECT_STORAGE = !!BUCKET_ID;
 
-const LOCAL_UPLOADS_DIR = "/tmp/uploads";
+const LOCAL_UPLOADS_DIR = process.env.UPLOAD_DIR || "/app/artifacts/api-server/uploads";
 if (!USE_OBJECT_STORAGE) {
   fs.mkdirSync(LOCAL_UPLOADS_DIR, { recursive: true });
 }
