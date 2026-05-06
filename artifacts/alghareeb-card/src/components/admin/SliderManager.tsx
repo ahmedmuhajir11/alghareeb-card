@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload, ImagePlus, Link } from "lucide-react";
+import { Trash2, Upload, ImagePlus, Link, Image, MessageCircle } from "lucide-react";
 import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -203,40 +203,72 @@ export default function SliderManager() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {images.map(img => (
-              <Card key={img.id} className="overflow-hidden border-border/50 bg-card/50">
-                <div className="aspect-[21/9] relative">
-                  <img
-                    src={img.imageUrl}
-                    alt={img.title || "صورة سلايدر"}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-3 space-y-2 bg-card/80">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium truncate text-muted-foreground">
-                      {img.title || "بدون عنوان"}
-                    </span>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(img.id)}
-                      disabled={deleteImg.isPending}
-                      className="flex-shrink-0 gap-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      حذف
-                    </Button>
-                  </div>
-                  {img.linkUrl && (
-                    <div className="flex items-center gap-1 text-xs text-green-400 truncate">
-                      <Link className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate" dir="ltr">{img.linkUrl}</span>
+            {images.map(img => {
+              const isClickable = !!img.linkUrl;
+              const isWhatsApp = isClickable && img.linkUrl!.includes("wa.me");
+              return (
+                <Card
+                  key={img.id}
+                  className={`overflow-hidden bg-card/50 ${
+                    isWhatsApp
+                      ? "border-2 border-green-500/60 shadow-[0_0_12px_rgba(34,197,94,0.2)]"
+                      : isClickable
+                      ? "border-2 border-blue-500/60 shadow-[0_0_12px_rgba(59,130,246,0.2)]"
+                      : "border border-border/50"
+                  }`}
+                >
+                  <div className="aspect-[21/9] relative">
+                    <img
+                      src={img.imageUrl}
+                      alt={img.title || "صورة سلايدر"}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Type badge overlay */}
+                    <div className="absolute top-2 right-2 z-10">
+                      {isWhatsApp ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/90 text-white text-xs font-bold shadow-lg">
+                          <MessageCircle className="w-3 h-3" />
+                          واتساب
+                        </span>
+                      ) : isClickable ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/90 text-white text-xs font-bold shadow-lg">
+                          <Link className="w-3 h-3" />
+                          رابط مخصص
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs font-bold shadow-lg">
+                          <Image className="w-3 h-3" />
+                          عادية
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-              </Card>
-            ))}
+                  </div>
+                  <div className="p-3 space-y-2 bg-card/80">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium truncate text-muted-foreground">
+                        {img.title || "بدون عنوان"}
+                      </span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(img.id)}
+                        disabled={deleteImg.isPending}
+                        className="flex-shrink-0 gap-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        حذف
+                      </Button>
+                    </div>
+                    {img.linkUrl && (
+                      <div className={`flex items-center gap-1 text-xs truncate ${isWhatsApp ? "text-green-400" : "text-blue-400"}`}>
+                        <Link className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate" dir="ltr">{img.linkUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
