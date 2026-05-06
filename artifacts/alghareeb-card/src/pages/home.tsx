@@ -58,13 +58,12 @@ function Slider() {
               href={img.linkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-[0_0_100%] min-w-0 cursor-pointer"
-              style={{ display: 'block' }}
+              className="flex-[0_0_100%] min-w-0 cursor-pointer block"
             >
               {inner}
             </a>
           ) : (
-            <div key={img.id}>{inner}</div>
+            <div key={img.id} className="flex-[0_0_100%] min-w-0">{inner}</div>
           );
         })}
       </div>
