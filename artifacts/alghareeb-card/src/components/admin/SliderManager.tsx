@@ -17,6 +17,7 @@ export default function SliderManager() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
@@ -37,11 +38,13 @@ export default function SliderManager() {
           data: {
             imageUrl: uploadRes.url,
             title: newTitle || undefined,
+            linkUrl: newLinkUrl.trim() || undefined,
             sortOrder: (images?.length || 0) + 1,
           },
         });
         toast({ title: "✅ تمت إضافة الصورة بنجاح" });
         setNewTitle("");
+        setNewLinkUrl("");
         invalidateSlider();
       }
     } catch (err: any) {
@@ -63,11 +66,13 @@ export default function SliderManager() {
         data: {
           imageUrl: imageUrl.trim(),
           title: newTitle || undefined,
+          linkUrl: newLinkUrl.trim() || undefined,
           sortOrder: (images?.length || 0) + 1,
         },
       });
       toast({ title: "✅ تمت إضافة الصورة بنجاح" });
       setNewTitle("");
+      setNewLinkUrl("");
       setImageUrl("");
       invalidateSlider();
     } catch (err: any) {
@@ -105,6 +110,21 @@ export default function SliderManager() {
               placeholder="مثال: خصومات حصرية..."
               className="bg-background/50"
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-1">
+              <Link className="w-4 h-4 text-green-400" />
+              رابط الضغط على الصورة (اختياري — مثال: رابط واتساب)
+            </label>
+            <Input
+              value={newLinkUrl}
+              onChange={e => setNewLinkUrl(e.target.value)}
+              placeholder="https://wa.me/905378221375"
+              className="bg-background/50 text-left"
+              dir="ltr"
+            />
+            <p className="text-xs text-muted-foreground">إذا أدخلت رابطاً، فالضغط على الصورة سيفتح هذا الرابط في نافذة جديدة.</p>
           </div>
 
           <div className="space-y-2">
@@ -192,20 +212,28 @@ export default function SliderManager() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="p-3 flex items-center justify-between gap-2 bg-card/80">
-                  <span className="text-sm font-medium truncate text-muted-foreground">
-                    {img.title || "بدون عنوان"}
-                  </span>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(img.id)}
-                    disabled={deleteImg.isPending}
-                    className="flex-shrink-0 gap-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    حذف
-                  </Button>
+                <div className="p-3 space-y-2 bg-card/80">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium truncate text-muted-foreground">
+                      {img.title || "بدون عنوان"}
+                    </span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(img.id)}
+                      disabled={deleteImg.isPending}
+                      className="flex-shrink-0 gap-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      حذف
+                    </Button>
+                  </div>
+                  {img.linkUrl && (
+                    <div className="flex items-center gap-1 text-xs text-green-400 truncate">
+                      <Link className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate" dir="ltr">{img.linkUrl}</span>
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}

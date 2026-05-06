@@ -508,6 +508,8 @@ components:
           type: string
         moneyTransferCurrencies:
           type: string
+        welcomeMessage:
+          type: string
         updatedAt:
           type: string
       required:
@@ -524,6 +526,7 @@ components:
         - usdToSar
         - whatsappNumber
         - moneyTransferCurrencies
+        - welcomeMessage
         - updatedAt
 
     UpdateSettingsBody:
@@ -552,6 +555,8 @@ components:
         whatsappNumber:
           type: string
         moneyTransferCurrencies:
+          type: string
+        welcomeMessage:
           type: string
 
     Section:

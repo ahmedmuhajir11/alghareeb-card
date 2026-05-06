@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useGetSettings, useUpdateSettings } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +25,7 @@ export default function SettingsManager() {
     marqueeText: "",
     whatsappNumber: "",
     moneyTransferCurrencies: "",
+    welcomeMessage: "",
   });
   const [newCurrency, setNewCurrency] = useState("");
 
@@ -42,6 +44,7 @@ export default function SettingsManager() {
         marqueeText: settings.marqueeText || "",
         whatsappNumber: settings.whatsappNumber || "",
         moneyTransferCurrencies: settings.moneyTransferCurrencies || "دولار,ليرة تركية,يورو,سوري",
+        welcomeMessage: settings.welcomeMessage || "",
       });
     }
   }, [settings]);
@@ -137,6 +140,17 @@ export default function SettingsManager() {
             onChange={e => setFormData({...formData, marqueeText: e.target.value})}
             className="bg-background/50"
           />
+        </div>
+
+        <div className="space-y-2 border-t border-primary/10 pt-4">
+          <label className="text-sm font-medium">رسالة الترحيب (تظهر للمستخدم عند تسجيل الدخول مرة واحدة في كل جلسة)</label>
+          <Textarea
+            value={formData.welcomeMessage}
+            onChange={e => setFormData({...formData, welcomeMessage: e.target.value})}
+            className="bg-background/50 min-h-[100px] resize-y"
+            placeholder="مثال: تنبيه هام: تأكد دائماً من بيانات طريقة الدفع قبل إرسال أي مبلغ..."
+          />
+          <p className="text-xs text-muted-foreground">ستظهر هذه الرسالة للمستخدم في نافذة منبثقة بعد كل تسجيل دخول. اتركها فارغة لإلغاء تفعيلها.</p>
         </div>
 
         <div className="space-y-3 border-t border-primary/10 pt-4">

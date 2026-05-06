@@ -9,5 +9,6 @@
 export interface CreateSliderImageBody {
   imageUrl: string;
   title?: string;
+  linkUrl?: string;
   sortOrder?: number;
 }

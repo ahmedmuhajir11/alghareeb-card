@@ -27,30 +27,46 @@ function Slider() {
   }
 
   const slides = Array.isArray(images) && images.length > 0 ? images : [
-    { id: 1, imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80', title: 'Placeholder 1' },
-    { id: 2, imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80', title: 'Placeholder 2' },
+    { id: 1, imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80', title: 'Placeholder 1', linkUrl: null },
+    { id: 2, imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80', title: 'Placeholder 2', linkUrl: null },
   ];
 
   return (
     <div className="relative mb-12 rounded-xl overflow-hidden neon-border group" ref={emblaRef}>
       <div className="flex touch-pan-y">
-        {slides.map((img) => (
-          <div key={img.id} className="flex-[0_0_100%] min-w-0 relative aspect-[21/9] md:aspect-[3/1]">
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
-            <img 
-              src={img.imageUrl} 
-              alt={img.title || 'Slide'} 
-              className="w-full h-full object-cover"
-            />
-            {img.title && (
-              <div className="absolute bottom-0 right-0 p-6 z-20">
-                <h2 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg neon-text">
-                  {img.title}
-                </h2>
-              </div>
-            )}
-          </div>
-        ))}
+        {slides.map((img) => {
+          const inner = (
+            <div className="flex-[0_0_100%] min-w-0 relative aspect-[21/9] md:aspect-[3/1]">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
+              <img
+                src={img.imageUrl}
+                alt={img.title || 'Slide'}
+                className="w-full h-full object-cover"
+              />
+              {img.title && (
+                <div className="absolute bottom-0 right-0 p-6 z-20">
+                  <h2 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg neon-text">
+                    {img.title}
+                  </h2>
+                </div>
+              )}
+            </div>
+          );
+          return img.linkUrl ? (
+            <a
+              key={img.id}
+              href={img.linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-[0_0_100%] min-w-0 cursor-pointer"
+              style={{ display: 'block' }}
+            >
+              {inner}
+            </a>
+          ) : (
+            <div key={img.id}>{inner}</div>
+          );
+        })}
       </div>
     </div>
   );

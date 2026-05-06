@@ -23,6 +23,7 @@ export interface Settings {
   usdToSar: number;
   whatsappNumber: string;
   moneyTransferCurrencies: string;
+  welcomeMessage: string;
   updatedAt: string;
 }
 
@@ -39,6 +40,7 @@ export interface UpdateSettingsBody {
   usdToSar?: number;
   whatsappNumber?: string;
   moneyTransferCurrencies?: string;
+  welcomeMessage?: string;
 }
 
 export interface Section {
@@ -155,6 +157,7 @@ export interface SliderImage {
   id: number;
   imageUrl: string;
   title?: string;
+  linkUrl?: string;
   sortOrder: number;
   createdAt: string;
 }
@@ -162,6 +165,7 @@ export interface SliderImage {
 export interface CreateSliderImageBody {
   imageUrl: string;
   title?: string;
+  linkUrl?: string;
   sortOrder?: number;
 }
 

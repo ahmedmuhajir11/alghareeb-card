@@ -16,6 +16,7 @@ export const settingsTable = pgTable("settings", {
   usdToSar: doublePrecision("usd_to_sar").notNull().default(3.75),
   whatsappNumber: text("whatsapp_number").notNull().default("00905378221375"),
   moneyTransferCurrencies: text("money_transfer_currencies").notNull().default("دولار,ليرة تركية,يورو,سوري"),
+  welcomeMessage: text("welcome_message").notNull().default("تنبيه هام: قبل إرسال أي مبلغ، تأكد دائماً من بيانات طريقة الدفع الحالية في صفحة (إضافة رصيد). معلومات الدفع قد تتغير في أي وقت، لا ترسل لأي بيانات قديمة محفوظة عندك."),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 

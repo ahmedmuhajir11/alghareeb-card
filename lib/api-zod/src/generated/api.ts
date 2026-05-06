@@ -31,6 +31,7 @@ export const GetSettingsResponse = zod.object({
   usdToSar: zod.number(),
   whatsappNumber: zod.string(),
   moneyTransferCurrencies: zod.string(),
+  welcomeMessage: zod.string(),
   updatedAt: zod.string(),
 });
 
@@ -50,6 +51,7 @@ export const UpdateSettingsBody = zod.object({
   usdToSar: zod.number().optional(),
   whatsappNumber: zod.string().optional(),
   moneyTransferCurrencies: zod.string().optional(),
+  welcomeMessage: zod.string().optional(),
 });
 
 export const UpdateSettingsResponse = zod.object({
@@ -66,6 +68,7 @@ export const UpdateSettingsResponse = zod.object({
   usdToSar: zod.number(),
   whatsappNumber: zod.string(),
   moneyTransferCurrencies: zod.string(),
+  welcomeMessage: zod.string(),
   updatedAt: zod.string(),
 });
 
@@ -356,6 +359,7 @@ export const ListSliderImagesResponseItem = zod.object({
   id: zod.number(),
   imageUrl: zod.string(),
   title: zod.string().optional(),
+  linkUrl: zod.string().optional(),
   sortOrder: zod.number(),
   createdAt: zod.string(),
 });
@@ -367,6 +371,7 @@ export const ListSliderImagesResponse = zod.array(ListSliderImagesResponseItem);
 export const CreateSliderImageBody = zod.object({
   imageUrl: zod.string(),
   title: zod.string().optional(),
+  linkUrl: zod.string().optional(),
   sortOrder: zod.number().optional(),
 });
 

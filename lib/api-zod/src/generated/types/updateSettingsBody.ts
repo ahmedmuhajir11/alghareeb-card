@@ -19,4 +19,5 @@ export interface UpdateSettingsBody {
   usdToSar?: number;
   whatsappNumber?: string;
   moneyTransferCurrencies?: string;
+  welcomeMessage?: string;
 }

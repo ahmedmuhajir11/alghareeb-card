@@ -10,6 +10,7 @@ export interface SliderImage {
   id: number;
   imageUrl: string;
   title?: string;
+  linkUrl?: string;
   sortOrder: number;
   createdAt: string;
 }
