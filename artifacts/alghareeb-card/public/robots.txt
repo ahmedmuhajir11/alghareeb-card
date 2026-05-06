@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://alghareebcard.replit.app/sitemap.xml
+Sitemap: https://alghareeb-card.fly.dev/sitemap.xml
