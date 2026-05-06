@@ -804,6 +804,8 @@ components:
           type: string
         title:
           type: string
+        linkUrl:
+          type: string
         sortOrder:
           type: integer
         createdAt:
@@ -820,6 +822,8 @@ components:
         imageUrl:
           type: string
         title:
+          type: string
+        linkUrl:
           type: string
         sortOrder:
           type: integer
