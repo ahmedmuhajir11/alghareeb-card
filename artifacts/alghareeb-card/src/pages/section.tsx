@@ -4,11 +4,10 @@ import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, LogIn } from "lucide-react";
+import { Search } from "lucide-react";
 import WithdrawalForm from "@/components/WithdrawalForm";
 import MoneyTransferForm from "@/components/MoneyTransferForm";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
 
 export default function SectionPage({ id }: { id: number }) {
   const { data: section, isLoading: sectionLoading } = useGetSection(id);
@@ -28,29 +27,6 @@ export default function SectionPage({ id }: { id: number }) {
   }, [sectionLoading, isPaymentSection, navigate]);
 
   const isPublicSection = isWithdrawalSection || isMoneyTransferSection;
-
-  // Auth guard — only for non-public sections
-  if (!isPublicSection && isLoaded && !isSignedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center space-y-5" dir="rtl">
-        <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
-          <LogIn className="w-8 h-8 text-purple-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-white mb-2">يجب تسجيل الدخول</h2>
-          <p className="text-muted-foreground text-sm">سجّل دخولك للوصول إلى هذا القسم</p>
-        </div>
-        <div className="flex gap-3">
-          <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl px-6">
-            <Link href={`/sign-in?returnUrl=/section/${id}`}>تسجيل الدخول</Link>
-          </Button>
-          <Button asChild variant="outline" className="border-purple-500/30 text-purple-300 rounded-xl px-6">
-            <Link href="/sign-up">إنشاء حساب</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   const filteredItems = items?.filter(item =>
     item.nameAr.toLowerCase().includes(search.toLowerCase()) ||

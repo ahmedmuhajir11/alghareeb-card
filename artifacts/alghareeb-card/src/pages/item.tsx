@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, LogIn } from "lucide-react";
+import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
@@ -21,28 +21,6 @@ export default function ItemPage({ id }: { id: number }) {
   const { isSignedIn, isLoaded, user, refetch: refetchAuth } = useAuth();
   const [, navigate] = useLocation();
   const [submitting, setSubmitting] = useState(false);
-
-  if (isLoaded && !isSignedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center space-y-5" dir="rtl">
-        <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
-          <LogIn className="w-8 h-8 text-purple-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-white mb-2">يجب تسجيل الدخول</h2>
-          <p className="text-muted-foreground text-sm">سجّل دخولك للوصول إلى هذا المنتج</p>
-        </div>
-        <div className="flex gap-3">
-          <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl px-6">
-            <Link href={`/sign-in?returnUrl=/item/${id}`}>تسجيل الدخول</Link>
-          </Button>
-          <Button asChild variant="outline" className="border-purple-500/30 text-purple-300 rounded-xl px-6">
-            <Link href="/sign-up">إنشاء حساب</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   const isPerQuantity = item?.sectionPricingType === "per_quantity";
   const minQuantity = (item as any)?.minQuantity ?? 1;
@@ -103,6 +81,10 @@ export default function ItemPage({ id }: { id: number }) {
   };
 
   const handleOrder = () => {
+    if (!isSignedIn) {
+      navigate(`/sign-in?returnUrl=/item/${id}`);
+      return;
+    }
     if (!userId.trim()) {
       toast({ variant: "destructive", title: "خطأ", description: item?.sectionId === 5 ? "الرجاء إدخال رقمك" : "الرجاء إدخال المعرف (ID) الخاص بك" });
       return;
