@@ -1,11 +1,136 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListSections, useListSliderImages } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import useEmblaCarousel from 'embla-carousel-react';
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, Zap, Headphones, BadgeCheck, ChevronLeft } from "lucide-react";
+import { ShieldCheck, Zap, Headphones, BadgeCheck, ChevronLeft, Search, X } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+/* ─── Types ─── */
+interface SearchResult {
+  id: number;
+  nameAr: string;
+  nameEn: string;
+  logoUrl: string | null;
+  sectionId: number;
+  sectionNameAr: string | null;
+}
+
+/* ─── Global Search Bar ─── */
+function GlobalSearch() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) { setResults([]); setOpen(false); return; }
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        setResults(data.items || []);
+        setOpen(true);
+      } catch { setResults([]); }
+      finally { setLoading(false); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const go = (id: number) => {
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+    navigate(`/item/${id}`);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative w-full mb-8" dir="rtl">
+      <div className="relative">
+        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/60 pointer-events-none" />
+        <Input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          placeholder="ابحث عن أي منتج أو لعبة أو تطبيق..."
+          className="h-13 pr-12 pl-10 text-base bg-card/60 border-primary/30 focus-visible:border-primary rounded-xl neon-border shadow-[0_0_15px_rgba(139,92,246,0.1)]"
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(""); setResults([]); setOpen(false); }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute top-full mt-2 w-full bg-card border border-primary/30 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-50 overflow-hidden">
+          {loading ? (
+            <div className="p-4 space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-2/3" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : results.length === 0 ? (
+            <div className="p-6 text-center text-muted-foreground text-sm">
+              لا توجد نتائج لـ "{query}"
+            </div>
+          ) : (
+            <ul className="max-h-72 overflow-y-auto divide-y divide-border/30">
+              {results.map(item => (
+                <li key={item.id}>
+                  <button
+                    onClick={() => go(item.id)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-colors text-right"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                      {item.logoUrl
+                        ? <img src={item.logoUrl} alt="" className="w-full h-full object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+                        : <span className="text-lg font-bold text-primary">{item.nameAr.charAt(0)}</span>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{item.nameAr}</p>
+                      <p className="text-xs text-muted-foreground truncate">{item.sectionNameAr || item.nameEn}</p>
+                    </div>
+                    <ChevronLeft className="w-4 h-4 text-primary/50 flex-shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Slider ─── */
 function Slider() {
   const { data: images, isLoading } = useListSliderImages();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, direction: 'rtl' });
@@ -16,9 +141,7 @@ function Slider() {
 
   useEffect(() => {
     if (!emblaApi) return;
-    const interval = setInterval(() => {
-      scrollNext();
-    }, 3000);
+    const interval = setInterval(() => { scrollNext(); }, 3000);
     return () => clearInterval(interval);
   }, [emblaApi, scrollNext]);
 
@@ -32,34 +155,22 @@ function Slider() {
   ];
 
   return (
-    <div className="relative mb-12 rounded-xl overflow-hidden neon-border group" ref={emblaRef}>
+    <div className="relative mb-8 rounded-xl overflow-hidden neon-border group" ref={emblaRef}>
       <div className="flex touch-pan-y">
         {slides.map((img) => {
           const inner = (
             <div className="flex-[0_0_100%] min-w-0 relative aspect-[21/9] md:aspect-[3/1]">
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
-              <img
-                src={img.imageUrl}
-                alt={img.title || 'Slide'}
-                className="w-full h-full object-cover"
-              />
+              <img src={img.imageUrl} alt={img.title || 'Slide'} className="w-full h-full object-cover" />
               {img.title && (
                 <div className="absolute bottom-0 right-0 p-6 z-20">
-                  <h2 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg neon-text">
-                    {img.title}
-                  </h2>
+                  <h2 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg neon-text">{img.title}</h2>
                 </div>
               )}
             </div>
           );
           return img.linkUrl ? (
-            <a
-              key={img.id}
-              href={img.linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-[0_0_100%] min-w-0 cursor-pointer block"
-            >
+            <a key={img.id} href={img.linkUrl} target="_blank" rel="noopener noreferrer" className="flex-[0_0_100%] min-w-0 cursor-pointer block">
               {inner}
             </a>
           ) : (
@@ -85,12 +196,9 @@ export default function Home() {
     <div>
       <Slider />
 
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-          <span className="w-2 h-8 bg-gradient-to-b from-[hsl(var(--gold-light))] to-[hsl(var(--gold-dark))] rounded-full inline-block shadow-[0_0_12px_hsl(var(--gold)/0.6)]"></span>
-          <span className="text-gradient-purple-gold">الأقسام</span>
-        </h2>
+      <GlobalSearch />
 
+      <div className="mb-8">
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
@@ -134,13 +242,12 @@ export default function Home() {
                 </Card>
               </Link>
             ))}
-
           </div>
         )}
       </div>
 
-      {/* Trust badges row */}
-      <div className="mb-8 mt-12 rounded-2xl bg-gradient-to-l from-[hsl(260_35%_8%)] via-[hsl(260_30%_10%)] to-[hsl(260_35%_8%)] border border-[hsl(var(--gold)/0.25)] p-4 md:p-5 shadow-[0_0_30px_hsl(var(--gold)/0.08)]">
+      {/* Trust badges */}
+      <div className="mb-8 mt-4 rounded-2xl bg-gradient-to-l from-[hsl(260_35%_8%)] via-[hsl(260_30%_10%)] to-[hsl(260_35%_8%)] border border-[hsl(var(--gold)/0.25)] p-4 md:p-5 shadow-[0_0_30px_hsl(var(--gold)/0.08)]">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4" dir="rtl">
           {[
             { icon: <ShieldCheck className="w-6 h-6" />, title: "آمن وموثوق", subtitle: "حماية بياناتك" },
@@ -148,10 +255,7 @@ export default function Home() {
             { icon: <Headphones className="w-6 h-6" />, title: "دعم على مدار الساعة", subtitle: "خدمتنا دائماً معك" },
             { icon: <BadgeCheck className="w-6 h-6" />, title: "أفضل الأسعار", subtitle: "عروض حصرية" },
           ].map((item) => (
-            <div
-              key={item.title}
-              className="flex items-center gap-3 p-2 rounded-xl"
-            >
+            <div key={item.title} className="flex items-center gap-3 p-2 rounded-xl">
               <div className="shrink-0 w-11 h-11 rounded-full bg-[hsl(var(--gold)/0.12)] border border-[hsl(var(--gold)/0.4)] flex items-center justify-center text-[hsl(var(--gold))] gold-glow">
                 {item.icon}
               </div>
@@ -164,7 +268,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Floating WhatsApp Button */}
+      {/* Floating WhatsApp */}
       <style>{`
         @keyframes neonPulse {
           0%   { box-shadow: 0 0 10px rgba(138,43,226,0.4), 0 0 25px rgba(138,43,226,0.2), inset 0 0 10px rgba(255,255,255,0.05); }
@@ -178,27 +282,13 @@ export default function Home() {
           background: rgba(20,20,35,0.6);
           backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
           border: 1px solid rgba(138,43,226,0.3);
-          box-shadow: 0 0 10px rgba(138,43,226,0.4), 0 0 25px rgba(138,43,226,0.2), inset 0 0 10px rgba(255,255,255,0.05);
-          z-index: 9999;
-          transition: all 0.3s ease;
-          animation: neonPulse 3s infinite;
+          z-index: 9999; transition: all 0.3s ease; animation: neonPulse 3s infinite;
         }
-        .whatsapp-float:hover {
-          transform: scale(1.12);
-          box-shadow: 0 0 20px rgba(138,43,226,0.8), 0 0 40px rgba(138,43,226,0.4), inset 0 0 12px rgba(255,255,255,0.08);
-        }
+        .whatsapp-float:hover { transform: scale(1.12); }
         .whatsapp-float:active { transform: scale(0.95); }
-        .whatsapp-float svg {
-          filter: drop-shadow(0 0 6px rgba(0,255,150,0.5)) brightness(1.1);
-        }
+        .whatsapp-float svg { filter: drop-shadow(0 0 6px rgba(0,255,150,0.5)) brightness(1.1); }
       `}</style>
-      <a
-        href="https://wa.me/905378221375"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="whatsapp-float"
-        aria-label="تواصل معنا على واتساب"
-      >
+      <a href="https://wa.me/905378221375" target="_blank" rel="noopener noreferrer" className="whatsapp-float" aria-label="تواصل معنا على واتساب">
         <svg viewBox="0 0 24 24" width="30" height="30" fill="white">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
           <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.533 5.856L.057 23.625a.75.75 0 0 0 .918.918l5.769-1.476A11.952 11.952 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.927 0-3.733-.5-5.306-1.373l-.38-.217-3.942 1.009 1.009-3.942-.217-.38A9.952 9.952 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
