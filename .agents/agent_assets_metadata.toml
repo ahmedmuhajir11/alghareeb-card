@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "ulu0YSjDEuQsjcKaZyy8_"
+uri = "file://translations.json"
+type = "unspecified"
+title = "ملف الترجمة — AlGhareeb Card"
