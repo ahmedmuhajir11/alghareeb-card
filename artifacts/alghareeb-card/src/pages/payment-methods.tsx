@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Copy, Check, Download, ZoomIn, ChevronDown, ChevronUp, AlertTriangle, Lock, ShieldCheck, BadgeCheck, Upload, Send, Image as ImageIcon, ArrowDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -185,7 +186,9 @@ function QRSection({ url, name }: { url: string; name: string }) {
 }
 
 function DepositForm({ method }: { method: PaymentMethod }) {
-  const methodName = method.nameAr;
+  const { lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const methodName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
   const isShamCash = isShamCashMethod(method);
   const { isSignedIn, user, refetch } = useAuth();
   const { toast } = useToast();
@@ -392,6 +395,10 @@ function DepositForm({ method }: { method: PaymentMethod }) {
 
 function PaymentCard({ method }: { method: PaymentMethod }) {
   const [open, setOpen] = useState(false);
+  const { lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
+  const subName = isRtlLang ? method.nameEn : method.nameAr;
   return (
     <Card className={`overflow-hidden transition-all duration-300 ${open ? "neon-border" : "border-border/50 bg-card/30 hover:border-primary/40"}`}>
       <button
@@ -405,8 +412,8 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
             <span className="text-3xl leading-none">{method.flagEmoji}</span>
           )}
           <div className="text-right">
-            <h3 className="font-bold text-base">{method.nameAr}</h3>
-            <p className="text-xs text-muted-foreground">{method.nameEn}</p>
+            <h3 className="font-bold text-base">{displayName}</h3>
+            <p className="text-xs text-muted-foreground">{subName}</p>
           </div>
         </div>
         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${open ? "bg-primary/20 text-primary" : "bg-card text-muted-foreground"}`}>
