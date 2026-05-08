@@ -395,7 +395,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
 
 function PaymentCard({ method }: { method: PaymentMethod }) {
   const [open, setOpen] = useState(false);
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
   const subName = isRtlLang ? method.nameEn : method.nameAr;
@@ -441,7 +441,7 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
             <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 space-y-1">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                <span className="text-sm font-bold text-yellow-400">تنويه</span>
+                <span className="text-sm font-bold text-yellow-400">{t('payment.notice')}</span>
               </div>
               {method.notes.map((note, i) => (
                 <p key={i} className="text-xs text-muted-foreground">
@@ -461,19 +461,20 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
 
 export default function PaymentMethodsPage() {
   const { data: methods, isLoading } = useFetchPaymentMethods();
+  const { t } = useI18n();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="text-right">
-        <h1 className="text-2xl font-bold neon-text mb-1">طرق الدفع والإيداع</h1>
-        <p className="text-muted-foreground text-sm">اختر دولتك لعرض بيانات الإيداع</p>
+        <h1 className="text-2xl font-bold neon-text mb-1">{t('payment.title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('payment.subtitle')}</p>
       </div>
 
       {/* Security Trust Badge */}
       <div className="rounded-2xl overflow-hidden border border-primary/20 bg-card/30 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/5">
           <Lock className="w-4 h-4 text-primary" />
-          <span className="text-sm font-bold text-primary tracking-wide">موقع آمن ومحمي بالكامل</span>
+          <span className="text-sm font-bold text-primary tracking-wide">{t('payment.secureTitle')}</span>
           <Lock className="w-4 h-4 text-primary" />
         </div>
         <div className="grid grid-cols-3 divide-x divide-x-reverse divide-border/30 px-2 py-4">
@@ -483,7 +484,7 @@ export default function PaymentMethodsPage() {
             </div>
             <div className="text-center">
               <p className="text-xs font-bold text-green-400">SSL</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">تشفير كامل</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{t('payment.sslLabel')}</p>
             </div>
           </div>
           <div className="flex flex-col items-center gap-2 px-3">
@@ -491,8 +492,8 @@ export default function PaymentMethodsPage() {
               <ShieldCheck className="w-5 h-5 text-primary" />
             </div>
             <div className="text-center">
-              <p className="text-xs font-bold text-primary">مؤمّن</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">بيانات محمية</p>
+              <p className="text-xs font-bold text-primary">{t('payment.securedLabel')}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{t('payment.securedDesc')}</p>
             </div>
           </div>
           <div className="flex flex-col items-center gap-2 px-3">
@@ -500,14 +501,14 @@ export default function PaymentMethodsPage() {
               <BadgeCheck className="w-5 h-5 text-blue-400" />
             </div>
             <div className="text-center">
-              <p className="text-xs font-bold text-blue-400">موثوق</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">معاملات آمنة</p>
+              <p className="text-xs font-bold text-blue-400">{t('payment.trustedLabel')}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{t('payment.trustedDesc')}</p>
             </div>
           </div>
         </div>
         <div className="px-4 pb-4 text-center">
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            جميع بياناتك مشفرة ومحمية بتقنية SSL 256-bit. لن يتم مشاركة معلوماتك مع أي طرف ثالث.
+            {t('payment.secureNote')}
           </p>
         </div>
       </div>
@@ -519,7 +520,7 @@ export default function PaymentMethodsPage() {
           ))}
         </div>
       ) : !methods?.length ? (
-        <div className="text-center py-12 text-muted-foreground">لا توجد طرق دفع متاحة</div>
+        <div className="text-center py-12 text-muted-foreground">{t('payment.noMethods')}</div>
       ) : (
         <div className="space-y-3">
           {methods.map(method => (
