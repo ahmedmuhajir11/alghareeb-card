@@ -55,7 +55,7 @@ export default function SectionPage({ id }: { id: number }) {
       ) : (
         <div className="flex items-center gap-4 mb-6">
           {section?.logoUrl && (
-            <img src={section.logoUrl} alt={section.nameAr} className="w-12 h-12 object-contain" />
+            <img src={section.logoUrl} alt={section.nameAr} className="w-12 h-12 object-cover rounded-2xl" />
           )}
           <h1 className="text-3xl font-bold neon-text">{section ? displayName(section.nameAr, section.nameEn) : ""}</h1>
         </div>
@@ -90,7 +90,7 @@ export default function SectionPage({ id }: { id: number }) {
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <div className="flex items-center justify-center w-full h-20 pt-3 relative z-10">
                     {item.logoUrl ? (
-                      <img src={item.logoUrl} alt="" className="w-14 h-14 object-contain drop-shadow-md group-hover:scale-110 transition-transform" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      <img src={item.logoUrl} alt="" className="w-14 h-14 object-cover rounded-2xl drop-shadow-md group-hover:scale-110 transition-transform" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                     ) : (
                       <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <span className="text-2xl font-bold text-primary">{item.nameAr.charAt(0)}</span>

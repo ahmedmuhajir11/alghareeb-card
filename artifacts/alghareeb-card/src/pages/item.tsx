@@ -139,7 +139,7 @@ export default function ItemPage({ id }: { id: number }) {
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row items-center gap-6 bg-card/30 p-6 rounded-2xl neon-border">
         {item.logoUrl ? (
-          <img src={item.logoUrl} alt={item.nameAr} className="w-24 h-24 object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+          <img src={item.logoUrl} alt={item.nameAr} className="w-24 h-24 object-cover rounded-2xl drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
         ) : (
           <div className="w-24 h-24 rounded-2xl bg-primary/20 flex items-center justify-center">
             <span className="text-4xl font-bold text-primary">{item.nameAr.charAt(0)}</span>

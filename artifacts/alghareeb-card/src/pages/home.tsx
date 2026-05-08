@@ -106,7 +106,7 @@ function GlobalSearch() {
                   >
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex-shrink-0 overflow-hidden flex items-center justify-center">
                       {item.logoUrl
-                        ? <img src={item.logoUrl} alt="" className="w-full h-full object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+                        ? <img src={item.logoUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
                         : <span className="text-lg font-bold text-primary">{item.nameAr.charAt(0)}</span>
                       }
                     </div>
