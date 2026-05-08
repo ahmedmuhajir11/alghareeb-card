@@ -19,7 +19,9 @@ export default function ItemPage({ id }: { id: number }) {
   const { data: item, isLoading: itemLoading } = useGetItem(id);
   const { formatPrice } = useCurrency();
   const { toast } = useToast();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const itemName = item ? (isRtlLang ? item.nameAr : (item.nameEn || item.nameAr)) : "";
   const { isSignedIn, isLoaded, user, refetch: refetchAuth } = useAuth();
   const [, navigate] = useLocation();
   const [submitting, setSubmitting] = useState(false);
@@ -142,7 +144,7 @@ export default function ItemPage({ id }: { id: number }) {
           </div>
         )}
         <div className="text-center md:text-start">
-          <h1 className="text-3xl font-bold neon-text mb-2">{item.nameAr}</h1>
+          <h1 className="text-3xl font-bold neon-text mb-2">{itemName}</h1>
           <p className="text-muted-foreground">
             {item.description || (isPerQuantity ? `${t('item.enterQty')} ${unitLabel}` : t('item.choosePackage'))}
           </p>

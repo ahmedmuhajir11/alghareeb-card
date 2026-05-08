@@ -16,7 +16,10 @@ export default function SectionPage({ id }: { id: number }) {
   const [search, setSearch] = useState("");
   const [, navigate] = useLocation();
   const { isSignedIn, isLoaded } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const displayName = (nameAr: string, nameEn: string) =>
+    isRtlLang ? nameAr : (nameEn || nameAr);
 
   const isWithdrawalSection = section?.nameAr?.includes("سحب رواتب");
   const isPaymentSection = section?.nameAr?.includes("طرق الدفع") || section?.nameEn === "Payment Methods";
@@ -54,7 +57,7 @@ export default function SectionPage({ id }: { id: number }) {
           {section?.logoUrl && (
             <img src={section.logoUrl} alt={section.nameAr} className="w-12 h-12 object-contain" />
           )}
-          <h1 className="text-3xl font-bold neon-text">{section?.nameAr}</h1>
+          <h1 className="text-3xl font-bold neon-text">{section ? displayName(section.nameAr, section.nameEn) : ""}</h1>
         </div>
       )}
 
@@ -95,8 +98,7 @@ export default function SectionPage({ id }: { id: number }) {
                     )}
                   </div>
                   <div className="px-2 pb-3 relative z-10">
-                    <h3 className="font-bold text-sm leading-tight">{item.nameAr}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{item.nameEn}</p>
+                    <h3 className="font-bold text-sm leading-tight">{displayName(item.nameAr, item.nameEn)}</h3>
                   </div>
                 </CardContent>
               </Card>

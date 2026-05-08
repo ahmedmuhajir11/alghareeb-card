@@ -187,7 +187,10 @@ function getSectionLabel(nameAr: string, t: (k: string) => string): string {
 
 export default function Home() {
   const { data: sections, isLoading } = useListSections();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const sectionName = (s: { nameAr: string; nameEn: string }) =>
+    isRtlLang ? s.nameAr : (s.nameEn || s.nameAr);
 
   return (
     <div>
@@ -223,7 +226,7 @@ export default function Home() {
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                       <div className="absolute bottom-0 inset-x-0 p-2 text-center">
-                        <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">{section.nameAr}</h3>
+                        <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">{sectionName(section)}</h3>
                       </div>
                     </div>
                     <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
