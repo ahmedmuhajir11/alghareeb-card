@@ -131,7 +131,9 @@ export default function ItemPage({ id }: { id: number }) {
 
   if (!item) return <div className="text-center py-12">{t('item.notFound')}</div>;
 
-  const unitLabel = item.currencyUnit || "وحدة";
+  const rawUnit = item.currencyUnit || "وحدة";
+  const unitKey = `unit.${rawUnit}` as Parameters<typeof t>[0];
+  const unitLabel = t(unitKey) !== unitKey ? t(unitKey) : rawUnit;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
