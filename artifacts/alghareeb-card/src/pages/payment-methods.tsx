@@ -141,6 +141,7 @@ function CopyButton({ value }: { value: string }) {
 
 function QRSection({ url, name }: { url: string; name: string }) {
   const [zoomed, setZoomed] = useState(false);
+  const { t } = useI18n();
   const handleDownload = async () => {
     const a = document.createElement("a");
     a.href = url;
@@ -149,7 +150,7 @@ function QRSection({ url, name }: { url: string; name: string }) {
   };
   return (
     <div className="mt-4">
-      <p className="text-sm font-medium text-muted-foreground mb-2 text-center">رمز QR للدفع</p>
+      <p className="text-sm font-medium text-muted-foreground mb-2 text-center">{t('payment.qrTitle')}</p>
       <div className="flex flex-col items-center gap-3">
         <div
           className={`cursor-pointer transition-all duration-300 rounded-xl overflow-hidden border-2 border-primary/30 hover:border-primary ${zoomed ? "w-full max-w-xs" : "w-36 h-36"}`}
@@ -160,11 +161,11 @@ function QRSection({ url, name }: { url: string; name: string }) {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setZoomed(!zoomed)} className="gap-1 text-xs">
             <ZoomIn className="w-3 h-3" />
-            {zoomed ? "تصغير" : "تكبير"}
+            {zoomed ? t('payment.qrZoomOut') : t('payment.qrZoomIn')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleDownload} className="gap-1 text-xs">
             <Download className="w-3 h-3" />
-            تحميل
+            {t('payment.qrDownload')}
           </Button>
         </div>
       </div>
@@ -174,9 +175,9 @@ function QRSection({ url, name }: { url: string; name: string }) {
             <img src={url} alt="QR Code" className="w-full object-contain" />
             <div className="flex gap-2 mt-3">
               <Button className="flex-1" onClick={handleDownload} size="sm">
-                <Download className="w-4 h-4 ml-2" /> تحميل QR
+                <Download className="w-4 h-4 ml-2" /> {t('payment.qrDownloadFull')}
               </Button>
-              <Button variant="outline" className="flex-1" onClick={() => setZoomed(false)} size="sm">إغلاق</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setZoomed(false)} size="sm">{t('payment.qrClose')}</Button>
             </div>
           </div>
         </div>
@@ -443,11 +444,17 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
                 <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
                 <span className="text-sm font-bold text-yellow-400">{t('payment.notice')}</span>
               </div>
-              {method.notes.map((note, i) => (
-                <p key={i} className="text-xs text-muted-foreground">
-                  ({i + 1})- {note}
-                </p>
-              ))}
+              {method.notes.map((note, i) => {
+                const parts = note.split('||');
+                const displayNote = parts.length >= 2
+                  ? (isRtlLang ? parts[0].trim() : parts[1].trim())
+                  : note;
+                return (
+                  <p key={i} className="text-xs text-muted-foreground">
+                    ({i + 1})- {displayNote}
+                  </p>
+                );
+              })}
             </div>
           )}
 
