@@ -63,7 +63,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         <div className="flex items-center justify-between px-5 py-4 border-b border-primary/20 bg-gradient-to-l from-primary/10 to-transparent">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="الغريب كارد" className="h-10 w-auto object-contain drop-shadow-[0_0_8px_hsl(var(--gold)/0.4)]" />
-            <span className="font-black text-lg text-gradient-gold">الغريب كارد</span>
+            <span className="font-black text-lg text-gradient-gold">{t('site.name')}</span>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors">
             <X className="w-5 h-5" />

@@ -21,8 +21,7 @@ export default function AboutPage() {
         <p className="text-base font-bold text-foreground">{t('about.intro3')}</p>
         <div className="bg-primary/10 border border-primary/30 rounded-xl p-4">
           <p className="text-sm text-muted-foreground">
-            🏢 منصة مرخصة ومسجلة رسميًا في <span className="text-foreground font-semibold">تركيا</span> تحت السجل التجاري رقم{" "}
-            <span className="font-mono text-primary font-bold">9431357857</span> — يمنحك ذلك راحة البال في كل عملية تقوم بها معنا، من أول نقرة وحتى إتمام الخدمة.
+            🏢 {t('about.licenseText')}
           </p>
         </div>
       </div>
@@ -58,7 +57,7 @@ export default function AboutPage() {
           {t('about.transferTitle')}
         </h2>
         <p className="text-muted-foreground leading-relaxed">
-          نقدّم لك حلول تحويل أموال إلى جميع أنحاء العالم بطريقة سهلة وآمنة، مع متابعة دقيقة لكل عملية لضمان وصولها بسرعة وثقة.
+          {t('about.transferDesc')}
         </p>
       </div>
 
@@ -69,7 +68,7 @@ export default function AboutPage() {
           {t('about.visionTitle')}
         </h2>
         <p className="text-muted-foreground leading-relaxed">
-          أن نصبح الاسم الأول في العالم العربي في مجال الخدمات الرقمية، وأن ننافس كبرى المنصات العالمية من خلال الجودة، الثقة، والتجربة الاستثنائية.
+          {t('about.visionText')}
         </p>
       </div>
 

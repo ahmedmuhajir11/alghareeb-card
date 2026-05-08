@@ -38,75 +38,76 @@ const COUNTRY_CURRENCY: Record<string, string> = {
 };
 
 const COUNTRIES = [
-  { name: "سوريا", code: "+963", flag: "🇸🇾" },
-  { name: "تركيا", code: "+90", flag: "🇹🇷" },
-  { name: "السعودية", code: "+966", flag: "🇸🇦" },
-  { name: "الإمارات", code: "+971", flag: "🇦🇪" },
-  { name: "العراق", code: "+964", flag: "🇮🇶" },
-  { name: "مصر", code: "+20", flag: "🇪🇬" },
-  { name: "الأردن", code: "+962", flag: "🇯🇴" },
-  { name: "الكويت", code: "+965", flag: "🇰🇼" },
-  { name: "قطر", code: "+974", flag: "🇶🇦" },
-  { name: "البحرين", code: "+973", flag: "🇧🇭" },
-  { name: "عُمان", code: "+968", flag: "🇴🇲" },
-  { name: "لبنان", code: "+961", flag: "🇱🇧" },
-  { name: "اليمن", code: "+967", flag: "🇾🇲" },
-  { name: "فلسطين", code: "+970", flag: "🇵🇸" },
-  { name: "ليبيا", code: "+218", flag: "🇱🇾" },
-  { name: "تونس", code: "+216", flag: "🇹🇳" },
-  { name: "الجزائر", code: "+213", flag: "🇩🇿" },
-  { name: "المغرب", code: "+212", flag: "🇲🇦" },
-  { name: "السودان", code: "+249", flag: "🇸🇩" },
-  { name: "موريتانيا", code: "+222", flag: "🇲🇷" },
-  { name: "الصومال", code: "+252", flag: "🇸🇴" },
-  { name: "ألمانيا", code: "+49", flag: "🇩🇪" },
-  { name: "فرنسا", code: "+33", flag: "🇫🇷" },
-  { name: "المملكة المتحدة", code: "+44", flag: "🇬🇧" },
-  { name: "الولايات المتحدة", code: "+1", flag: "🇺🇸" },
-  { name: "كندا", code: "+1", flag: "🇨🇦" },
-  { name: "أستراليا", code: "+61", flag: "🇦🇺" },
-  { name: "السويد", code: "+46", flag: "🇸🇪" },
-  { name: "هولندا", code: "+31", flag: "🇳🇱" },
-  { name: "النرويج", code: "+47", flag: "🇳🇴" },
-  { name: "الدنمارك", code: "+45", flag: "🇩🇰" },
-  { name: "فنلندا", code: "+358", flag: "🇫🇮" },
-  { name: "بلجيكا", code: "+32", flag: "🇧🇪" },
-  { name: "سويسرا", code: "+41", flag: "🇨🇭" },
-  { name: "النمسا", code: "+43", flag: "🇦🇹" },
-  { name: "إسبانيا", code: "+34", flag: "🇪🇸" },
-  { name: "إيطاليا", code: "+39", flag: "🇮🇹" },
-  { name: "البرتغال", code: "+351", flag: "🇵🇹" },
-  { name: "اليونان", code: "+30", flag: "🇬🇷" },
-  { name: "بولندا", code: "+48", flag: "🇵🇱" },
-  { name: "رومانيا", code: "+40", flag: "🇷🇴" },
-  { name: "روسيا", code: "+7", flag: "🇷🇺" },
-  { name: "أوكرانيا", code: "+380", flag: "🇺🇦" },
-  { name: "إيران", code: "+98", flag: "🇮🇷" },
-  { name: "باكستان", code: "+92", flag: "🇵🇰" },
-  { name: "الهند", code: "+91", flag: "🇮🇳" },
-  { name: "الصين", code: "+86", flag: "🇨🇳" },
-  { name: "اليابان", code: "+81", flag: "🇯🇵" },
-  { name: "كوريا الجنوبية", code: "+82", flag: "🇰🇷" },
-  { name: "إندونيسيا", code: "+62", flag: "🇮🇩" },
-  { name: "ماليزيا", code: "+60", flag: "🇲🇾" },
-  { name: "سنغافورة", code: "+65", flag: "🇸🇬" },
-  { name: "تايلاند", code: "+66", flag: "🇹🇭" },
-  { name: "البرازيل", code: "+55", flag: "🇧🇷" },
-  { name: "الأرجنتين", code: "+54", flag: "🇦🇷" },
-  { name: "المكسيك", code: "+52", flag: "🇲🇽" },
-  { name: "نيجيريا", code: "+234", flag: "🇳🇬" },
-  { name: "جنوب أفريقيا", code: "+27", flag: "🇿🇦" },
-  { name: "كينيا", code: "+254", flag: "🇰🇪" },
-  { name: "أذربيجان", code: "+994", flag: "🇦🇿" },
-  { name: "أوزبكستان", code: "+998", flag: "🇺🇿" },
-  { name: "كازاخستان", code: "+7", flag: "🇰🇿" },
+  { name: "سوريا", nameEn: "Syria", code: "+963", flag: "🇸🇾" },
+  { name: "تركيا", nameEn: "Turkey", code: "+90", flag: "🇹🇷" },
+  { name: "السعودية", nameEn: "Saudi Arabia", code: "+966", flag: "🇸🇦" },
+  { name: "الإمارات", nameEn: "UAE", code: "+971", flag: "🇦🇪" },
+  { name: "العراق", nameEn: "Iraq", code: "+964", flag: "🇮🇶" },
+  { name: "مصر", nameEn: "Egypt", code: "+20", flag: "🇪🇬" },
+  { name: "الأردن", nameEn: "Jordan", code: "+962", flag: "🇯🇴" },
+  { name: "الكويت", nameEn: "Kuwait", code: "+965", flag: "🇰🇼" },
+  { name: "قطر", nameEn: "Qatar", code: "+974", flag: "🇶🇦" },
+  { name: "البحرين", nameEn: "Bahrain", code: "+973", flag: "🇧🇭" },
+  { name: "عُمان", nameEn: "Oman", code: "+968", flag: "🇴🇲" },
+  { name: "لبنان", nameEn: "Lebanon", code: "+961", flag: "🇱🇧" },
+  { name: "اليمن", nameEn: "Yemen", code: "+967", flag: "🇾🇲" },
+  { name: "فلسطين", nameEn: "Palestine", code: "+970", flag: "🇵🇸" },
+  { name: "ليبيا", nameEn: "Libya", code: "+218", flag: "🇱🇾" },
+  { name: "تونس", nameEn: "Tunisia", code: "+216", flag: "🇹🇳" },
+  { name: "الجزائر", nameEn: "Algeria", code: "+213", flag: "🇩🇿" },
+  { name: "المغرب", nameEn: "Morocco", code: "+212", flag: "🇲🇦" },
+  { name: "السودان", nameEn: "Sudan", code: "+249", flag: "🇸🇩" },
+  { name: "موريتانيا", nameEn: "Mauritania", code: "+222", flag: "🇲🇷" },
+  { name: "الصومال", nameEn: "Somalia", code: "+252", flag: "🇸🇴" },
+  { name: "ألمانيا", nameEn: "Germany", code: "+49", flag: "🇩🇪" },
+  { name: "فرنسا", nameEn: "France", code: "+33", flag: "🇫🇷" },
+  { name: "المملكة المتحدة", nameEn: "United Kingdom", code: "+44", flag: "🇬🇧" },
+  { name: "الولايات المتحدة", nameEn: "United States", code: "+1", flag: "🇺🇸" },
+  { name: "كندا", nameEn: "Canada", code: "+1", flag: "🇨🇦" },
+  { name: "أستراليا", nameEn: "Australia", code: "+61", flag: "🇦🇺" },
+  { name: "السويد", nameEn: "Sweden", code: "+46", flag: "🇸🇪" },
+  { name: "هولندا", nameEn: "Netherlands", code: "+31", flag: "🇳🇱" },
+  { name: "النرويج", nameEn: "Norway", code: "+47", flag: "🇳🇴" },
+  { name: "الدنمارك", nameEn: "Denmark", code: "+45", flag: "🇩🇰" },
+  { name: "فنلندا", nameEn: "Finland", code: "+358", flag: "🇫🇮" },
+  { name: "بلجيكا", nameEn: "Belgium", code: "+32", flag: "🇧🇪" },
+  { name: "سويسرا", nameEn: "Switzerland", code: "+41", flag: "🇨🇭" },
+  { name: "النمسا", nameEn: "Austria", code: "+43", flag: "🇦🇹" },
+  { name: "إسبانيا", nameEn: "Spain", code: "+34", flag: "🇪🇸" },
+  { name: "إيطاليا", nameEn: "Italy", code: "+39", flag: "🇮🇹" },
+  { name: "البرتغال", nameEn: "Portugal", code: "+351", flag: "🇵🇹" },
+  { name: "اليونان", nameEn: "Greece", code: "+30", flag: "🇬🇷" },
+  { name: "بولندا", nameEn: "Poland", code: "+48", flag: "🇵🇱" },
+  { name: "رومانيا", nameEn: "Romania", code: "+40", flag: "🇷🇴" },
+  { name: "روسيا", nameEn: "Russia", code: "+7", flag: "🇷🇺" },
+  { name: "أوكرانيا", nameEn: "Ukraine", code: "+380", flag: "🇺🇦" },
+  { name: "إيران", nameEn: "Iran", code: "+98", flag: "🇮🇷" },
+  { name: "باكستان", nameEn: "Pakistan", code: "+92", flag: "🇵🇰" },
+  { name: "الهند", nameEn: "India", code: "+91", flag: "🇮🇳" },
+  { name: "الصين", nameEn: "China", code: "+86", flag: "🇨🇳" },
+  { name: "اليابان", nameEn: "Japan", code: "+81", flag: "🇯🇵" },
+  { name: "كوريا الجنوبية", nameEn: "South Korea", code: "+82", flag: "🇰🇷" },
+  { name: "إندونيسيا", nameEn: "Indonesia", code: "+62", flag: "🇮🇩" },
+  { name: "ماليزيا", nameEn: "Malaysia", code: "+60", flag: "🇲🇾" },
+  { name: "سنغافورة", nameEn: "Singapore", code: "+65", flag: "🇸🇬" },
+  { name: "تايلاند", nameEn: "Thailand", code: "+66", flag: "🇹🇭" },
+  { name: "البرازيل", nameEn: "Brazil", code: "+55", flag: "🇧🇷" },
+  { name: "الأرجنتين", nameEn: "Argentina", code: "+54", flag: "🇦🇷" },
+  { name: "المكسيك", nameEn: "Mexico", code: "+52", flag: "🇲🇽" },
+  { name: "نيجيريا", nameEn: "Nigeria", code: "+234", flag: "🇳🇬" },
+  { name: "جنوب أفريقيا", nameEn: "South Africa", code: "+27", flag: "🇿🇦" },
+  { name: "كينيا", nameEn: "Kenya", code: "+254", flag: "🇰🇪" },
+  { name: "أذربيجان", nameEn: "Azerbaijan", code: "+994", flag: "🇦🇿" },
+  { name: "أوزبكستان", nameEn: "Uzbekistan", code: "+998", flag: "🇺🇿" },
+  { name: "كازاخستان", nameEn: "Kazakhstan", code: "+7", flag: "🇰🇿" },
 ];
 
 export default function ProfileSetupPage() {
   const { user, isLoaded, refetch } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { t, dir } = useI18n();
+  const { t, dir, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
 
   const [country, setCountry] = useState("");
   const [phone, setPhone] = useState("");
@@ -167,7 +168,7 @@ export default function ProfileSetupPage() {
       <Link href="/" className="flex items-center gap-3 mb-8">
         <img src="/logo.png" alt="الغريب كارد" className="h-12 w-auto object-contain" />
         <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-          الغريب كارد
+          {t('site.name')}
         </span>
       </Link>
 
@@ -198,7 +199,7 @@ export default function ProfileSetupPage() {
                 {COUNTRIES.map(c => (
                   <SelectItem key={c.name} value={c.name} className="text-white hover:bg-purple-600/20 focus:bg-purple-600/20">
                     <span className="flex items-center gap-2">
-                      <span>{c.flag}</span><span>{c.name}</span>
+                      <span>{c.flag}</span><span>{isRtlLang ? c.name : c.nameEn}</span>
                       <span className="text-muted-foreground text-xs">{c.code}</span>
                     </span>
                   </SelectItem>

@@ -186,7 +186,7 @@ function QRSection({ url, name }: { url: string; name: string }) {
 }
 
 function DepositForm({ method }: { method: PaymentMethod }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const methodName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
   const isShamCash = isShamCashMethod(method);
@@ -217,10 +217,10 @@ function DepositForm({ method }: { method: PaymentMethod }) {
     return (
       <div className="bg-purple-500/5 border border-purple-500/30 rounded-xl p-4 text-center space-y-3">
         <p className="text-sm text-muted-foreground">
-          سجّل دخولك لإرسال طلب إيداع
+          {t('payment.loginToDeposit')}
         </p>
         <Button asChild size="sm" className="bg-purple-600 hover:bg-purple-700">
-          <Link href="/sign-in">تسجيل الدخول</Link>
+          <Link href="/sign-in">{t('payment.loginBtn')}</Link>
         </Button>
       </div>
     );
@@ -230,15 +230,15 @@ function DepositForm({ method }: { method: PaymentMethod }) {
     e.preventDefault();
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) {
-      toast({ variant: "destructive", title: "خطأ", description: "أدخل مبلغاً صحيحاً" });
+      toast({ variant: "destructive", title: t('payment.errorLabel'), description: t('payment.errorAmount') });
       return;
     }
     if (method.requireSenderName && !senderName.trim()) {
-      toast({ variant: "destructive", title: "خطأ", description: "أدخل اسم المرسل الكامل" });
+      toast({ variant: "destructive", title: t('payment.errorLabel'), description: t('payment.errorSender') });
       return;
     }
     if (!file) {
-      toast({ variant: "destructive", title: "خطأ", description: "أرفق صورة الإيصال" });
+      toast({ variant: "destructive", title: t('payment.errorLabel'), description: t('payment.errorReceipt') });
       return;
     }
     setSubmitting(true);
@@ -259,24 +259,24 @@ function DepositForm({ method }: { method: PaymentMethod }) {
         if (res.status === 409 && data?.code === "PENDING_DEPOSIT_EXISTS") {
           toast({
             variant: "destructive",
-            title: "لديك طلب قيد المراجعة",
-            description: "لا يمكن إرسال طلب إيداع جديد قبل مراجعة الطلب السابق.",
+            title: t('payment.pendingDeposit'),
+            description: t('payment.pendingDesc'),
           });
           setTimeout(() => navigate("/"), 1200);
           return;
         }
-        throw new Error(data?.error ?? "فشل الإرسال");
+        throw new Error(data?.error ?? t('payment.errorFailed'));
       }
       toast({
-        title: "تم إرسال الطلب ✓",
-        description: "سيتم مراجعة الإيداع وإضافة الرصيد بعد الموافقة",
+        title: t('payment.depositSent'),
+        description: t('payment.depositSentDesc'),
       });
       setAmount("");
       setFile(null);
       await refetch();
       setTimeout(() => navigate("/"), 900);
     } catch (err: any) {
-      toast({ variant: "destructive", title: "خطأ", description: err?.message ?? "فشل الإرسال" });
+      toast({ variant: "destructive", title: t('payment.errorLabel'), description: err?.message ?? t('payment.errorFailed') });
     } finally {
       setSubmitting(false);
     }
@@ -286,12 +286,12 @@ function DepositForm({ method }: { method: PaymentMethod }) {
     <form onSubmit={handleSubmit} className="bg-purple-500/5 border border-purple-500/30 rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-2 mb-1">
         <Send className="w-4 h-4 text-purple-400" />
-        <span className="text-sm font-bold text-purple-300">أرسلت لنا حوالة؟ أكمل الإيداع هنا</span>
+        <span className="text-sm font-bold text-purple-300">{t('payment.depositFormTitle')}</span>
       </div>
 
       {isShamCash && (
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">عملة المبلغ المرسل</Label>
+          <Label className="text-xs text-muted-foreground">{t('payment.sentCurrency')}</Label>
           <Select value={sentCurrency} onValueChange={setSentCurrency}>
             <SelectTrigger className="bg-background/60 h-10 font-bold">
               <SelectValue />
@@ -305,17 +305,17 @@ function DepositForm({ method }: { method: PaymentMethod }) {
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">
-            شام كاش يدعم 3 عملات — اختر العملة التي أرسلتها فعلياً
+            {t('payment.shamNote')}
           </p>
         </div>
       )}
 
       {method.requireSenderName && (
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">اسم المرسل الكامل *</Label>
+          <Label className="text-xs text-muted-foreground">{t('payment.senderName')}</Label>
           <Input
             type="text"
-            placeholder="أدخل الاسم الكامل للمرسل"
+            placeholder={t('payment.senderPh')}
             value={senderName}
             onChange={e => setSenderName(e.target.value)}
             className="bg-background/60 h-10 font-bold"
@@ -326,14 +326,14 @@ function DepositForm({ method }: { method: PaymentMethod }) {
 
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">
-          المبلغ المرسل ({isShamCash ? sentCurrency : user?.currency})
+          {t('payment.amountLabel')} ({isShamCash ? sentCurrency : user?.currency})
         </Label>
         <Input
           type="number"
           inputMode="decimal"
           step="0.01"
           min="0"
-          placeholder="مثال: 500"
+          placeholder={t('payment.amountPh')}
           value={amount}
           onChange={e => setAmount(e.target.value)}
           className="bg-background/60 h-10 text-center font-bold"
@@ -343,7 +343,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
           <div className="mt-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <ArrowDown className="w-3 h-3 text-primary" />
-              <span>سيُضاف لرصيدك</span>
+              <span>{t('payment.addedToBalance')}</span>
             </div>
             <div className="text-sm font-bold text-primary" dir="ltr">
               {formatNumber(convertedToAccount)} {userCurrency}
@@ -351,12 +351,12 @@ function DepositForm({ method }: { method: PaymentMethod }) {
           </div>
         )}
         {isShamCash && convertedToAccount === null && amount && parseFloat(amount) > 0 && sentCurrency.toUpperCase() !== userCurrency && (
-          <p className="text-[11px] text-amber-400">جاري حساب المبلغ المعادل...</p>
+          <p className="text-[11px] text-amber-400">{t('payment.calculating')}</p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">إيصال الدفع (صورة)</Label>
+        <Label className="text-xs text-muted-foreground">{t('payment.receiptLabel')}</Label>
         <label className="flex items-center justify-center gap-2 cursor-pointer h-20 rounded-lg border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-background/40 transition-colors">
           <input
             type="file"
@@ -372,7 +372,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
           ) : (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Upload className="w-4 h-4" />
-              <span>اضغط لاختيار صورة الإيصال</span>
+              <span>{t('payment.chooseReceipt')}</span>
             </div>
           )}
         </label>
@@ -383,11 +383,11 @@ function DepositForm({ method }: { method: PaymentMethod }) {
         disabled={submitting}
         className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold"
       >
-        {submitting ? "جاري الإرسال..." : "إرسال طلب الإيداع"}
+        {submitting ? t('payment.sending') : t('payment.sendDeposit')}
       </Button>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        سيتم مراجعة طلبك خلال دقائق وإضافة الرصيد لحسابك بعد الموافقة
+        {t('payment.depositNote')}
       </p>
     </form>
   );
