@@ -17,6 +17,8 @@ export const LANG_META: Record<LangCode, { name: string; flag: string; dir: 'rtl
 type T = Partial<Record<LangCode, string>>;
 
 const t: Record<string, T> = {
+  // ── Site ─────────────────────────────────────────────────────────────────
+  'site.name': { ar:'الغريب كارد', en:'AlGhareeb Card', tr:'AlGhareeb Card', fr:'AlGhareeb Card', es:'AlGhareeb Card', pt:'AlGhareeb Card', fa:'الغریب کارد', ru:'AlGhareeb Card', de:'AlGhareeb Card', id:'AlGhareeb Card', ku:'الغریب کارد' },
   // ── Sidebar ──────────────────────────────────────────────────────────────
   'sidebar.home':         { ar:'الرئيسية',    en:'Home',         tr:'Ana Sayfa',    fr:'Accueil',      es:'Inicio',    pt:'Início',     fa:'خانه',        ru:'Главная',   de:'Startseite',  id:'Beranda',       ku:'سەرەکی' },
   'sidebar.addBalance':   { ar:'إضافة رصيد',  en:'Add Balance',  tr:'Bakiye Ekle',  fr:'Ajouter crédit', es:'Añadir saldo', pt:'Adicionar saldo', fa:'افزودن موجودی', ru:'Пополнить', de:'Guthaben',    id:'Tambah Saldo',  ku:'باڵانس زیاد بکە' },

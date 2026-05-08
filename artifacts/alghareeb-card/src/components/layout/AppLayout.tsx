@@ -293,7 +293,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             )}
 
             <Link href="/">
-              <span className="font-black text-xl text-gradient-gold gold-glow whitespace-nowrap">الغريب كارد</span>
+              <span className="font-black text-xl text-gradient-gold gold-glow whitespace-nowrap">{t('site.name')}</span>
             </Link>
           </div>
 
