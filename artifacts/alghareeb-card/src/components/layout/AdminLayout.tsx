@@ -2,7 +2,9 @@ import { Link, useLocation } from "wouter";
 import { useAdminMe, useAdminLogout } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, LogOut, Settings, Image as ImageIcon, Box, Layers } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
+
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
@@ -13,6 +15,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   });
   
   const logout = useAdminLogout();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleLogout = useCallback(() => {
+    logout.mutate(undefined, {
+      onSuccess: () => {
+        setLocation("/admin/login");
+      },
+      onError: () => {
+        setLocation("/admin/login");
+      }
+    });
+  }, [logout, setLocation]);
 
   useEffect(() => {
     if (!isLoading && (!me || !me.isAdmin || error)) {
@@ -20,13 +34,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [me, isLoading, error, setLocation]);
 
-  const handleLogout = () => {
-    logout.mutate(undefined, {
-      onSuccess: () => {
-        setLocation("/");
-      }
-    });
-  };
+  useEffect(() => {
+    if (!me?.isAdmin) return;
+
+    const resetTimer = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        handleLogout();
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
+    events.forEach(e => window.addEventListener(e, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [me?.isAdmin, handleLogout]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
