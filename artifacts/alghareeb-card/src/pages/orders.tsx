@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,53 +22,28 @@ type Order = {
   createdAt: string;
 };
 
-const STATUS_META: Record<string, { label: string; icon: any; classes: string }> = {
-  pending: {
-    label: "قيد الانتظار",
-    icon: Clock,
-    classes: "bg-yellow-500/10 border-yellow-500/30 text-yellow-300",
-  },
-  approved: {
-    label: "تمت الموافقة",
-    icon: CheckCircle2,
-    classes: "bg-green-500/10 border-green-500/30 text-green-300",
-  },
-  completed: {
-    label: "مكتمل",
-    icon: CheckCircle2,
-    classes: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
-  },
-  rejected: {
-    label: "مرفوض",
-    icon: XCircle,
-    classes: "bg-red-500/10 border-red-500/30 text-red-300",
-  },
-  cancelled: {
-    label: "ملغي",
-    icon: XCircle,
-    classes: "bg-gray-500/10 border-gray-500/30 text-gray-300",
-  },
-};
-
-function formatDate(d: string) {
-  try {
-    return new Date(d).toLocaleString("ar-EG", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return d;
-  }
-}
-
 export default function OrdersPage() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { t, lang } = useI18n();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const STATUS_META: Record<string, { label: string; icon: any; classes: string }> = {
+    pending:   { label: t('orders.pending'),   icon: Clock,         classes: "bg-yellow-500/10 border-yellow-500/30 text-yellow-300" },
+    approved:  { label: t('orders.approved'),  icon: CheckCircle2,  classes: "bg-green-500/10 border-green-500/30 text-green-300" },
+    completed: { label: t('orders.completed'), icon: CheckCircle2,  classes: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300" },
+    rejected:  { label: t('orders.rejected'),  icon: XCircle,       classes: "bg-red-500/10 border-red-500/30 text-red-300" },
+    cancelled: { label: t('orders.cancelled'), icon: XCircle,       classes: "bg-gray-500/10 border-gray-500/30 text-gray-300" },
+  };
+
+  function formatDate(d: string) {
+    try {
+      return new Date(d).toLocaleString(lang === "ar" ? "ar-EG" : lang, {
+        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+      });
+    } catch { return d; }
+  }
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -91,31 +67,31 @@ export default function OrdersPage() {
 
   if (isLoaded && !isSignedIn) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center space-y-5" dir="rtl">
+      <div className="flex flex-col items-center justify-center py-24 text-center space-y-5">
         <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
           <LogIn className="w-8 h-8 text-purple-400" />
         </div>
         <div>
-          <h2 className="text-xl font-black text-white mb-2">يجب تسجيل الدخول</h2>
-          <p className="text-muted-foreground text-sm">سجّل دخولك لعرض طلباتك</p>
+          <h2 className="text-xl font-black text-white mb-2">{t('orders.loginRequired')}</h2>
+          <p className="text-muted-foreground text-sm">{t('orders.loginSub')}</p>
         </div>
         <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl px-6">
-          <Link href="/sign-in?returnUrl=/orders">تسجيل الدخول</Link>
+          <Link href="/sign-in?returnUrl=/orders">{t('orders.loginBtn')}</Link>
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
             <ShoppingBag className="w-5 h-5 text-purple-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-black neon-text">طلباتي</h1>
-            <p className="text-xs text-muted-foreground">جميع طلباتك السابقة وحالة كل طلب</p>
+            <h1 className="text-2xl font-black neon-text">{t('orders.title')}</h1>
+            <p className="text-xs text-muted-foreground">{t('orders.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -131,10 +107,10 @@ export default function OrdersPage() {
       ) : !orders || orders.length === 0 ? (
         <Card className="p-10 text-center bg-card/30 border-primary/20 neon-border">
           <Package className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-          <p className="font-bold text-lg mb-1">لا توجد طلبات بعد</p>
-          <p className="text-sm text-muted-foreground mb-5">عند إرسال أول طلب لك سيظهر هنا.</p>
+          <p className="font-bold text-lg mb-1">{t('orders.none')}</p>
+          <p className="text-sm text-muted-foreground mb-5">{t('orders.noneDesc')}</p>
           <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl px-6">
-            <Link href="/">تصفح الأقسام</Link>
+            <Link href="/">{t('orders.browse')}</Link>
           </Button>
         </Card>
       ) : (
@@ -156,7 +132,7 @@ export default function OrdersPage() {
                     )}
                     {o.targetId && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        المعرف: <span dir="ltr" className="font-mono">{o.targetId}</span>
+                        {t('orders.targetId')}: <span dir="ltr" className="font-mono">{o.targetId}</span>
                       </p>
                     )}
                     <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
@@ -169,11 +145,11 @@ export default function OrdersPage() {
                       <Icon className="w-3.5 h-3.5" />
                       {meta.label}
                     </span>
-                    <div className="text-left">
+                    <div className="text-end">
                       <span className="font-black text-base text-primary">
                         {o.amount.toFixed(2)}
                       </span>
-                      <span className="text-[11px] text-muted-foreground mr-1">{o.currency}</span>
+                      <span className="text-[11px] text-muted-foreground ms-1">{o.currency}</span>
                     </div>
                   </div>
                 </div>

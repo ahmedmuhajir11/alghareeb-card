@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { useGetSettings } from "@workspace/api-client-react";
 import { AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ const STORAGE_KEY = "welcome_modal_shown";
 
 export default function WelcomeModal() {
   const { isSignedIn } = useAuth();
+  const { t } = useI18n();
   const { data: settings } = useGetSettings();
   const [open, setOpen] = useState(false);
 
@@ -30,18 +32,12 @@ export default function WelcomeModal() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-      <div
-        className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-[#0e0e1f] shadow-[0_0_40px_hsl(40_80%_50%/0.15)] p-6"
-        dir="rtl"
-      >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
+      <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-[#0e0e1f] shadow-[0_0_40px_hsl(40_80%_50%/0.15)] p-6" dir="rtl">
         <button
           onClick={handleClose}
-          className="absolute top-3 left-3 p-1.5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
-          aria-label="إغلاق"
+          className="absolute top-3 start-3 p-1.5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+          aria-label={t('welcome.understood')}
         >
           <X className="w-4 h-4" />
         </button>
@@ -51,8 +47,8 @@ export default function WelcomeModal() {
             <AlertTriangle className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <h2 className="font-black text-lg text-amber-300 leading-tight">تنبيه هام</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">يُرجى قراءة هذه الرسالة قبل المتابعة</p>
+            <h2 className="font-black text-lg text-amber-300 leading-tight">{t('welcome.title')}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('welcome.subtitle')}</p>
           </div>
         </div>
 
@@ -64,7 +60,7 @@ export default function WelcomeModal() {
           onClick={handleClose}
           className="mt-5 w-full bg-amber-500 hover:bg-amber-400 text-black font-black text-base"
         >
-          فهمت، متابعة
+          {t('welcome.understood')}
         </Button>
       </div>
     </div>

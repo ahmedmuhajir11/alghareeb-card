@@ -3,6 +3,7 @@ import { useGetItem } from "@workspace/api-client-react";
 import type { Package } from "@workspace/api-client-react";
 import { useCurrency } from "@/lib/currency";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { useLocation } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -18,6 +19,7 @@ export default function ItemPage({ id }: { id: number }) {
   const { data: item, isLoading: itemLoading } = useGetItem(id);
   const { formatPrice } = useCurrency();
   const { toast } = useToast();
+  const { t } = useI18n();
   const { isSignedIn, isLoaded, user, refetch: refetchAuth } = useAuth();
   const [, navigate] = useLocation();
   const [submitting, setSubmitting] = useState(false);
@@ -56,25 +58,25 @@ export default function ItemPage({ id }: { id: number }) {
         if (res.status === 400 && data?.code === "INSUFFICIENT_BALANCE") {
           toast({
             variant: "destructive",
-            title: "الرصيد غير كافي",
-            description: `يجب إضافة رصيد إلى حسابك قبل إتمام الطلب. سيتم نقلك الآن إلى صفحة شحن الرصيد.`,
+            title: t('item.insufficientBalance'),
+            description: t('item.insufficientDesc'),
           });
           setTimeout(() => navigate("/payment-methods"), 1200);
           return;
         }
-        throw new Error(data?.error || "فشلت العملية");
+        throw new Error(data?.error || t('item.failed'));
       }
 
       await refetchAuth();
       const charged = data?.order?.amount ?? 0;
       const chargedCur = data?.order?.currency ?? user?.currency ?? "USD";
       toast({
-        title: "تم إرسال طلبك ✓",
-        description: `تم خصم ${charged.toFixed(2)} ${chargedCur} من رصيدك. يمكنك متابعة حالة الطلب من قسم "طلباتي".`,
+        title: t('item.orderSent'),
+        description: `${t('item.orderSentDesc')} (${charged.toFixed(2)} ${chargedCur})`,
       });
       setTimeout(() => navigate("/orders"), 900);
     } catch (e: any) {
-      toast({ variant: "destructive", title: "خطأ", description: e?.message ?? "فشلت العملية" });
+      toast({ variant: "destructive", title: t('item.error'), description: e?.message ?? t('item.failed') });
     } finally {
       setSubmitting(false);
     }
@@ -86,25 +88,25 @@ export default function ItemPage({ id }: { id: number }) {
       return;
     }
     if (!userId.trim()) {
-      toast({ variant: "destructive", title: "خطأ", description: item?.sectionId === 5 ? "الرجاء إدخال رقمك" : "الرجاء إدخال المعرف (ID) الخاص بك" });
+      toast({ variant: "destructive", title: t('item.error'), description: item?.sectionId === 5 ? t('item.errorMissingId') : t('item.errorMissingId') });
       return;
     }
 
     if (isPerQuantity) {
       const qty = parseFloat(quantity);
       if (!qty || qty <= 0) {
-        toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال الكمية المطلوبة" });
+        toast({ variant: "destructive", title: t('item.error'), description: t('item.errorMissingQty') });
         return;
       }
       if (qty < minQuantity) {
-        toast({ variant: "destructive", title: "كمية أقل من الحد الأدنى", description: `الحد الأدنى للطلب هو ${minQuantity} ${unitLabel}` });
+        toast({ variant: "destructive", title: t('item.belowMin'), description: `${t('item.minQty')} ${minQuantity} ${unitLabel}` });
         return;
       }
       if (!calculatedPrice) return;
       submitOrder({ quantity: qty });
     } else {
       if (!selectedPackageId) {
-        toast({ variant: "destructive", title: "خطأ", description: "الرجاء اختيار باقة أولاً" });
+        toast({ variant: "destructive", title: t('item.error'), description: t('item.errorMissingPkg') });
         return;
       }
       const selectedPackage = item?.packages?.find((p: Package) => p.id === selectedPackageId);
@@ -125,7 +127,7 @@ export default function ItemPage({ id }: { id: number }) {
     );
   }
 
-  if (!item) return <div className="text-center py-12">العنصر غير موجود</div>;
+  if (!item) return <div className="text-center py-12">{t('item.notFound')}</div>;
 
   const unitLabel = item.currencyUnit || "وحدة";
 
@@ -139,14 +141,14 @@ export default function ItemPage({ id }: { id: number }) {
             <span className="text-4xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
           </div>
         )}
-        <div className="text-center md:text-right">
+        <div className="text-center md:text-start">
           <h1 className="text-3xl font-bold neon-text mb-2">{item.nameAr}</h1>
           <p className="text-muted-foreground">
-            {item.description || (isPerQuantity ? `أدخل الكمية المطلوبة من ${unitLabel}` : "اختر الباقة المناسبة")}
+            {item.description || (isPerQuantity ? `${t('item.enterQty')} ${unitLabel}` : t('item.choosePackage'))}
           </p>
           {isPerQuantity && item.pricePerUnit && (
             <p className="text-sm text-primary/80 mt-1">
-              سعر كل {unitLabel}: {formatPrice(item.pricePerUnit)}
+              {t('item.pricePerUnit')} {unitLabel}: {formatPrice(item.pricePerUnit)}
             </p>
           )}
         </div>
@@ -156,16 +158,16 @@ export default function ItemPage({ id }: { id: number }) {
         <div className="space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
-            أدخل الكمية المطلوبة
+            {t('item.enterQty')}
           </h2>
           <div className="bg-card/30 rounded-2xl neon-border p-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">عدد {unitLabel}</label>
+              <label className="text-sm font-medium">{t('item.quantityOf')} {unitLabel}</label>
               <Input
                 type="number"
                 min="1"
                 step="1"
-                placeholder={`مثال: ${minQuantity > 1 ? minQuantity : 1000} ${unitLabel}`}
+                placeholder={`${minQuantity > 1 ? minQuantity : 1000} ${unitLabel}`}
                 className={`h-14 text-xl bg-background/50 focus-visible:border-primary text-center ${isBelowMin ? "border-red-500" : "border-primary/20"}`}
                 value={quantity}
                 onChange={e => setQuantity(e.target.value)}
@@ -173,18 +175,18 @@ export default function ItemPage({ id }: { id: number }) {
               />
               {minQuantity > 1 && !isBelowMin && (
                 <p className="text-xs text-muted-foreground text-center">
-                  الحد الأدنى للطلب: {minQuantity} {unitLabel}
+                  {t('item.minQty')} {minQuantity} {unitLabel}
                 </p>
               )}
               {isBelowMin && (
                 <p className="text-sm text-red-500 font-bold text-center" data-testid="min-quantity-error">
-                  ⚠ الكمية أقل من الحد الأدنى. الحد الأدنى للطلب هو {minQuantity} {unitLabel}
+                  ⚠ {t('item.belowMin')} {minQuantity} {unitLabel}
                 </p>
               )}
             </div>
             {calculatedPrice !== null && (
               <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">السعر الإجمالي لـ {quantity} {unitLabel}</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('item.totalPrice')} {quantity} {unitLabel}</p>
                 <p className="text-3xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
               </div>
             )}
@@ -194,11 +196,11 @@ export default function ItemPage({ id }: { id: number }) {
         <div className="space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
-            اختر الباقة
+            {t('item.choosePackageTitle')}
           </h2>
           {!item.packages || item.packages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground bg-card/50 rounded-xl border border-border/50">
-              لا توجد باقات متاحة حالياً
+              {t('item.noPackages')}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -215,7 +217,7 @@ export default function ItemPage({ id }: { id: number }) {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
                       <div className="font-bold text-lg">{pkg.label}</div>
-                      <div className="text-sm text-primary/80 font-medium">الكمية: {pkg.quantity}</div>
+                      <div className="text-sm text-primary/80 font-medium">{t('item.pkgQty')} {pkg.quantity}</div>
                     </div>
                     <div className="font-black text-xl text-primary drop-shadow-sm">
                       {formatPrice(pkg.priceUsd)}
@@ -231,15 +233,15 @@ export default function ItemPage({ id }: { id: number }) {
       <div className="space-y-4 bg-card/30 p-6 rounded-2xl neon-border">
         <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
           <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
-          بيانات الشحن
+          {t('item.shippingData')}
         </h2>
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            {item.sectionId === 5 ? "رقم الهاتف" : "المعرف (ID) الخاص بك"}
+            {item.sectionId === 5 ? t('item.phoneLabel') : t('item.idLabel')}
           </label>
           <Input
-            placeholder={item.sectionId === 5 ? "أدخل رقمك" : "أدخل الـ ID هنا..."}
-            className="h-12 text-lg bg-background/50 border-primary/20 focus-visible:border-primary text-center md:text-right"
+            placeholder={item.sectionId === 5 ? t('item.phonePh') : t('item.idPh')}
+            className="h-12 text-lg bg-background/50 border-primary/20 focus-visible:border-primary text-center"
             value={userId}
             onChange={e => setUserId(e.target.value)}
             dir="ltr"
@@ -251,11 +253,11 @@ export default function ItemPage({ id }: { id: number }) {
           disabled={submitting}
         >
           <Send className="w-5 h-5" />
-          {submitting ? "جاري الإرسال..." : "إرسال الطلب"}
+          {submitting ? t('item.sending') : t('item.sendOrder')}
         </Button>
         {user && (
           <p className="text-xs text-center text-muted-foreground mt-2">
-            رصيدك الحالي: <span className="text-primary font-bold">{user.balance.toFixed(2)} {user.currency}</span>
+            {t('item.currentBalance')} <span className="text-primary font-bold">{user.balance.toFixed(2)} {user.currency}</span>
           </p>
         )}
       </div>

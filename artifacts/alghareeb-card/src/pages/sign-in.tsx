@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -12,6 +13,7 @@ export default function SignInPage() {
   const { refetch } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t, dir } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -38,7 +40,7 @@ export default function SignInPage() {
         setLocation(params.get("returnUrl") || "/");
       }
     } catch (err: any) {
-      toast({ title: "خطأ", description: err.message, variant: "destructive" });
+      toast({ title: t('signIn.error'), description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -47,7 +49,7 @@ export default function SignInPage() {
   const GOOGLE_URL = `${API_BASE}/api/auth/google`;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir={dir}>
       <Link href="/" className="flex items-center gap-3 mb-8">
         <img src="/logo.png" alt="الغريب كارد" className="h-12 w-auto object-contain" />
         <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
@@ -57,11 +59,10 @@ export default function SignInPage() {
 
       <div className="w-full max-w-sm bg-card border border-purple-500/20 rounded-2xl p-6 shadow-2xl shadow-purple-900/20 space-y-5">
         <div className="text-center">
-          <h1 className="text-2xl font-black text-white">تسجيل الدخول</h1>
-          <p className="text-sm text-muted-foreground mt-1">أهلاً بعودتك</p>
+          <h1 className="text-2xl font-black text-white">{t('signIn.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('signIn.welcome')}</p>
         </div>
 
-        {/* Google Sign In */}
         <a
           href={GOOGLE_URL}
           className="flex items-center justify-center gap-3 w-full h-11 bg-white hover:bg-gray-100 text-gray-800 font-semibold rounded-xl transition-all duration-200 shadow"
@@ -72,12 +73,12 @@ export default function SignInPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          تسجيل الدخول بجوجل
+          {t('signIn.withGoogle')}
         </a>
 
         <div className="flex items-center gap-3 text-muted-foreground">
           <div className="flex-1 h-px bg-border" />
-          <span className="text-sm">أو</span>
+          <span className="text-sm">{t('signIn.or')}</span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
@@ -88,7 +89,7 @@ export default function SignInPage() {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="البريد الإلكتروني"
+              placeholder={t('signIn.email')}
               className="pr-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11"
               required
             />
@@ -99,7 +100,7 @@ export default function SignInPage() {
               type={showPass ? "text" : "password"}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="كلمة السر"
+              placeholder={t('signIn.password')}
               className="pr-10 pl-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11"
               required
             />
@@ -112,14 +113,16 @@ export default function SignInPage() {
             disabled={loading}
             className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl"
           >
-            {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" /> : "دخول"}
+            {loading
+              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
+              : t('signIn.loginBtn')}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          ليس لديك حساب؟{" "}
+          {t('signIn.noAccount')}{" "}
           <Link href="/sign-up" className="text-primary hover:underline font-semibold">
-            إنشاء حساب
+            {t('signIn.createAccount')}
           </Link>
         </p>
       </div>

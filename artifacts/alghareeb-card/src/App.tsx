@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CurrencyProvider } from "@/lib/currency";
 import { AuthProvider } from "@/lib/auth";
+import { LanguageProvider } from "@/lib/i18n";
 import PushPermissionBanner from "@/components/PushPermissionBanner";
 import ScrollToTop from "@/components/ScrollToTop";
 import NotFound from "@/pages/not-found";
@@ -79,16 +80,18 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <CurrencyProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <ScrollToTop />
-              <Router />
-              <PushPermissionBanner />
-            </WouterRouter>
-            <Toaster />
-          </CurrencyProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CurrencyProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <ScrollToTop />
+                <Router />
+                <PushPermissionBanner />
+              </WouterRouter>
+              <Toaster />
+            </CurrencyProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

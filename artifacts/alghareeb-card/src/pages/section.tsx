@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import WithdrawalForm from "@/components/WithdrawalForm";
 import MoneyTransferForm from "@/components/MoneyTransferForm";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 
 export default function SectionPage({ id }: { id: number }) {
   const { data: section, isLoading: sectionLoading } = useGetSection(id);
@@ -15,6 +16,7 @@ export default function SectionPage({ id }: { id: number }) {
   const [search, setSearch] = useState("");
   const [, navigate] = useLocation();
   const { isSignedIn, isLoaded } = useAuth();
+  const { t } = useI18n();
 
   const isWithdrawalSection = section?.nameAr?.includes("سحب رواتب");
   const isPaymentSection = section?.nameAr?.includes("طرق الدفع") || section?.nameEn === "Payment Methods";
@@ -25,8 +27,6 @@ export default function SectionPage({ id }: { id: number }) {
       navigate("/payment-methods", { replace: true });
     }
   }, [sectionLoading, isPaymentSection, navigate]);
-
-  const isPublicSection = isWithdrawalSection || isMoneyTransferSection;
 
   const filteredItems = items?.filter(item =>
     item.nameAr.toLowerCase().includes(search.toLowerCase()) ||
@@ -59,10 +59,10 @@ export default function SectionPage({ id }: { id: number }) {
       )}
 
       <div className="relative max-w-md">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <Input 
-          placeholder="ابحث عن لعبة أو تطبيق..." 
-          className="pl-4 pr-10 bg-card border-primary/20 focus-visible:border-primary neon-border"
+        <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <Input
+          placeholder={t('section.searchPh')}
+          className="ps-4 pe-10 bg-card border-primary/20 focus-visible:border-primary neon-border"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -76,7 +76,7 @@ export default function SectionPage({ id }: { id: number }) {
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground bg-card/50 rounded-xl border border-border/50">
-          لا توجد عناصر مطابقة للبحث
+          {t('section.noResults')}
         </div>
       ) : (
         <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">

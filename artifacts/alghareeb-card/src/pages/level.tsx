@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Trophy, Lock, Check, Loader2, ArrowDownCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -39,6 +40,7 @@ function fmtNum(n: number, decimals = 2): string {
 
 export default function LevelPage() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { t } = useI18n();
 
   const { data, isLoading, error } = useQuery<LevelData>({
     queryKey: ["my-level"],
@@ -60,14 +62,12 @@ export default function LevelPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="max-w-md mx-auto text-center py-16" dir="rtl">
+      <div className="max-w-md mx-auto text-center py-16">
         <Trophy className="w-12 h-12 text-primary mx-auto mb-4" />
-        <h1 className="text-xl font-bold mb-2">سجّل الدخول لعرض مستواك</h1>
-        <p className="text-muted-foreground text-sm mb-6">
-          ابدأ رحلتك واحصل على شارات المستويات
-        </p>
+        <h1 className="text-xl font-bold mb-2">{t('level.loginPrompt')}</h1>
+        <p className="text-muted-foreground text-sm mb-6">{t('level.loginSub')}</p>
         <Link href="/sign-in">
-          <Button className="w-full">تسجيل الدخول</Button>
+          <Button className="w-full">{t('level.loginBtn')}</Button>
         </Link>
       </div>
     );
@@ -83,7 +83,7 @@ export default function LevelPage() {
 
   if (error || !data) {
     return (
-      <div className="text-rose-400 text-center py-12 bg-rose-500/5 border border-rose-500/20 rounded-xl max-w-2xl mx-auto" dir="rtl">
+      <div className="text-rose-400 text-center py-12 bg-rose-500/5 border border-rose-500/20 rounded-xl max-w-2xl mx-auto">
         {(error as Error)?.message || "حدث خطأ"}
       </div>
     );
@@ -93,29 +93,29 @@ export default function LevelPage() {
   const decimals = ccy === "SYP" || ccy === "IQD" || ccy === "DZD" ? 0 : 2;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="rounded-2xl p-6 border border-primary/30 bg-gradient-to-br from-purple-900/40 via-purple-700/20 to-purple-500/10 relative overflow-hidden">
-        <div className="absolute top-2 left-2 text-7xl opacity-20 select-none">
+        <div className="absolute top-2 start-2 text-7xl opacity-20 select-none">
           {data.currentLevel.emoji}
         </div>
         <div className="relative">
-          <p className="text-xs font-semibold text-purple-200/80 mb-1">مستواك الحالي</p>
+          <p className="text-xs font-semibold text-purple-200/80 mb-1">{t('level.currentLevel')}</p>
           <h1 className="text-3xl md:text-4xl font-black flex items-center gap-3">
             <span>{data.currentLevel.emoji}</span>
             <span style={{ color: data.currentLevel.color }} className="neon-text">
-              المستوى {data.currentLevel.nameAr}
+              {t('level.prefix')} {data.currentLevel.nameAr}
             </span>
           </h1>
           <p className="text-sm text-purple-100/80 mt-3 leading-relaxed">
             {data.nextLevel ? (
               <>
-                إذا كنت ترغب بترقية حسابك إلى المستوى{" "}
+                {t('level.upgradeMsg')}{" "}
                 <span className="font-bold text-white">{data.nextLevel.nameAr}</span>{" "}
-                والحصول على شارة مميزة، ما عليك إلا زيادة إيداعاتك على الموقع.
+                {t('level.upgradeMsg2')}
               </>
             ) : (
-              <>🎉 وصلت إلى أعلى مستوى! أنت من نجوم المنصة.</>
+              <>{t('level.maxLevel')}</>
             )}
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function LevelPage() {
       <div className="rounded-2xl p-5 border border-emerald-500/30 bg-gradient-to-br from-emerald-600/15 to-emerald-500/5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-emerald-200/80 flex items-center gap-1.5">
-            <ArrowDownCircle className="w-4 h-4" /> إجمالي إيداعاتك
+            <ArrowDownCircle className="w-4 h-4" /> {t('level.totalDeposits')}
           </span>
           <span className="text-2xl">📊</span>
         </div>
@@ -138,7 +138,7 @@ export default function LevelPage() {
           <div className="mt-4">
             <div className="flex justify-between text-xs mb-1.5">
               <span className="text-muted-foreground">
-                متبقي للوصول إلى {data.nextLevel.nameAr} {data.nextLevel.emoji}
+                {t('level.remaining')} {data.nextLevel.nameAr} {data.nextLevel.emoji}
               </span>
               <span className="font-bold text-primary">
                 {data.progressToNext.toFixed(1)}%
@@ -151,11 +151,11 @@ export default function LevelPage() {
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              يلزمك إيداع{" "}
+              {t('level.toReachNext')}{" "}
               <span className="font-bold text-purple-300">
                 {fmtNum(data.amountToNextUserCcy, decimals)} {ccy}
               </span>{" "}
-              للوصول إلى المستوى التالي
+              {t('level.toReachNext2')}
             </p>
           </div>
         )}
@@ -165,7 +165,7 @@ export default function LevelPage() {
       <div className="bg-card border border-border/50 rounded-2xl p-4 md:p-6">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-primary" />
-          جميع المستويات
+          {t('level.allLevels')}
         </h2>
         <div className="space-y-3">
           {data.allLevels.map((lv) => {
@@ -192,7 +192,7 @@ export default function LevelPage() {
                         className={`font-bold text-base ${isCurrent ? "neon-text" : ""}`}
                         style={isCurrent ? { color: lv.color } : {}}
                       >
-                        المستوى {lv.nameAr}
+                        {t('level.prefix')} {lv.nameAr}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {lv.maxUserCcy === null
@@ -209,7 +209,7 @@ export default function LevelPage() {
                     )}
                     {isCurrent && (
                       <span className="px-3 py-1 text-xs font-bold rounded-full bg-primary/20 border border-primary/40 text-primary">
-                        الحالي
+                        {t('level.current')}
                       </span>
                     )}
                     {isLocked && (
@@ -229,7 +229,7 @@ export default function LevelPage() {
         <Link href="/payment-methods">
           <Button size="lg" className="gap-2">
             <ArrowDownCircle className="w-5 h-5" />
-            إيداع رصيد للترقية
+            {t('level.depositBtn')}
           </Button>
         </Link>
       </div>

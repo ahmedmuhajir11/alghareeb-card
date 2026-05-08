@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -12,6 +13,7 @@ export default function SignUpPage() {
   const { refetch } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t, dir } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,7 @@ export default function SignUpPage() {
     e.preventDefault();
     if (!name || !email || !password) return;
     if (password.length < 6) {
-      toast({ title: "خطأ", description: "كلمة السر يجب أن تكون 6 أحرف على الأقل", variant: "destructive" });
+      toast({ title: t('signUp.error'), description: t('signUp.passwordShort'), variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -38,7 +40,7 @@ export default function SignUpPage() {
       await refetch();
       setLocation("/profile-setup");
     } catch (err: any) {
-      toast({ title: "خطأ", description: err.message, variant: "destructive" });
+      toast({ title: t('signUp.error'), description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -47,7 +49,7 @@ export default function SignUpPage() {
   const GOOGLE_URL = `${API_BASE}/api/auth/google`;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir={dir}>
       <Link href="/" className="flex items-center gap-3 mb-8">
         <img src="/logo.png" alt="الغريب كارد" className="h-12 w-auto object-contain" />
         <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
@@ -57,8 +59,8 @@ export default function SignUpPage() {
 
       <div className="w-full max-w-sm bg-card border border-purple-500/20 rounded-2xl p-6 shadow-2xl shadow-purple-900/20 space-y-5">
         <div className="text-center">
-          <h1 className="text-2xl font-black text-white">إنشاء حساب</h1>
-          <p className="text-sm text-muted-foreground mt-1">ابدأ رحلتك مع الغريب كارد</p>
+          <h1 className="text-2xl font-black text-white">{t('signUp.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('signUp.subtitle')}</p>
         </div>
 
         <a
@@ -71,39 +73,41 @@ export default function SignUpPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          التسجيل بجوجل
+          {t('signUp.withGoogle')}
         </a>
 
         <div className="flex items-center gap-3 text-muted-foreground">
           <div className="flex-1 h-px bg-border" />
-          <span className="text-sm">أو</span>
+          <span className="text-sm">{t('signUp.or')}</span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div className="relative">
             <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="الاسم الكامل" className="pr-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11" required />
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder={t('signUp.name')} className="pr-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11" required />
           </div>
           <div className="relative">
             <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="البريد الإلكتروني" className="pr-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11" required />
+            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('signUp.email')} className="pr-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11" required />
           </div>
           <div className="relative">
             <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="كلمة السر (6 أحرف على الأقل)" className="pr-10 pl-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11" required />
+            <Input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder={t('signUp.password')} className="pr-10 pl-10 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11" required />
             <button type="button" onClick={() => setShowPass(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white">
               {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
           <Button type="submit" disabled={loading} className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl">
-            {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" /> : "إنشاء حساب"}
+            {loading
+              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
+              : t('signUp.registerBtn')}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          لديك حساب؟{" "}
-          <Link href="/sign-in" className="text-primary hover:underline font-semibold">تسجيل الدخول</Link>
+          {t('signUp.haveAccount')}{" "}
+          <Link href="/sign-in" className="text-primary hover:underline font-semibold">{t('signUp.loginLink')}</Link>
         </p>
       </div>
     </div>

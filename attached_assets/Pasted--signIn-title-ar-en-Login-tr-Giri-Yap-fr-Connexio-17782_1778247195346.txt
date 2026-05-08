@@ -1,0 +1,16 @@
+  "signIn": {
+    "title": { "ar": "تسجيل الدخول", "en": "Login", "tr": "Giriş Yap", "fr": "Connexion", "es": "Login", "pt": "Login", "fa": "ورود", "ru": "Вход", "de": "Login", "id": "Masuk", "ku": "چوونە ژوورەوە" },
+    "emailPlaceholder": { "ar": "البريد الإلكتروني", "en": "Email", "tr": "E-posta", "fr": "E-mail", "es": "Correo", "pt": "Email", "fa": "ایمیل", "ru": "Email", "de": "E-Mail", "id": "Email", "ku": "ئیمەیڵ" },
+    "passwordPlaceholder": { "ar": "كلمة السر", "en": "Password", "tr": "Şifre", "fr": "Mot de passe", "es": "Contraseña", "pt": "Senha", "fa": "رمز عبور", "ru": "Пароль", "de": "Passwort", "id": "Kata Sandi", "ku": "وشەی نهێنی" },
+    "loginBtn": { "ar": "دخول", "en": "Login", "tr": "Giriş", "fr": "Entrer", "es": "Entrar", "pt": "Entrar", "fa": "ورود", "ru": "Войти", "de": "Anmelden", "id": "Masuk", "ku": "چوونە ژوورەوە" }
+  },
+  "paymentMethods": {
+    "title": { "ar": "طرق الدفع والإيداع", "en": "Payment Methods", "tr": "Ödeme Yöntemleri", "fr": "Moyens de paiement", "es": "Métodos de pago", "pt": "Métodos de pagamento", "fa": "روش‌های پرداخت", "ru": "Способы оплаты", "de": "Zahlungsmethoden", "id": "Metode Pembayaran", "ku": "ڕێگاکانی پارەدان" },
+    "copy": { "ar": "نسخ", "en": "Copy", "tr": "Kopyala", "fr": "Copier", "es": "Copiar", "pt": "Copiar", "fa": "کپی", "ru": "Копировать", "de": "Kopieren", "id": "Salin", "ku": "کۆپی" },
+    "amountLabel": { "ar": "المبلغ المرسل", "en": "Amount Sent", "tr": "Gönderilen Tutar", "fr": "Montant envoyé", "es": "Monto enviado", "pt": "Valor enviado", "fa": "مبلغ ارسال شده", "ru": "Сумма", "de": "Betrag", "id": "Jumlah", "ku": "بڕی نێردراو" }
+  },
+  "footer": {
+    "aboutUs": { "ar": "من نحن", "en": "About Us", "tr": "Hakkımızda", "fr": "À propos", "es": "Nosotros", "pt": "Sobre", "fa": "درباره ما", "ru": "О нас", "de": "Über uns", "id": "Tentang", "ku": "دەربارەی ئێمە" },
+    "copyright": { "ar": "جميع الحقوق محفوظة", "en": "All rights reserved", "tr": "Tüm hakları saklıdır", "fr": "Tous droits réservés", "es": "Reservados todos los derechos", "pt": "Todos os direitos reservados", "fa": "حقوق محفوظ است", "ru": "Все права защищены", "de": "Alle Rechte vorbehalten", "id": "Hak cipta", "ku": "مافەکان پارێزراون" }
+  }
+}

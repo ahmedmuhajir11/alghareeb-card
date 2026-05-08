@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Lock, User, Phone, Globe, Coins } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -105,6 +106,7 @@ export default function ProfileSetupPage() {
   const { user, isLoaded, refetch } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t, dir } = useI18n();
 
   const [country, setCountry] = useState("");
   const [phone, setPhone] = useState("");
@@ -127,7 +129,7 @@ export default function ProfileSetupPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!country || !phone || !currency) {
-      toast({ title: "خطأ", description: "يرجى ملء جميع الحقول", variant: "destructive" });
+      toast({ title: t('signIn.error'), description: t('profile.fillAll'), variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -143,10 +145,10 @@ export default function ProfileSetupPage() {
         throw new Error(err?.error ?? "حدث خطأ أثناء الحفظ");
       }
       await refetch();
-      toast({ title: "تم الحفظ بنجاح", description: "اكتمل ملفك الشخصي" });
+      toast({ title: t('profile.saved'), description: t('profile.complete') });
       setLocation("/");
     } catch (err: any) {
-      toast({ title: "خطأ", description: err?.message ?? "حدث خطأ", variant: "destructive" });
+      toast({ title: t('signIn.error'), description: err?.message ?? "حدث خطأ", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -161,7 +163,7 @@ export default function ProfileSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir={dir}>
       <Link href="/" className="flex items-center gap-3 mb-8">
         <img src="/logo.png" alt="الغريب كارد" className="h-12 w-auto object-contain" />
         <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
@@ -175,22 +177,22 @@ export default function ProfileSetupPage() {
             <User className="w-5 h-5 text-purple-400" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white">إكمال الملف الشخصي</h1>
-            <p className="text-sm text-muted-foreground">أدخل بياناتك لتفعيل حسابك</p>
+            <h1 className="text-xl font-black text-white">{t('profile.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('profile.subtitle')}</p>
           </div>
         </div>
 
         <form onSubmit={handleSave} className="space-y-5">
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-slate-300 font-semibold">
-              <Globe className="w-4 h-4 text-purple-400" /> الدولة
+              <Globe className="w-4 h-4 text-purple-400" /> {t('profile.country')}
             </Label>
             <Select value={country} onValueChange={(v) => {
               setCountry(v);
               if (!currencyLocked && COUNTRY_CURRENCY[v]) setCurrency(COUNTRY_CURRENCY[v]);
             }} required>
               <SelectTrigger className="w-full bg-[#0f0f1a] border-purple-500/30 text-white h-11">
-                <SelectValue placeholder="اختر دولتك" />
+                <SelectValue placeholder={t('profile.selectCountry')} />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a2e] border-purple-500/30 max-h-60">
                 {COUNTRIES.map(c => (
@@ -207,7 +209,7 @@ export default function ProfileSetupPage() {
 
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-slate-300 font-semibold">
-              <Phone className="w-4 h-4 text-purple-400" /> رقم الهاتف
+              <Phone className="w-4 h-4 text-purple-400" /> {t('profile.phone')}
             </Label>
             <div className="flex gap-2" dir="ltr">
               <div className="flex items-center justify-center px-3 bg-[#0f0f1a] border border-purple-500/30 rounded-lg text-sm text-muted-foreground min-w-[70px]">
@@ -226,12 +228,16 @@ export default function ProfileSetupPage() {
 
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-slate-300 font-semibold">
-              <Coins className="w-4 h-4 text-purple-400" /> العملة المفضلة
-              {currencyLocked && <span className="flex items-center gap-1 text-xs text-amber-400 font-normal mr-auto"><Lock className="w-3 h-3" />مقفلة</span>}
+              <Coins className="w-4 h-4 text-purple-400" /> {t('profile.currency')}
+              {currencyLocked && (
+                <span className="flex items-center gap-1 text-xs text-amber-400 font-normal ms-auto">
+                  <Lock className="w-3 h-3" />{t('profile.locked')}
+                </span>
+              )}
             </Label>
             <Select value={currency} onValueChange={currencyLocked ? undefined : setCurrency} disabled={currencyLocked} required>
               <SelectTrigger className={`w-full bg-[#0f0f1a] border-purple-500/30 text-white h-11 ${currencyLocked ? "opacity-60 cursor-not-allowed" : ""}`}>
-                <SelectValue placeholder="اختر العملة" />
+                <SelectValue placeholder={t('profile.selectCurrency')} />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a2e] border-purple-500/30">
                 {CURRENCIES.map(c => (
@@ -247,12 +253,17 @@ export default function ProfileSetupPage() {
             </Select>
             <p className="text-xs text-amber-400/80 flex items-center gap-1">
               <Lock className="w-3 h-3" />
-              {currencyLocked ? "العملة مقفلة ولا يمكن تغييرها" : "تنبيه: لا يمكن تغيير العملة بعد الحفظ"}
+              {currencyLocked ? t('profile.currencyLocked') : t('profile.currencyWarning')}
             </p>
           </div>
 
           <Button type="submit" disabled={saving} className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold text-base rounded-xl shadow-lg">
-            {saving ? <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />جاري الحفظ...</div> : "حفظ وإكمال"}
+            {saving
+              ? <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  {t('profile.saving')}
+                </div>
+              : t('profile.save')}
           </Button>
         </form>
       </div>

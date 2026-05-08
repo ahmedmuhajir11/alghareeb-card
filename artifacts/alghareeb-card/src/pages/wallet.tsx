@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Wallet as WalletIcon, ShoppingBag, ArrowDownCircle, Plus, ArrowUpCircle, RefreshCcw, Loader2, Trophy, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -56,22 +57,23 @@ function StatCard({
       </div>
       <p className="text-2xl font-black">
         {value.toFixed(2)}
-        <span className="text-xs font-semibold text-muted-foreground mr-1.5">{currency}</span>
+        <span className="text-xs font-semibold text-muted-foreground ms-1.5">{currency}</span>
       </p>
     </div>
   );
 }
 
-const TYPE_LABELS: Record<string, { label: string; sign: "+" | "-"; color: string; icon: React.ReactNode }> = {
-  deposit: { label: "إيداع", sign: "+", color: "text-emerald-400", icon: <ArrowDownCircle className="w-4 h-4" /> },
-  refund: { label: "استرداد", sign: "+", color: "text-emerald-400", icon: <RefreshCcw className="w-4 h-4" /> },
-  purchase: { label: "شراء", sign: "-", color: "text-rose-400", icon: <ArrowUpCircle className="w-4 h-4" /> },
-  withdrawal: { label: "سحب", sign: "-", color: "text-rose-400", icon: <ArrowUpCircle className="w-4 h-4" /> },
-  transfer: { label: "تحويل", sign: "-", color: "text-rose-400", icon: <ArrowUpCircle className="w-4 h-4" /> },
-};
-
 export default function WalletPage() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { t, lang } = useI18n();
+
+  const typeLabels = () => ({
+    deposit:    { label: t('wallet.deposit'),    sign: "+" as const, color: "text-emerald-400", icon: <ArrowDownCircle className="w-4 h-4" /> },
+    refund:     { label: t('wallet.refund'),     sign: "+" as const, color: "text-emerald-400", icon: <RefreshCcw className="w-4 h-4" /> },
+    purchase:   { label: t('wallet.purchase'),   sign: "-" as const, color: "text-rose-400",    icon: <ArrowUpCircle className="w-4 h-4" /> },
+    withdrawal: { label: t('wallet.withdrawal'), sign: "-" as const, color: "text-rose-400",    icon: <ArrowUpCircle className="w-4 h-4" /> },
+    transfer:   { label: t('wallet.transfer'),   sign: "-" as const, color: "text-rose-400",    icon: <ArrowUpCircle className="w-4 h-4" /> },
+  });
 
   const { data, isLoading, error } = useQuery<WalletData>({
     queryKey: ["wallet"],
@@ -105,26 +107,26 @@ export default function WalletPage() {
     return (
       <div className="max-w-md mx-auto text-center py-16">
         <WalletIcon className="w-12 h-12 text-primary mx-auto mb-4" />
-        <h1 className="text-xl font-bold mb-2">سجّل الدخول لعرض محفظتك</h1>
-        <p className="text-muted-foreground text-sm mb-6">تابع رصيدك وعملياتك بسهولة</p>
+        <h1 className="text-xl font-bold mb-2">{t('wallet.loginPrompt')}</h1>
+        <p className="text-muted-foreground text-sm mb-6">{t('wallet.loginSub')}</p>
         <Link href="/sign-in">
-          <Button className="w-full">تسجيل الدخول</Button>
+          <Button className="w-full">{t('wallet.loginBtn')}</Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black neon-text">محفظتي</h1>
-          <p className="text-muted-foreground text-sm mt-1">رصيدك ومعاملاتك في مكان واحد</p>
+          <h1 className="text-2xl md:text-3xl font-black neon-text">{t('wallet.title')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{t('wallet.subtitle')}</p>
         </div>
         <Link href="/payment-methods">
           <Button size="sm" className="gap-1.5">
             <Plus className="w-4 h-4" />
-            إضافة رصيد
+            {t('wallet.addBalance')}
           </Button>
         </Link>
       </div>
@@ -150,18 +152,15 @@ export default function WalletPage() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-3xl shrink-0">{levelData.currentLevel.emoji}</span>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-purple-200/80">مستواك الحالي</p>
-                      <p
-                        className="font-black text-base"
-                        style={{ color: levelData.currentLevel.color }}
-                      >
+                      <p className="text-xs font-semibold text-purple-200/80">{t('wallet.currentLevel')}</p>
+                      <p className="font-black text-base" style={{ color: levelData.currentLevel.color }}>
                         {levelData.currentLevel.nameAr}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-primary shrink-0">
                     <Trophy className="w-4 h-4" />
-                    <span>التفاصيل</span>
+                    <span>{t('wallet.details')}</span>
                     <ChevronLeft className="w-4 h-4" />
                   </div>
                 </div>
@@ -174,11 +173,11 @@ export default function WalletPage() {
                       />
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1.5 text-center">
-                      متبقي{" "}
+                      {t('wallet.remaining')}{" "}
                       <span className="font-bold text-purple-300">
                         {levelData.amountToNextUserCcy.toFixed(2)} {levelData.currency}
                       </span>{" "}
-                      للوصول إلى {levelData.nextLevel.nameAr} {levelData.nextLevel.emoji}
+                      {t('wallet.toReach')} {levelData.nextLevel.nameAr} {levelData.nextLevel.emoji}
                     </p>
                   </>
                 )}
@@ -187,61 +186,42 @@ export default function WalletPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard
-              icon={<WalletIcon className="w-5 h-5" />}
-              label="رصيدي الحالي"
-              value={data.balance}
-              currency={data.currency}
-              tone="primary"
-            />
-            <StatCard
-              icon={<ShoppingBag className="w-5 h-5" />}
-              label="إجمالي المشتريات"
-              value={data.totalPurchases}
-              currency={data.currency}
-              tone="blue"
-            />
-            <StatCard
-              icon={<ArrowDownCircle className="w-5 h-5" />}
-              label="إجمالي الوارد"
-              value={data.totalDeposits}
-              currency={data.currency}
-              tone="green"
-            />
+            <StatCard icon={<WalletIcon className="w-5 h-5" />} label={t('wallet.current')}       value={data.balance}        currency={data.currency} tone="primary" />
+            <StatCard icon={<ShoppingBag className="w-5 h-5" />} label={t('wallet.totalPurchases')} value={data.totalPurchases}  currency={data.currency} tone="blue" />
+            <StatCard icon={<ArrowDownCircle className="w-5 h-5" />} label={t('wallet.totalIncome')} value={data.totalDeposits}   currency={data.currency} tone="green" />
           </div>
 
           <div className="bg-card border border-border/50 rounded-2xl p-4 md:p-6">
-            <h2 className="text-lg font-bold mb-4">آخر العمليات</h2>
+            <h2 className="text-lg font-bold mb-4">{t('wallet.lastTx')}</h2>
             {data.transactions.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10 text-sm">
-                لا توجد معاملات بعد
-              </p>
+              <p className="text-center text-muted-foreground py-10 text-sm">{t('wallet.noTx')}</p>
             ) : (
               <div className="divide-y divide-border/40">
-                {data.transactions.map((t) => {
-                  const meta = TYPE_LABELS[t.type] ?? {
-                    label: t.type,
+                {data.transactions.map((tx) => {
+                  const TYPE_LABELS = typeLabels();
+                  const meta = TYPE_LABELS[tx.type as keyof typeof TYPE_LABELS] ?? {
+                    label: tx.type,
                     sign: "-" as const,
                     color: "text-muted-foreground",
                     icon: <ArrowUpCircle className="w-4 h-4" />,
                   };
-                  const date = new Date(t.createdAt).toLocaleString("ar-EG", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  });
+                  const date = new Date(tx.createdAt).toLocaleString(
+                    lang === "ar" ? "ar-EG" : lang,
+                    { dateStyle: "short", timeStyle: "short" }
+                  );
                   return (
-                    <div key={t.id} className="flex items-center justify-between py-3">
+                    <div key={tx.id} className="flex items-center justify-between py-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-9 h-9 rounded-full bg-card border border-border/40 flex items-center justify-center ${meta.color}`}>
                           {meta.icon}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate">{t.description || meta.label}</p>
+                          <p className="text-sm font-semibold truncate">{tx.description || meta.label}</p>
                           <p className="text-xs text-muted-foreground">{date}</p>
                         </div>
                       </div>
                       <p className={`text-sm font-bold whitespace-nowrap ${meta.color}`}>
-                        {meta.sign}{t.amount.toFixed(2)}{" "}
+                        {meta.sign}{tx.amount.toFixed(2)}{" "}
                         <span className="text-xs font-semibold opacity-80">{data.currency}</span>
                       </p>
                     </div>

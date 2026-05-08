@@ -1,0 +1,22 @@
+{
+  "_instructions": "تمت إضافة اللغات المطلوبة: العربية، الإنجليزية، التركية، الفرنسية، الإسبانية، البرتغالية، الفارسية، الروسية، الألمانية، الإندونيسية، والكردية.",
+  "sidebar": {
+    "home": { "ar": "الرئيسية", "en": "Home", "tr": "Ana Sayfa", "fr": "Accueil", "es": "Inicio", "pt": "Início", "fa": "خانه", "ru": "Главная", "de": "Startseite", "id": "Beranda", "ku": "سەرەکی" },
+    "addBalance": { "ar": "إضافة رصيد", "en": "Add Balance", "tr": "Bakiye Ekle", "fr": "Ajouter du solde", "es": "Añadir saldo", "pt": "Adicionar saldo", "fa": "افزودن موجودی", "ru": "Пополнить баланс", "de": "Guthaben aufladen", "id": "Tambah Saldo", "ku": "باڵانس زیاد بکە" },
+    "myDeposits": { "ar": "دفعاتي", "en": "My Deposits", "tr": "Ödemelerim", "fr": "Mes dépôts", "es": "Mis depósitos", "pt": "Meus depósitos", "fa": "پرداختی‌های من", "ru": "Мои депозиты", "de": "Meine Einzahlungen", "id": "Deposit Saya", "ku": "پارەدانەکانم" },
+    "myWallet": { "ar": "محفظتي", "en": "My Wallet", "tr": "Cüzdanım", "fr": "Mon portefeuille", "es": "Mi billetera", "pt": "Minha carteira", "fa": "کیف پول من", "ru": "Мой кошелек", "de": "Mein Wallet", "id": "Dompet Saya", "ku": "جزدانەکەم" },
+    "myLevel": { "ar": "مستواي", "en": "My Level", "tr": "Seviyem", "fr": "Mon niveau", "es": "Mi nivel", "pt": "Meu nível", "fa": "سطح من", "ru": "Мой уровень", "de": "Mein Level", "id": "Level Saya", "ku": "ئاستەکەم" },
+    "myOrders": { "ar": "طلباتي", "en": "My Orders", "tr": "Siparişlerim", "fr": "Mes commandes", "es": "Mis pedidos", "pt": "Meus pedidos", "fa": "سفارشات من", "ru": "Мои заказы", "de": "Meine Bestellungen", "id": "Pesanan Saya", "ku": "داواکارییەکانم" },
+    "aboutUs": { "ar": "من نحن", "en": "About Us", "tr": "Hakkımızda", "fr": "À propos", "es": "Sobre nosotros", "pt": "Sobre nós", "fa": "درباره ما", "ru": "О нас", "de": "Über uns", "id": "Tentang Kami", "ku": "دەربارەی ئێمە" },
+    "contactUs": { "ar": "تواصل معنا", "en": "Contact Us", "tr": "İletişim", "fr": "Contactez-nous", "es": "Contáctenos", "pt": "Contate-nos", "fa": "تماس با ما", "ru": "Связаться с нами", "de": "Kontaktieren Sie uns", "id": "Hubungi Kami", "ku": "پەیوەندیمان پێوە بکە" },
+    "logout": { "ar": "تسجيل الخروج", "en": "Logout", "tr": "Çıkış Yap", "fr": "Déconnexion", "es": "Cerrar sesión", "pt": "Sair", "fa": "خروج", "ru": "Выйти", "de": "Abmelden", "id": "Keluar", "ku": "چوونە دەرەوە" },
+    "login": { "ar": "تسجيل الدخول", "en": "Login", "tr": "Giriş Yap", "fr": "Connexion", "es": "Iniciar sesión", "pt": "Entrar", "fa": "ورود", "ru": "Войти", "de": "Anmelden", "id": "Masuk", "ku": "چوونە ژوورەوە" },
+    "register": { "ar": "إنشاء حساب", "en": "Register", "tr": "Kayıt Ol", "fr": "S'inscrire", "es": "Registrarse", "pt": "Registrar", "fa": "ثبت نام", "ru": "Регистрация", "de": "Registrieren", "id": "Daftar", "ku": "دروستکردنی هەژمار" },
+    "balance": { "ar": "الرصيد", "en": "Balance", "tr": "Bakiye", "fr": "Solde", "es": "Saldo", "pt": "Saldo", "fa": "موجودی", "ru": "Баланс", "de": "Guthaben", "id": "Saldo", "ku": "باڵانس" }
+  },
+  "home": {
+    "searchPlaceholder": { "ar": "ابحث عن أي منتج أو لعبة أو تطبيق...", "en": "Search for products, games or apps...", "tr": "Ürün, oyun veya uygulama ara...", "fr": "Rechercher des produits...", "es": "Buscar productos...", "pt": "Buscar produtos...", "fa": "جستجوی محصولات...", "ru": "Поиск продуктов...", "de": "Nach Produkten suchen...", "id": "Cari produk...", "ku": "گەڕان بۆ بەرهەمەکان..." },
+    "shopNow": { "ar": "تسوّق الآن", "en": "Shop Now", "tr": "Şimdi Alış", "fr": "Acheter", "es": "Comprar", "pt": "Comprar", "fa": "خرید", "ru": "Купить", "de": "Kaufen", "id": "Beli", "ku": "بکڕە" },
+    "trust1Title": { "ar": "آمن وموثوق", "en": "Safe & Secure", "tr": "Güvenli", "fr": "Sécurisé", "es": "Seguro", "pt": "Seguro", "fa": "امن", "ru": "Безопасно", "de": "Sicher", "id": "Aman", "ku": "ئارام" },
+    "trust3Title": { "ar": "دعم على مدار الساعة", "en": "24/7 Support", "tr": "7/24 Destek", "fr": "Support 24/7", "es": "Soporte 24/7", "pt": "Suporte 24/7", "fa": "پشتیبانی", "ru": "Поддержка", "de": "Support", "id": "Dukungan", "ku": "پشتیوانی" }
+  },
