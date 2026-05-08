@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, ExternalLink, Clock, CheckCircle2, XCircle, Filter, RefreshCw } from "lucide-react";
+import { Check, X, ExternalLink, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Download, ZoomIn, ZoomOut } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -116,6 +116,67 @@ export default function DepositsManager() {
   );
 }
 
+function ReceiptViewer({ url }: { url: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      const res = await fetch(url, { credentials: "include" });
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "receipt" + (blob.type.includes("png") ? ".png" : ".jpg");
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      window.open(url, "_blank");
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+        صورة الإيصال
+      </div>
+      <div className={`relative border border-border/40 rounded-xl overflow-hidden bg-background/50 transition-all ${expanded ? "max-h-none" : "max-h-48"}`}>
+        <img
+          src={url}
+          alt="إيصال"
+          className={`w-full object-contain transition-all ${expanded ? "" : "max-h-48"}`}
+          style={{ display: "block" }}
+        />
+        {!expanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background/90 to-transparent" />
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 h-8 text-xs flex-1"
+          onClick={() => setExpanded(v => !v)}
+        >
+          {expanded ? <ZoomOut className="w-3.5 h-3.5" /> : <ZoomIn className="w-3.5 h-3.5" />}
+          {expanded ? "تصغير" : "عرض كامل"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 h-8 text-xs flex-1"
+          onClick={handleDownload}
+        >
+          <Download className="w-3.5 h-3.5" /> تحميل
+        </Button>
+        <a href={url} target="_blank" rel="noopener noreferrer">
+          <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+            <ExternalLink className="w-3.5 h-3.5" /> فتح
+          </Button>
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function DepositCard({ d, executor }: { d: DepositRow; executor: any }) {
   const [note, setNote] = useState("");
   const [showNote, setShowNote] = useState(false);
@@ -157,17 +218,7 @@ function DepositCard({ d, executor }: { d: DepositRow; executor: any }) {
         </div>
 
         {d.receiptUrl && (
-          <a
-            href={d.receiptUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-background/50 border border-border/40 rounded-lg p-2 hover:border-primary/50 transition-colors w-fit"
-          >
-            <img src={d.receiptUrl} alt="إيصال" className="w-16 h-16 object-cover rounded" />
-            <div className="text-xs text-muted-foreground flex items-center gap-1">
-              <ExternalLink className="w-3 h-3" /> فتح الإيصال
-            </div>
-          </a>
+          <ReceiptViewer url={d.receiptUrl} />
         )}
 
         {d.adminNote && (
