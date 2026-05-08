@@ -91,7 +91,7 @@ async function deliverPush(rows: any[], title: string, body: string, url: string
     rows.map((sub: any) =>
       webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify({ title, body, url })
+        JSON.stringify({ title, body, url, tag: url })
       )
     )
   );

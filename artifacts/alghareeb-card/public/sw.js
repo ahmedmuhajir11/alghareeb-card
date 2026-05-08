@@ -8,6 +8,9 @@ self.addEventListener("push", function (event) {
     badge: "/logo.png",
     dir: "rtl",
     lang: "ar",
+    tag: data.tag || data.url || "alghareeb-notification",
+    renotify: true,
+    requireInteraction: false,
     data: { url: data.url || "/" },
   };
   event.waitUntil(self.registration.showNotification(title, options));
