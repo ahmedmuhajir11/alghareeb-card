@@ -15,6 +15,7 @@ import PaymentMethodsPage from "@/pages/payment-methods";
 import AboutPage from "@/pages/about";
 import OrdersPage from "@/pages/orders";
 import WalletPage from "@/pages/wallet";
+import MyDepositsPage from "@/pages/my-deposits";
 import LevelPage from "@/pages/level";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -44,6 +45,9 @@ function Router() {
       </Route>
       <Route path="/about">
         <AppLayout><AboutPage /></AppLayout>
+      </Route>
+      <Route path="/my-deposits">
+        <AppLayout><MyDepositsPage /></AppLayout>
       </Route>
       <Route path="/orders">
         <AppLayout><OrdersPage /></AppLayout>

@@ -3,7 +3,7 @@ import { useGetSettings } from "@workspace/api-client-react";
 import { useCurrency } from "@/lib/currency";
 import { useAuth } from "@/lib/auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -33,6 +33,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
     { href: "/payment-methods", label: "إضافة رصيد", icon: <Wallet className="w-5 h-5" /> },
     ...(isSignedIn
       ? [
+          { href: "/my-deposits", label: "دفعاتي", icon: <ReceiptText className="w-5 h-5" /> },
           { href: "/wallet", label: "محفظتي", icon: <Wallet className="w-5 h-5" /> },
           { href: "/level", label: "مستواي", icon: <Trophy className="w-5 h-5" /> },
           { href: "/orders", label: "طلباتي", icon: <ShoppingBag className="w-5 h-5" /> },
@@ -75,8 +76,12 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         {isSignedIn && user ? (
           <div className="mx-4 mt-4 p-4 rounded-xl bg-purple-600/10 border border-purple-500/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-600/20 border border-purple-500/40 flex items-center justify-center">
-                <User className="w-5 h-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-full bg-purple-600/20 border border-purple-500/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <User className="w-5 h-5 text-purple-400" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-white text-sm truncate">{user.name}</p>

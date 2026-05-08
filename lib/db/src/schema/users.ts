@@ -10,6 +10,7 @@ export const usersTable = pgTable("users", {
   country: varchar("country", { length: 100 }),
   passwordHash: varchar("password_hash", { length: 255 }),
   googleId: varchar("google_id", { length: 255 }).unique(),
+  avatarUrl: varchar("avatar_url", { length: 500 }),
   balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default("0"),
   currency: varchar("currency", { length: 10 }).notNull().default("TRY"),
   level: varchar("level", { length: 50 }).notNull().default("عادي"),

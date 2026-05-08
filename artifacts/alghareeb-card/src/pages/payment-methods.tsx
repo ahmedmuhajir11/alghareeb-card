@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { Copy, Check, Download, ZoomIn, ChevronDown, ChevronUp, AlertTriangle, Lock, ShieldCheck, BadgeCheck, Upload, Send, Image as ImageIcon, ArrowDown, Clock, CheckCircle2, XCircle, Wallet } from "lucide-react";
+import { Copy, Check, Download, ZoomIn, ChevronDown, ChevronUp, AlertTriangle, Lock, ShieldCheck, BadgeCheck, Upload, Send, Image as ImageIcon, ArrowDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -451,97 +451,9 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
   );
 }
 
-type MyDeposit = {
-  id: number;
-  paymentMethodName: string;
-  amount: number;
-  currency: string;
-  status: "pending" | "approved" | "rejected";
-  adminNote: string | null;
-  createdAt: string;
-};
-
-function MyDeposits() {
-  const { isSignedIn } = useAuth();
-  const [openId, setOpenId] = useState<number | null>(null);
-
-  const { data, isLoading } = useQuery<MyDeposit[]>({
-    queryKey: ["/api/deposits"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/deposits`, { credentials: "include" });
-      if (!res.ok) throw new Error("فشل التحميل");
-      return res.json();
-    },
-    enabled: isSignedIn,
-    staleTime: 30_000,
-  });
-
-  if (!isSignedIn) return null;
-  if (isLoading) return <div className="h-10 bg-card/40 rounded-xl animate-pulse" />;
-  if (!data?.length) return (
-    <div className="text-center py-6 text-sm text-muted-foreground bg-card/20 border border-border/30 rounded-2xl">
-      لا توجد دفعات سابقة
-    </div>
-  );
-
-  const statusConfig = {
-    pending:  { label: "بانتظار المراجعة", bg: "bg-amber-500",  text: "text-white", icon: <Clock className="w-3.5 h-3.5" /> },
-    approved: { label: "مقبول",            bg: "bg-green-600",  text: "text-white", icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-    rejected: { label: "مرفوض",            bg: "bg-red-600",    text: "text-white", icon: <XCircle className="w-3.5 h-3.5" /> },
-  };
-
-  return (
-    <div className="space-y-2">
-      {data.map(d => {
-        const cfg = statusConfig[d.status];
-        const isOpen = openId === d.id;
-        const date = new Date(d.createdAt).toLocaleString("ar", { dateStyle: "short", timeStyle: "short" });
-        return (
-          <div key={d.id} className="rounded-xl overflow-hidden border border-border/40">
-            <button
-              className={`w-full flex items-center justify-between gap-3 px-4 py-3 ${cfg.bg} ${cfg.text}`}
-              onClick={() => setOpenId(isOpen ? null : d.id)}
-            >
-              <div className="flex items-center gap-2 font-bold text-sm">
-                {cfg.icon}
-                <span>{cfg.label}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm font-bold">
-                <span>{d.paymentMethodName} - {d.amount.toFixed(2)} {d.currency}</span>
-                {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </div>
-            </button>
-
-            {isOpen && (
-              <div className="bg-card/60 px-4 py-4 space-y-2 text-sm" dir="rtl">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <div className="text-muted-foreground">رقم العملية :</div>
-                  <div className="font-bold font-mono">{d.id}</div>
-                  <div className="text-muted-foreground">الإجمالي :</div>
-                  <div className="font-bold">{d.amount.toFixed(0)} {d.currency}</div>
-                  <div className="text-muted-foreground">القيمة :</div>
-                  <div className="font-bold">{d.amount.toFixed(2)} {d.currency}</div>
-                  <div className="text-muted-foreground">التاريخ :</div>
-                  <div className="font-mono text-xs">{date}</div>
-                  {d.adminNote && (
-                    <>
-                      <div className="text-muted-foreground">ملاحظة :</div>
-                      <div className="text-amber-300">{d.adminNote}</div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function PaymentMethodsPage() {
   const { data: methods, isLoading } = useFetchPaymentMethods();
-  const { isSignedIn } = useAuth();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -609,15 +521,6 @@ export default function PaymentMethodsPage() {
         </div>
       )}
 
-      {isSignedIn && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 pt-2">
-            <Wallet className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold">دفعاتي</h2>
-          </div>
-          <MyDeposits />
-        </div>
-      )}
 
     </div>
   );

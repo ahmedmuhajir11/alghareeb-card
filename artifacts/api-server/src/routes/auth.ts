@@ -54,6 +54,7 @@ function mapUser(row: any) {
     level: row.level || "عادي",
     isVerified: row.is_verified,
     profileCompleted: row.profile_completed,
+    avatarUrl: row.avatar_url || null,
     createdAt: row.created_at,
   };
 }
@@ -222,7 +223,7 @@ router.get("/auth/google/callback", async (req: Request, res: Response): Promise
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const gUser = await infoRes.json() as any;
-    const { sub: googleId, email, name } = gUser;
+    const { sub: googleId, email, name, picture } = gUser;
     if (!googleId || !email) throw new Error("Invalid Google user info");
 
     // Find or create user
@@ -230,15 +231,17 @@ router.get("/auth/google/callback", async (req: Request, res: Response): Promise
     const existing = await pool.query("SELECT * FROM users WHERE google_id=$1 OR email=$2 LIMIT 1", [googleId, email.toLowerCase()]);
     if (existing.rows.length > 0) {
       userRow = existing.rows[0];
-      // Update google_id if missing
-      if (!userRow.google_id) {
-        await pool.query("UPDATE users SET google_id=$1, updated_at=NOW() WHERE id=$2", [googleId, userRow.id]);
-        userRow.google_id = googleId;
-      }
+      // Update google_id and avatar_url
+      await pool.query(
+        "UPDATE users SET google_id=COALESCE(google_id,$1), avatar_url=$2, updated_at=NOW() WHERE id=$3",
+        [googleId, picture || userRow.avatar_url, userRow.id]
+      );
+      userRow.google_id = userRow.google_id || googleId;
+      userRow.avatar_url = picture || userRow.avatar_url;
     } else {
       const ins = await pool.query(
-        `INSERT INTO users (account_number, name, email, google_id, profile_completed) VALUES ($1,$2,$3,$4,false) RETURNING *`,
-        ["0000", name || email.split("@")[0], email.toLowerCase(), googleId]
+        `INSERT INTO users (account_number, name, email, google_id, avatar_url, profile_completed) VALUES ($1,$2,$3,$4,$5,false) RETURNING *`,
+        ["0000", name || email.split("@")[0], email.toLowerCase(), googleId, picture || null]
       );
       userRow = ins.rows[0];
       const accNum = generateAccountNumber(userRow.id);

@@ -14,6 +14,7 @@ export interface AuthUser {
   level: string;
   isVerified: boolean;
   profileCompleted: boolean;
+  avatarUrl?: string | null;
 }
 
 interface AuthCtx {
