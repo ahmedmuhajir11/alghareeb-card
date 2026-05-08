@@ -205,7 +205,8 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: settings } = useGetSettings();
   const { user, isSignedIn } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const { data: allMessages = [] } = useTickerMessages();
   const messages = allMessages.filter(m => m.is_active);
   const [msgIndex, setMsgIndex] = useState(0);
@@ -233,7 +234,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => { document.body.style.overflow = ""; };
   }, [sidebarOpen]);
 
-  const currentMsg = messages.length > 0 ? messages[msgIndex % messages.length]?.text : null;
+  const rawMsg = messages.length > 0 ? messages[msgIndex % messages.length]?.text : null;
+  const currentMsg = rawMsg
+    ? rawMsg.includes('||')
+      ? (isRtlLang
+          ? rawMsg.split('||')[0].trim()
+          : rawMsg.split('||')[1].trim() || rawMsg.split('||')[0].trim())
+      : rawMsg
+    : null;
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
