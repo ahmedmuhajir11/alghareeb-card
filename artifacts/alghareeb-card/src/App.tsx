@@ -7,6 +7,8 @@ import { AuthProvider } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n";
 import PushPermissionBanner from "@/components/PushPermissionBanner";
 import ScrollToTop from "@/components/ScrollToTop";
+import LoadingScreen from "@/components/LoadingScreen";
+import { useState } from "react";
 import NotFound from "@/pages/not-found";
 
 import Home from "@/pages/home";
@@ -77,18 +79,23 @@ function Router() {
 }
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <LanguageProvider>
           <AuthProvider>
             <CurrencyProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <ScrollToTop />
-                <Router />
-                <PushPermissionBanner />
-              </WouterRouter>
-              <Toaster />
+              {loading && <LoadingScreen onDone={() => setLoading(false)} />}
+              <div style={{ opacity: loading ? 0 : 1, transition: "opacity 0.4s ease 0.1s" }}>
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                  <ScrollToTop />
+                  <Router />
+                  <PushPermissionBanner />
+                </WouterRouter>
+                <Toaster />
+              </div>
             </CurrencyProvider>
           </AuthProvider>
         </LanguageProvider>
