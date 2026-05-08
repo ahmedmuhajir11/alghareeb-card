@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Globe } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -298,16 +298,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-xl border border-primary/20 hover:border-primary/50 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all duration-200"
-              aria-label={t('sidebar.language')}
-              title={t('sidebar.language')}
-            >
-              <Globe className="w-5 h-5" />
-            </button>
             <Link href="/">
-              <img src="/logo.png" alt="الغريب كارد" className="h-24 w-auto object-contain drop-shadow-[0_0_12px_hsl(var(--gold)/0.4)]" />
+              <img src="/logo.png" alt="الغريب كارد" className="h-16 w-auto object-contain drop-shadow-[0_0_12px_hsl(var(--gold)/0.4)]" />
             </Link>
           </div>
         </div>
