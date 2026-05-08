@@ -340,7 +340,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-[hsl(var(--gold)/0.2)] bg-card/30 py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p className="font-black text-xl mb-2 text-gradient-gold gold-glow">الغريب كارد</p>
+          <p className="font-black text-xl mb-2 text-gradient-gold gold-glow">{t('site.name')}</p>
           <p className="text-sm">{t('footer.tagline')}</p>
           {settings?.whatsappNumber && (
             <p className="text-sm mt-4 text-[hsl(var(--gold))]">{t('footer.contact')}: {settings.whatsappNumber}</p>

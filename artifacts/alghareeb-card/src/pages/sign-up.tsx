@@ -53,7 +53,7 @@ export default function SignUpPage() {
       <Link href="/" className="flex items-center gap-3 mb-8">
         <img src="/logo.png" alt="الغريب كارد" className="h-12 w-auto object-contain" />
         <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-          الغريب كارد
+          {t('site.name')}
         </span>
       </Link>
 
