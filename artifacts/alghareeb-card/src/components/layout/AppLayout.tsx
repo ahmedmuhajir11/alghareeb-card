@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Globe } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -117,8 +117,8 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         )}
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          <p className="text-xs text-muted-foreground font-semibold px-3 mb-4 tracking-wider">{t('sidebar.mainMenu')}</p>
+        <nav className="flex-1 px-4 py-4 overflow-y-auto flex flex-col gap-1">
+          <p className="text-xs text-muted-foreground font-semibold px-3 mb-3 tracking-wider">{t('sidebar.mainMenu')}</p>
           {navLinks.map((link) => {
             const isActive = location === link.href;
             return (
@@ -137,29 +137,29 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
               </Link>
             );
           })}
-        </nav>
 
-        {/* Language Switcher */}
-        <div className="px-4 py-3 border-t border-primary/10">
-          <p className="text-[11px] text-muted-foreground font-semibold px-2 mb-2 tracking-wider">{t('sidebar.language')}</p>
-          <div className="grid grid-cols-4 gap-1.5">
-            {(Object.entries(LANG_META) as [LangCode, typeof LANG_META[LangCode]][]).map(([code, meta]) => (
-              <button
-                key={code}
-                onClick={() => setLang(code)}
-                title={meta.name}
-                className={`flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-lg text-xs transition-all ${
-                  lang === code
-                    ? "bg-primary/20 border border-primary/40 text-primary font-bold"
-                    : "hover:bg-muted/40 text-muted-foreground border border-transparent"
-                }`}
-              >
-                <span className="text-base leading-none">{meta.flag}</span>
-                <span className="text-[10px] font-medium uppercase">{code}</span>
-              </button>
-            ))}
+          {/* Language Switcher — inside scroll so always reachable */}
+          <div className="mt-4 pt-4 border-t border-primary/10">
+            <p className="text-[11px] text-muted-foreground font-semibold px-2 mb-2 tracking-wider">{t('sidebar.language')}</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {(Object.entries(LANG_META) as [LangCode, typeof LANG_META[LangCode]][]).map(([code, meta]) => (
+                <button
+                  key={code}
+                  onClick={() => setLang(code)}
+                  title={meta.name}
+                  className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-xs transition-all ${
+                    lang === code
+                      ? "bg-primary/20 border border-primary/40 text-primary font-bold"
+                      : "hover:bg-muted/40 text-muted-foreground border border-transparent"
+                  }`}
+                >
+                  <span className="text-lg leading-none">{meta.flag}</span>
+                  <span className="text-[10px] font-medium uppercase">{code}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </nav>
 
         {/* Social / Contact Links */}
         <div className="px-4 py-3 border-t border-primary/20 space-y-2">
@@ -297,7 +297,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-xl border border-primary/20 hover:border-primary/50 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all duration-200"
+              aria-label={t('sidebar.language')}
+              title={t('sidebar.language')}
+            >
+              <Globe className="w-5 h-5" />
+            </button>
             <Link href="/">
               <img src="/logo.png" alt="الغريب كارد" className="h-24 w-auto object-contain drop-shadow-[0_0_12px_hsl(var(--gold)/0.4)]" />
             </Link>
