@@ -12,7 +12,7 @@ const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || "";
 const USE_OBJECT_STORAGE = !!BUCKET_ID;
 
 const LOCAL_UPLOADS_DIR = process.env.UPLOAD_DIR ||
-  (process.env.NODE_ENV === "production"
+  (process.env.FLY_APP_NAME
     ? "/app/artifacts/api-server/uploads"
     : path.join(process.cwd(), "uploads"));
 if (!USE_OBJECT_STORAGE) {
