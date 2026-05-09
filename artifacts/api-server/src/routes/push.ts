@@ -145,6 +145,25 @@ export async function sendPushToAdmins(title: string, body: string, url = "/admi
   }
 }
 
+router.post("/push/welcome", async (req, res): Promise<void> => {
+  const userId = (req.session as any)?.userId;
+  if (!userId) { res.status(401).json({ error: "غير مسجّل" }); return; }
+  try {
+    const { rows } = await pool.query("SELECT name, balance, currency FROM users WHERE id=$1", [userId]);
+    if (!rows[0]) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
+    const { name, balance } = rows[0];
+    const firstName = (name as string).split(" ")[0];
+    const hasBalance = parseFloat(balance || "0") > 0;
+    const body = hasBalance
+      ? `رصيدك جاهز للشحن! شحّن ألعابك وتطبيقاتك المفضلة الآن 🎮`
+      : `أضف رصيداً الآن وابدأ الشحن الفوري لألعابك وتطبيقاتك 🚀`;
+    await sendPushToUser(userId, `أهلاً بك ${firstName}! 👋`, body, "/payment-methods");
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message });
+  }
+});
+
 router.post("/admin/push/notify", requireAdmin, async (req, res): Promise<void> => {
   const { title, body, url } = req.body;
   if (!title || !body) { res.status(400).json({ error: "العنوان والنص مطلوبان" }); return; }

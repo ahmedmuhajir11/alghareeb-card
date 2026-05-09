@@ -38,6 +38,9 @@ export default function SignUpPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "خطأ في التسجيل");
       await refetch();
+      setTimeout(() => {
+        fetch(`${API_BASE}/api/push/welcome`, { method: "POST", credentials: "include" }).catch(() => {});
+      }, 4000);
       setLocation("/profile-setup");
     } catch (err: any) {
       toast({ title: t('signUp.error'), description: err.message, variant: "destructive" });

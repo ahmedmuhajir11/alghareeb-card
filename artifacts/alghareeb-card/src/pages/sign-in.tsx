@@ -33,6 +33,9 @@ export default function SignInPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "خطأ في تسجيل الدخول");
       await refetch();
+      setTimeout(() => {
+        fetch(`${API_BASE}/api/push/welcome`, { method: "POST", credentials: "include" }).catch(() => {});
+      }, 3000);
       if (!data.user?.profileCompleted) {
         setLocation("/profile-setup");
       } else {
