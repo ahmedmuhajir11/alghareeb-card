@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Rocket, Shield, Globe, CreditCard, Headphones, Gamepad2, Banknote, Target, Phone, Mail } from "lucide-react";
+import { Rocket, Shield, Globe, CreditCard, Headphones, Gamepad2, Banknote, Target, Phone, Mail, MapPin, User } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 export default function AboutPage() {
@@ -70,6 +70,34 @@ export default function AboutPage() {
         <p className="text-muted-foreground leading-relaxed">
           {t('about.visionText')}
         </p>
+      </div>
+
+      {/* Founder */}
+      <div className="bg-gradient-to-br from-purple-900/30 to-card/50 border border-primary/30 rounded-2xl p-6 space-y-4">
+        <h2 className="text-xl font-black flex items-center gap-2">
+          <User className="w-6 h-6 text-primary" />
+          {t('about.founderTitle')}
+        </h2>
+        <div className="flex flex-col sm:flex-row items-start gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-primary/20 border-2 border-primary/40 flex items-center justify-center flex-shrink-0 text-3xl">
+            👤
+          </div>
+          <div className="space-y-2 flex-1">
+            <p className="text-xl font-black text-foreground">{t('about.founderName')}</p>
+            <p className="text-sm text-primary font-semibold">{t('about.founderRole')}</p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <span>{t('about.founderLocation')}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+              <span dir="ltr">ahmed.muhajir11@gmail.com</span>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed pt-1">
+              {t('about.founderBio')}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Contact */}
