@@ -13,6 +13,31 @@ import { Link, useLocation } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
+const FIELD_LABEL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  "عنوان المحفظة": { en:"Wallet Address", tr:"Cüzdan Adresi", fr:"Adresse du portefeuille", es:"Dirección de billetera", pt:"Endereço da carteira", fa:"آدرس کیف پول", ru:"Адрес кошелька", de:"Wallet-Adresse", id:"Alamat Dompet", ku:"ناونیشانی جزدان" },
+  "الاسم":          { en:"Name",           tr:"Ad",            fr:"Nom",                   es:"Nombre",              pt:"Nome",               fa:"نام",             ru:"Имя",           de:"Name",           id:"Nama",          ku:"ناو" },
+  "رقم الحساب":     { en:"Account Number", tr:"Hesap Numarası",fr:"Numéro de compte",      es:"Número de cuenta",    pt:"Número de conta",    fa:"شماره حساب",      ru:"Номер счёта",   de:"Kontonummer",    id:"Nomor Akun",    ku:"ژمارەی ئەکاونت" },
+  "رقم الهاتف":     { en:"Phone Number",   tr:"Telefon Numarası",fr:"Numéro de téléphone", es:"Número de teléfono",  pt:"Número de telefone", fa:"شماره تلفن",      ru:"Номер телефона",de:"Telefonnummer",  id:"Nomor Telepon", ku:"ژمارەی تەلەفۆن" },
+  "رقم الآيبان":    { en:"IBAN",           tr:"IBAN",          fr:"IBAN",                  es:"IBAN",                pt:"IBAN",               fa:"IBAN",            ru:"IBAN",          de:"IBAN",           id:"IBAN",          ku:"IBAN" },
+  "IBAN":           { en:"IBAN",           tr:"IBAN",          fr:"IBAN",                  es:"IBAN",                pt:"IBAN",               fa:"IBAN",            ru:"IBAN",          de:"IBAN",           id:"IBAN",          ku:"IBAN" },
+  "البنك":          { en:"Bank",           tr:"Banka",         fr:"Banque",                es:"Banco",               pt:"Banco",              fa:"بانک",            ru:"Банк",          de:"Bank",           id:"Bank",          ku:"بانک" },
+  "اسم البنك":      { en:"Bank Name",      tr:"Banka Adı",     fr:"Nom de la banque",      es:"Nombre del banco",    pt:"Nome do banco",      fa:"نام بانک",        ru:"Название банка",de:"Bankname",       id:"Nama Bank",     ku:"ناوی بانک" },
+  "الشبكة":         { en:"Network",        tr:"Ağ",            fr:"Réseau",                es:"Red",                 pt:"Rede",               fa:"شبکه",            ru:"Сеть",          de:"Netzwerk",       id:"Jaringan",      ku:"تۆڕ" },
+  "العملة":         { en:"Currency",       tr:"Para Birimi",   fr:"Devise",                es:"Divisa",              pt:"Moeda",              fa:"ارز",             ru:"Валюта",        de:"Währung",        id:"Mata Uang",     ku:"دراو" },
+  "الكود":          { en:"Code",           tr:"Kod",           fr:"Code",                  es:"Código",              pt:"Código",             fa:"کد",              ru:"Код",           de:"Code",           id:"Kode",          ku:"کۆد" },
+  "رقم الكود":      { en:"Code",           tr:"Kod",           fr:"Code",                  es:"Código",              pt:"Código",             fa:"کد",              ru:"Код",           de:"Code",           id:"Kode",          ku:"کۆد" },
+};
+
+function translateFieldLabel(label: string, lang: string): string {
+  if (['ar', 'fa', 'ku'].includes(lang)) return label;
+  const parts = label.split('||');
+  if (parts.length >= 2) return parts[1].trim();
+  const translation = FIELD_LABEL_TRANSLATIONS[label.trim()];
+  if (translation && translation[lang]) return translation[lang];
+  if (translation && translation['en']) return translation['en'];
+  return label;
+}
+
 type AppSettings = {
   usdToTry?: number;
   usdToSyp?: number;
@@ -427,7 +452,7 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
           <div className="space-y-3 pt-4">
             {method.fields.map((field, i) => (
               <div key={i} className="bg-background/50 rounded-xl p-3 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">{field.label}</p>
+                <p className="text-xs text-muted-foreground mb-1">{translateFieldLabel(field.label, lang)}</p>
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-mono text-sm font-semibold break-all" dir="ltr">{field.value}</p>
                   {field.isCopyable && <CopyButton value={field.value} />}
