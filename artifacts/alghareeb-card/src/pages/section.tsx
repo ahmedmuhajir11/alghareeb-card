@@ -9,6 +9,7 @@ import WithdrawalForm from "@/components/WithdrawalForm";
 import MoneyTransferForm from "@/components/MoneyTransferForm";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SectionPage({ id }: { id: number }) {
   const { data: section, isLoading: sectionLoading } = useGetSection(id);
@@ -17,6 +18,7 @@ export default function SectionPage({ id }: { id: number }) {
   const [, navigate] = useLocation();
   const { isSignedIn, isLoaded } = useAuth();
   const { t, lang } = useI18n();
+  const { toast } = useToast();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const displayName = (nameAr: string, nameEn: string) =>
     isRtlLang ? nameAr : (nameEn || nameAr);
@@ -85,34 +87,54 @@ export default function SectionPage({ id }: { id: number }) {
         <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredItems.map(item => {
             const unavailable = (item as any).isAvailable === false;
+
+            const cardContent = (
+              <Card className={`neon-border transition-all duration-300 h-full overflow-hidden group ${unavailable ? "bg-card/20 opacity-60 grayscale cursor-not-allowed" : "bg-card/50 hover:bg-card cursor-pointer"}`}>
+                <CardContent className="p-0 flex flex-col items-center text-center h-full relative">
+                  {!unavailable && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  )}
+                  <div className="flex items-center justify-center w-full h-20 pt-3 relative z-10">
+                    {item.logoUrl ? (
+                      <img src={item.logoUrl} alt="" className={`w-14 h-14 object-cover rounded-2xl drop-shadow-md ${!unavailable ? "group-hover:scale-110 transition-transform" : ""}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    ) : (
+                      <div className={`w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center ${!unavailable ? "group-hover:scale-110 transition-transform" : ""}`}>
+                        <span className="text-2xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
+                      </div>
+                    )}
+                    {unavailable && (
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                        <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded shadow-lg whitespace-nowrap">
+                          غير متاح
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-2 pb-3 relative z-10">
+                    <h3 className="font-bold text-sm leading-tight">{displayName(item.nameAr, item.nameEn)}</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+
+            if (unavailable) {
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => toast({
+                    variant: "destructive",
+                    title: "🚫 غير متاح بالوقت الحالي",
+                    description: "هذا المنتج غير متاح مؤقتاً، يرجى المحاولة لاحقاً",
+                  })}
+                >
+                  {cardContent}
+                </div>
+              );
+            }
+
             return (
               <Link key={item.id} href={`/item/${item.id}`}>
-                <Card className={`neon-border cursor-pointer transition-all duration-300 h-full overflow-hidden group ${unavailable ? "bg-card/20 opacity-60 grayscale" : "bg-card/50 hover:bg-card"}`}>
-                  <CardContent className="p-0 flex flex-col items-center text-center h-full relative">
-                    {!unavailable && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    )}
-                    <div className="flex items-center justify-center w-full h-20 pt-3 relative z-10">
-                      {unavailable && (
-                        <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-                          <div className="bg-red-600 text-white text-xs font-black px-3 py-1.5 rounded-lg shadow-xl tracking-wide border border-red-400/40 w-[80%] text-center">
-                            غير متاح
-                          </div>
-                        </div>
-                      )}
-                      {item.logoUrl ? (
-                        <img src={item.logoUrl} alt="" className={`w-14 h-14 object-cover rounded-2xl drop-shadow-md ${!unavailable ? "group-hover:scale-110 transition-transform" : ""}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      ) : (
-                        <div className={`w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center ${!unavailable ? "group-hover:scale-110 transition-transform" : ""}`}>
-                          <span className="text-2xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-2 pb-3 relative z-10">
-                      <h3 className="font-bold text-sm leading-tight">{displayName(item.nameAr, item.nameEn)}</h3>
-                    </div>
-                  </CardContent>
-                </Card>
+                {cardContent}
               </Link>
             );
           })}
