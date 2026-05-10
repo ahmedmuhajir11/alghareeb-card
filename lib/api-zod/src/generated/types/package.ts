@@ -13,5 +13,7 @@ export interface Package {
   quantity: number;
   priceUsd: number;
   sortOrder: number;
+  /** When false, package is shown greyed out and cannot be ordered */
+  isAvailable: boolean;
   createdAt: string;
 }

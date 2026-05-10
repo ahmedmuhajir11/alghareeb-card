@@ -772,6 +772,9 @@ components:
           type: number
         sortOrder:
           type: integer
+        isAvailable:
+          type: boolean
+          description: "When false, package is shown greyed out and cannot be ordered"
         createdAt:
           type: string
       required:
@@ -781,6 +784,7 @@ components:
         - quantity
         - priceUsd
         - sortOrder
+        - isAvailable
         - createdAt
 
     CreatePackageBody:
@@ -794,6 +798,8 @@ components:
           type: number
         sortOrder:
           type: integer
+        isAvailable:
+          type: boolean
       required:
         - label
         - quantity
@@ -810,6 +816,8 @@ components:
           type: number
         sortOrder:
           type: integer
+        isAvailable:
+          type: boolean
 
     SliderImage:
       type: object

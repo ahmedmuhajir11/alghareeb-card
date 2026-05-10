@@ -11,4 +11,5 @@ export interface CreatePackageBody {
   quantity: number;
   priceUsd: number;
   sortOrder?: number;
+  isAvailable?: boolean;
 }

@@ -234,6 +234,11 @@ export const GetItemResponse = zod.object({
       quantity: zod.number(),
       priceUsd: zod.number(),
       sortOrder: zod.number(),
+      isAvailable: zod
+        .boolean()
+        .describe(
+          "When false, package is shown greyed out and cannot be ordered",
+        ),
       createdAt: zod.string(),
     }),
   ),
@@ -308,6 +313,9 @@ export const ListPackagesResponseItem = zod.object({
   quantity: zod.number(),
   priceUsd: zod.number(),
   sortOrder: zod.number(),
+  isAvailable: zod
+    .boolean()
+    .describe("When false, package is shown greyed out and cannot be ordered"),
   createdAt: zod.string(),
 });
 export const ListPackagesResponse = zod.array(ListPackagesResponseItem);
@@ -324,6 +332,7 @@ export const CreatePackageBody = zod.object({
   quantity: zod.number(),
   priceUsd: zod.number(),
   sortOrder: zod.number().optional(),
+  isAvailable: zod.boolean().optional(),
 });
 
 /**
@@ -338,6 +347,7 @@ export const UpdatePackageBody = zod.object({
   quantity: zod.number().optional(),
   priceUsd: zod.number().optional(),
   sortOrder: zod.number().optional(),
+  isAvailable: zod.boolean().optional(),
 });
 
 export const UpdatePackageResponse = zod.object({
@@ -347,6 +357,9 @@ export const UpdatePackageResponse = zod.object({
   quantity: zod.number(),
   priceUsd: zod.number(),
   sortOrder: zod.number(),
+  isAvailable: zod
+    .boolean()
+    .describe("When false, package is shown greyed out and cannot be ordered"),
   createdAt: zod.string(),
 });
 

@@ -734,18 +734,18 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                 <Label>ترتيب العرض</Label>
                 <Input type="number" value={formData.sortOrder} onChange={e => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })} className="bg-background/50" dir="ltr" />
               </div>
-              <div className="flex items-center justify-between rounded-xl border border-border/50 bg-card/40 px-4 py-3">
-                <div>
-                  <p className="font-semibold text-sm">حالة التوفر</p>
-                  <p className="text-xs text-muted-foreground">إذا أُوقف، يظهر المنتج باللون الرمادي مع شارة "غير متاح"</p>
-                </div>
+              <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/40 px-4 py-3">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, isAvailable: !formData.isAvailable })}
-                  className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${formData.isAvailable ? "bg-green-500" : "bg-red-500/70"}`}
+                  className={`relative inline-flex h-7 w-14 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${formData.isAvailable ? "bg-green-500" : "bg-red-500/70"}`}
                 >
                   <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${formData.isAvailable ? "translate-x-7" : "translate-x-1"}`} />
                 </button>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">حالة التوفر</p>
+                  <p className="text-xs text-muted-foreground leading-snug">إذا أُوقف، يظهر المنتج باللون الرمادي مع شارة "غير متاح"</p>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>إلغاء</Button>
@@ -772,7 +772,7 @@ function PackagesView({ item, onBack }: { item: Item; onBack: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const emptyForm = { label: "", quantity: 0, priceUsd: 0, sortOrder: 0 };
+  const emptyForm = { label: "", quantity: 0, priceUsd: 0, sortOrder: 0, isAvailable: true };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Package | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -787,7 +787,7 @@ function PackagesView({ item, onBack }: { item: Item; onBack: () => void }) {
 
   const openEdit = (pkg: Package) => {
     setEditTarget(pkg);
-    setFormData({ label: pkg.label, quantity: pkg.quantity, priceUsd: pkg.priceUsd, sortOrder: pkg.sortOrder });
+    setFormData({ label: pkg.label, quantity: pkg.quantity, priceUsd: pkg.priceUsd, sortOrder: pkg.sortOrder, isAvailable: (pkg as any).isAvailable ?? true });
     setIsDialogOpen(true);
   };
 
@@ -863,25 +863,33 @@ function PackagesView({ item, onBack }: { item: Item; onBack: () => void }) {
           <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {packages?.map(pkg => (
-              <div key={pkg.id} className="flex flex-col p-4 border border-border/50 rounded-xl bg-card hover:border-primary/30 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-base">{pkg.label}</h3>
-                    <p className="text-xs text-primary/70">الكمية: {pkg.quantity}</p>
+            {packages?.map(pkg => {
+              const pkgUnavailable = (pkg as any).isAvailable === false;
+              return (
+                <div key={pkg.id} className={`flex flex-col p-4 border rounded-xl transition-colors ${pkgUnavailable ? "border-red-500/20 bg-card/40 opacity-60" : "border-border/50 bg-card hover:border-primary/30"}`}>
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-base">{pkg.label}</h3>
+                        {pkgUnavailable && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">غير متاح</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-primary/70">الكمية: {pkg.quantity}</p>
+                    </div>
+                    <div className={`font-black text-lg ${pkgUnavailable ? "text-muted-foreground line-through" : "text-primary"}`}>${pkg.priceUsd.toFixed(2)}</div>
                   </div>
-                  <div className="font-black text-lg text-primary">${pkg.priceUsd.toFixed(2)}</div>
+                  <div className="flex justify-end gap-2 mt-auto pt-3 border-t border-border/30">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(pkg)} className="text-yellow-400 hover:text-yellow-400 hover:bg-yellow-400/10 h-7 px-2 gap-1">
+                      <Edit className="w-3 h-3" /> تعديل
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(pkg.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2 gap-1">
+                      <Trash2 className="w-3 h-3" /> حذف
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex justify-end gap-2 mt-auto pt-3 border-t border-border/30">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(pkg)} className="text-yellow-400 hover:text-yellow-400 hover:bg-yellow-400/10 h-7 px-2 gap-1">
-                    <Edit className="w-3 h-3" /> تعديل
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(pkg.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2 gap-1">
-                    <Trash2 className="w-3 h-3" /> حذف
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {packages?.length === 0 && (
               <div className="col-span-full text-center py-8 text-muted-foreground">لا توجد باقات. أضف باقة جديدة.</div>
             )}
@@ -914,6 +922,19 @@ function PackagesView({ item, onBack }: { item: Item; onBack: () => void }) {
               <div className="space-y-2">
                 <Label>ترتيب العرض</Label>
                 <Input type="number" value={formData.sortOrder} onChange={e => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })} className="bg-background/50" dir="ltr" />
+              </div>
+              <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/40 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, isAvailable: !formData.isAvailable })}
+                  className={`relative inline-flex h-7 w-14 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${formData.isAvailable ? "bg-green-500" : "bg-red-500/70"}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${formData.isAvailable ? "translate-x-7" : "translate-x-1"}`} />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">حالة التوفر</p>
+                  <p className="text-xs text-muted-foreground leading-snug">إذا أُوقف، تظهر الباقة رمادية ولا يمكن اختيارها</p>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>إلغاء</Button>

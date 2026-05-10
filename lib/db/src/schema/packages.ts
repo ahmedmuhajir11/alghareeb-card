@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, doublePrecision, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, doublePrecision, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { itemsTable } from "./items";
@@ -10,6 +10,7 @@ export const packagesTable = pgTable("packages", {
   quantity: doublePrecision("quantity").notNull(),
   priceUsd: doublePrecision("price_usd").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
+  isAvailable: boolean("is_available").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -96,6 +96,8 @@ export interface Package {
   quantity: number;
   priceUsd: number;
   sortOrder: number;
+  /** When false, package is shown greyed out and cannot be ordered */
+  isAvailable: boolean;
   createdAt: string;
 }
 
@@ -149,6 +151,7 @@ export interface CreatePackageBody {
   quantity: number;
   priceUsd: number;
   sortOrder?: number;
+  isAvailable?: boolean;
 }
 
 export interface UpdatePackageBody {
@@ -156,6 +159,7 @@ export interface UpdatePackageBody {
   quantity?: number;
   priceUsd?: number;
   sortOrder?: number;
+  isAvailable?: boolean;
 }
 
 export interface SliderImage {

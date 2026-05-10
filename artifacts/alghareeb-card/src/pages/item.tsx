@@ -220,27 +220,39 @@ export default function ItemPage({ id }: { id: number }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[...item.packages].sort((a: Package, b: Package) => a.priceUsd - b.priceUsd).map((pkg: Package) => (
-                <Card
-                  key={pkg.id}
-                  className={`cursor-pointer transition-all duration-200 overflow-hidden ${
-                    selectedPackageId === pkg.id
-                      ? "border-primary shadow-[0_0_20px_var(--color-primary)] bg-primary/10"
-                      : "border-border/50 bg-card/50 hover:border-primary/50"
-                  }`}
-                  onClick={() => setSelectedPackageId(pkg.id)}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-lg">{pkg.label}</div>
-                      <div className="text-sm text-primary/80 font-medium">{t('item.pkgQty')} {pkg.quantity}</div>
-                    </div>
-                    <div className="font-black text-xl text-primary drop-shadow-sm">
-                      {formatPrice(pkg.priceUsd)}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {[...item.packages].sort((a: Package, b: Package) => a.priceUsd - b.priceUsd).map((pkg: Package) => {
+                const pkgUnavailable = (pkg as any).isAvailable === false;
+                return (
+                  <Card
+                    key={pkg.id}
+                    className={`transition-all duration-200 overflow-hidden relative ${
+                      pkgUnavailable
+                        ? "border-red-500/20 bg-card/20 opacity-50 cursor-not-allowed"
+                        : selectedPackageId === pkg.id
+                          ? "border-primary shadow-[0_0_20px_var(--color-primary)] bg-primary/10 cursor-pointer"
+                          : "border-border/50 bg-card/50 hover:border-primary/50 cursor-pointer"
+                    }`}
+                    onClick={() => !pkgUnavailable && setSelectedPackageId(pkg.id)}
+                  >
+                    {pkgUnavailable && (
+                      <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none z-10">
+                        <div className="absolute -top-1 -left-6 w-24 -rotate-45 bg-red-600 text-white text-[9px] font-bold text-center py-0.5">
+                          غير متاح
+                        </div>
+                      </div>
+                    )}
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div>
+                        <div className={`font-bold text-lg ${pkgUnavailable ? "line-through text-muted-foreground" : ""}`}>{pkg.label}</div>
+                        <div className="text-sm text-primary/80 font-medium">{t('item.pkgQty')} {pkg.quantity}</div>
+                      </div>
+                      <div className={`font-black text-xl drop-shadow-sm ${pkgUnavailable ? "text-muted-foreground line-through" : "text-primary"}`}>
+                        {formatPrice(pkg.priceUsd)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

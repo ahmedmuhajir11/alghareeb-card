@@ -11,4 +11,5 @@ export interface UpdatePackageBody {
   quantity?: number;
   priceUsd?: number;
   sortOrder?: number;
+  isAvailable?: boolean;
 }
