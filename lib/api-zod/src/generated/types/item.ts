@@ -20,5 +20,7 @@ export interface Item {
   description?: string;
   sortOrder: number;
   isActive: boolean;
+  /** When false, item is shown but marked as unavailable */
+  isAvailable: boolean;
   createdAt: string;
 }

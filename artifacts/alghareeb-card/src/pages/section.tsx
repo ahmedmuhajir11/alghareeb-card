@@ -83,27 +83,39 @@ export default function SectionPage({ id }: { id: number }) {
         </div>
       ) : (
         <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredItems.map(item => (
-            <Link key={item.id} href={`/item/${item.id}`}>
-              <Card className="neon-border cursor-pointer bg-card/50 hover:bg-card transition-all duration-300 h-full overflow-hidden group">
-                <CardContent className="p-0 flex flex-col items-center text-center h-full relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <div className="flex items-center justify-center w-full h-20 pt-3 relative z-10">
-                    {item.logoUrl ? (
-                      <img src={item.logoUrl} alt="" className="w-14 h-14 object-cover rounded-2xl drop-shadow-md group-hover:scale-110 transition-transform" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                    ) : (
-                      <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <span className="text-2xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
+          {filteredItems.map(item => {
+            const unavailable = (item as any).isAvailable === false;
+            return (
+              <Link key={item.id} href={`/item/${item.id}`}>
+                <Card className={`neon-border cursor-pointer transition-all duration-300 h-full overflow-hidden group ${unavailable ? "bg-card/20 opacity-60 grayscale" : "bg-card/50 hover:bg-card"}`}>
+                  <CardContent className="p-0 flex flex-col items-center text-center h-full relative">
+                    {!unavailable && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    )}
+                    {unavailable && (
+                      <div className="absolute inset-0 overflow-hidden rounded-[inherit] z-20 pointer-events-none">
+                        <div className="absolute -top-1 -right-6 w-28 rotate-45 bg-red-600 text-white text-[9px] font-bold text-center py-0.5 shadow-md">
+                          غير متاح
+                        </div>
                       </div>
                     )}
-                  </div>
-                  <div className="px-2 pb-3 relative z-10">
-                    <h3 className="font-bold text-sm leading-tight">{displayName(item.nameAr, item.nameEn)}</h3>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <div className="flex items-center justify-center w-full h-20 pt-3 relative z-10">
+                      {item.logoUrl ? (
+                        <img src={item.logoUrl} alt="" className={`w-14 h-14 object-cover rounded-2xl drop-shadow-md ${!unavailable ? "group-hover:scale-110 transition-transform" : ""}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      ) : (
+                        <div className={`w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center ${!unavailable ? "group-hover:scale-110 transition-transform" : ""}`}>
+                          <span className="text-2xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-2 pb-3 relative z-10">
+                      <h3 className="font-bold text-sm leading-tight">{displayName(item.nameAr, item.nameEn)}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

@@ -84,6 +84,8 @@ export interface Item {
   description?: string;
   sortOrder: number;
   isActive: boolean;
+  /** When false, item is shown but marked as unavailable */
+  isAvailable: boolean;
   createdAt: string;
 }
 
@@ -109,6 +111,7 @@ export interface ItemWithPackages {
   description?: string;
   sortOrder: number;
   isActive: boolean;
+  isAvailable: boolean;
   createdAt: string;
   /** pricing type inherited from the section */
   sectionPricingType: string;
@@ -125,6 +128,7 @@ export interface CreateItemBody {
   description?: string;
   sortOrder?: number;
   isActive?: boolean;
+  isAvailable?: boolean;
 }
 
 export interface UpdateItemBody {
@@ -137,6 +141,7 @@ export interface UpdateItemBody {
   description?: string;
   sortOrder?: number;
   isActive?: boolean;
+  isAvailable?: boolean;
 }
 
 export interface CreatePackageBody {

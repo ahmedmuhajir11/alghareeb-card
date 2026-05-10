@@ -131,17 +131,19 @@ export default function ItemPage({ id }: { id: number }) {
 
   if (!item) return <div className="text-center py-12">{t('item.notFound')}</div>;
 
+  const isUnavailable = (item as any).isAvailable === false;
+
   const rawUnit = item.currencyUnit || "وحدة";
   const unitKey = `unit.${rawUnit}` as Parameters<typeof t>[0];
   const unitLabel = t(unitKey) !== unitKey ? t(unitKey) : rawUnit;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      <div className="flex flex-col md:flex-row items-center gap-6 bg-card/30 p-6 rounded-2xl neon-border">
+      <div className={`flex flex-col md:flex-row items-center gap-6 p-6 rounded-2xl neon-border ${isUnavailable ? "bg-card/20 opacity-70" : "bg-card/30"}`}>
         {item.logoUrl ? (
-          <img src={item.logoUrl} alt={item.nameAr} className="w-24 h-24 object-cover rounded-2xl drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+          <img src={item.logoUrl} alt={item.nameAr} className={`w-24 h-24 object-cover rounded-2xl drop-shadow-[0_0_15px_rgba(139,92,246,0.5)] ${isUnavailable ? "grayscale" : ""}`} />
         ) : (
-          <div className="w-24 h-24 rounded-2xl bg-primary/20 flex items-center justify-center">
+          <div className={`w-24 h-24 rounded-2xl bg-primary/20 flex items-center justify-center ${isUnavailable ? "grayscale" : ""}`}>
             <span className="text-4xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
           </div>
         )}
@@ -157,6 +159,16 @@ export default function ItemPage({ id }: { id: number }) {
           )}
         </div>
       </div>
+
+      {isUnavailable && (
+        <div className="flex items-center gap-3 bg-red-950/60 border border-red-500/50 rounded-2xl p-5 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
+          <span className="text-3xl">🚫</span>
+          <div>
+            <p className="font-bold text-red-400 text-lg">المنتج غير متاح بالوقت الحالي</p>
+            <p className="text-sm text-red-300/70 mt-0.5">يرجى التواصل معنا أو المحاولة لاحقاً</p>
+          </div>
+        </div>
+      )}
 
       {isPerQuantity ? (
         <div className="space-y-4">
@@ -254,10 +266,10 @@ export default function ItemPage({ id }: { id: number }) {
         <Button
           className="w-full h-14 text-lg font-bold mt-6 shadow-[0_0_15px_var(--color-primary)] hover:shadow-[0_0_25px_var(--color-primary)] transition-all gap-2 bg-purple-600 hover:bg-purple-700 text-white border-none disabled:opacity-60"
           onClick={handleOrder}
-          disabled={submitting}
+          disabled={submitting || isUnavailable}
         >
           <Send className="w-5 h-5" />
-          {submitting ? t('item.sending') : t('item.sendOrder')}
+          {submitting ? t('item.sending') : isUnavailable ? "المنتج غير متاح" : t('item.sendOrder')}
         </Button>
         {user && (
           <p className="text-xs text-center text-muted-foreground mt-2">

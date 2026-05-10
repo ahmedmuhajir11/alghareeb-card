@@ -290,7 +290,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const isAppCharging = section.id === 2 || section.nameEn === "Instant App Top-Up" || section.nameAr === "شحن التطبيقات الفوري";
   const isMoneyTransfer = section.id === 3 || section.nameEn === "Money Transfers" || section.nameAr === "الحوالات المالية";
 
-  const emptyForm = { nameAr: "", nameEn: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true };
+  const emptyForm = { nameAr: "", nameEn: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true, isAvailable: true };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Item | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -356,6 +356,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       description: item.description ?? "",
       sortOrder: item.sortOrder,
       isActive: item.isActive,
+      isAvailable: (item as any).isAvailable ?? true,
     });
     setIsDialogOpen(true);
   };
@@ -379,6 +380,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       description: isAppCharging ? undefined : (formData.description || undefined),
       sortOrder: formData.sortOrder,
       isActive: formData.isActive,
+      isAvailable: formData.isAvailable,
     };
     if (isAppCharging) {
       payload.minQuantity = formData.minQuantity > 0 ? formData.minQuantity : 1;
@@ -503,7 +505,12 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                     </div>
                   )}
                   <div className="min-w-0">
-                    <h3 className="font-bold truncate">{item.nameAr}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold truncate">{item.nameAr}</h3>
+                      {(item as any).isAvailable === false && (
+                        <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 flex-shrink-0">غير متاح</span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>
                     {isPerQuantity && item.pricePerUnit && (
                       <p className="text-xs text-primary/80">${item.pricePerUnit} / {item.currencyUnit || "وحدة"}</p>
@@ -726,6 +733,19 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
               <div className="space-y-2">
                 <Label>ترتيب العرض</Label>
                 <Input type="number" value={formData.sortOrder} onChange={e => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })} className="bg-background/50" dir="ltr" />
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border/50 bg-card/40 px-4 py-3">
+                <div>
+                  <p className="font-semibold text-sm">حالة التوفر</p>
+                  <p className="text-xs text-muted-foreground">إذا أُوقف، يظهر المنتج باللون الرمادي مع شارة "غير متاح"</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, isAvailable: !formData.isAvailable })}
+                  className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${formData.isAvailable ? "bg-green-500" : "bg-red-500/70"}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${formData.isAvailable ? "translate-x-7" : "translate-x-1"}`} />
+                </button>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>إلغاء</Button>

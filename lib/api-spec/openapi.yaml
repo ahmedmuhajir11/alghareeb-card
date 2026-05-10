@@ -643,6 +643,9 @@ components:
           type: integer
         isActive:
           type: boolean
+        isAvailable:
+          type: boolean
+          description: "When false, item is shown but marked as unavailable"
         createdAt:
           type: string
       required:
@@ -652,6 +655,7 @@ components:
         - nameEn
         - sortOrder
         - isActive
+        - isAvailable
         - createdAt
 
     ItemWithPackages:
@@ -679,6 +683,8 @@ components:
           type: integer
         isActive:
           type: boolean
+        isAvailable:
+          type: boolean
         createdAt:
           type: string
         sectionPricingType:
@@ -695,6 +701,7 @@ components:
         - nameEn
         - sortOrder
         - isActive
+        - isAvailable
         - createdAt
         - sectionPricingType
         - packages
@@ -720,6 +727,8 @@ components:
           type: integer
         isActive:
           type: boolean
+        isAvailable:
+          type: boolean
       required:
         - nameAr
         - nameEn
@@ -744,6 +753,8 @@ components:
         sortOrder:
           type: integer
         isActive:
+          type: boolean
+        isAvailable:
           type: boolean
 
     Package:

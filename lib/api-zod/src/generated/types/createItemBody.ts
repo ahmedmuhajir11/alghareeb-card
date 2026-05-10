@@ -16,4 +16,5 @@ export interface CreateItemBody {
   description?: string;
   sortOrder?: number;
   isActive?: boolean;
+  isAvailable?: boolean;
 }

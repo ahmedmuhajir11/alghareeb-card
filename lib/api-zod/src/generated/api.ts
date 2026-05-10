@@ -175,6 +175,9 @@ export const ListItemsResponseItem = zod.object({
   description: zod.string().optional(),
   sortOrder: zod.number(),
   isActive: zod.boolean(),
+  isAvailable: zod
+    .boolean()
+    .describe("When false, item is shown but marked as unavailable"),
   createdAt: zod.string(),
 });
 export const ListItemsResponse = zod.array(ListItemsResponseItem);
@@ -196,6 +199,7 @@ export const CreateItemBody = zod.object({
   description: zod.string().optional(),
   sortOrder: zod.number().optional(),
   isActive: zod.boolean().optional(),
+  isAvailable: zod.boolean().optional(),
 });
 
 /**
@@ -217,6 +221,7 @@ export const GetItemResponse = zod.object({
   description: zod.string().optional(),
   sortOrder: zod.number(),
   isActive: zod.boolean(),
+  isAvailable: zod.boolean(),
   createdAt: zod.string(),
   sectionPricingType: zod
     .string()
@@ -251,6 +256,7 @@ export const UpdateItemBody = zod.object({
   description: zod.string().optional(),
   sortOrder: zod.number().optional(),
   isActive: zod.boolean().optional(),
+  isAvailable: zod.boolean().optional(),
 });
 
 export const UpdateItemResponse = zod.object({
@@ -271,6 +277,9 @@ export const UpdateItemResponse = zod.object({
   description: zod.string().optional(),
   sortOrder: zod.number(),
   isActive: zod.boolean(),
+  isAvailable: zod
+    .boolean()
+    .describe("When false, item is shown but marked as unavailable"),
   createdAt: zod.string(),
 });
 

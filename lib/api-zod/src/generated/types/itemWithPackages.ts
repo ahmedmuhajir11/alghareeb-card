@@ -19,6 +19,7 @@ export interface ItemWithPackages {
   description?: string;
   sortOrder: number;
   isActive: boolean;
+  isAvailable: boolean;
   createdAt: string;
   /** pricing type inherited from the section */
   sectionPricingType: string;

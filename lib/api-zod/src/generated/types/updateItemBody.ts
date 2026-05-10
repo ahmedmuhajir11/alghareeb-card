@@ -16,4 +16,5 @@ export interface UpdateItemBody {
   description?: string;
   sortOrder?: number;
   isActive?: boolean;
+  isAvailable?: boolean;
 }
