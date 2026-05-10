@@ -93,10 +93,10 @@ export default function SectionPage({ id }: { id: number }) {
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     )}
                     {unavailable && (
-                      <div className="absolute inset-0 overflow-hidden rounded-[inherit] z-20 pointer-events-none">
-                        <div className="absolute -top-1 -right-6 w-28 rotate-45 bg-red-600 text-white text-[9px] font-bold text-center py-0.5 shadow-md">
+                      <div className="absolute inset-0 z-20 pointer-events-none flex items-end justify-center pb-1">
+                        <span className="bg-red-600 text-white text-[11px] font-black px-2 py-0.5 rounded-md shadow-lg tracking-wide">
                           غير متاح
-                        </div>
+                        </span>
                       </div>
                     )}
                     <div className="flex items-center justify-center w-full h-20 pt-3 relative z-10">

@@ -235,10 +235,10 @@ export default function ItemPage({ id }: { id: number }) {
                     onClick={() => !pkgUnavailable && setSelectedPackageId(pkg.id)}
                   >
                     {pkgUnavailable && (
-                      <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none z-10">
-                        <div className="absolute -top-1 -left-6 w-24 -rotate-45 bg-red-600 text-white text-[9px] font-bold text-center py-0.5">
+                      <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
+                        <span className="bg-red-600/90 text-white text-xs font-black px-3 py-1 rounded-lg shadow-lg tracking-wide border border-red-400/30">
                           غير متاح
-                        </div>
+                        </span>
                       </div>
                     )}
                     <CardContent className="p-4 flex items-center justify-between">
