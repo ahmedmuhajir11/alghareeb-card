@@ -92,14 +92,14 @@ export default function SectionPage({ id }: { id: number }) {
                     {!unavailable && (
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     )}
-                    {unavailable && (
-                      <div className="absolute inset-0 z-20 pointer-events-none flex items-end justify-center pb-1">
-                        <span className="bg-red-600 text-white text-[11px] font-black px-2 py-0.5 rounded-md shadow-lg tracking-wide">
-                          غير متاح
-                        </span>
-                      </div>
-                    )}
                     <div className="flex items-center justify-center w-full h-20 pt-3 relative z-10">
+                      {unavailable && (
+                        <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+                          <div className="bg-red-600 text-white text-xs font-black px-3 py-1.5 rounded-lg shadow-xl tracking-wide border border-red-400/40 w-[80%] text-center">
+                            غير متاح
+                          </div>
+                        </div>
+                      )}
                       {item.logoUrl ? (
                         <img src={item.logoUrl} alt="" className={`w-14 h-14 object-cover rounded-2xl drop-shadow-md ${!unavailable ? "group-hover:scale-110 transition-transform" : ""}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                       ) : (
