@@ -79,8 +79,8 @@ export default function AboutPage() {
           {t('about.founderTitle')}
         </h2>
         <div className="flex flex-col sm:flex-row items-start gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-primary/20 border-2 border-primary/40 flex items-center justify-center flex-shrink-0 text-3xl">
-            👤
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border-2 border-primary/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <img src="/logo.png" alt="AlGhareeb Card" className="w-14 h-14 object-contain" />
           </div>
           <div className="space-y-2 flex-1">
             <p className="text-xl font-black text-foreground">{t('about.founderName')}</p>
