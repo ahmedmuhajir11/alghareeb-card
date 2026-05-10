@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -338,19 +338,90 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <footer className="border-t border-[hsl(var(--gold)/0.2)] bg-card/30 py-8 mt-auto">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p className="font-black text-xl mb-2 text-gradient-gold gold-glow">{t('site.name')}</p>
-          <p className="text-sm">{t('footer.tagline')}</p>
+      <footer className="border-t border-purple-800/40 bg-[#0a0a0f] py-10 mt-auto">
+        <div className="container mx-auto px-4 text-center space-y-6">
+
+          {/* Phone / WhatsApp contact row */}
           {settings?.whatsappNumber && (
-            <p className="text-sm mt-4 text-[hsl(var(--gold))]">{t('footer.contact')}: {settings.whatsappNumber}</p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <a
+                href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-600/50 shadow-[0_0_12px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.7)] transition-all"
+              >
+                <Phone className="w-5 h-5 text-purple-400" />
+              </a>
+              <span className="text-[hsl(var(--gold))] font-bold text-lg tracking-wide" dir="ltr">
+                {settings.whatsappNumber}
+              </span>
+              <span className="text-muted-foreground text-sm">{t('footer.contact').replace(':', '')}</span>
+            </div>
           )}
-          <div className="flex justify-center gap-6 mt-4 text-sm">
-            <Link href="/about" className="hover:text-[hsl(var(--gold))] transition-colors">{t('footer.aboutUs')}</Link>
-            <Link href="/payment-methods" className="hover:text-[hsl(var(--gold))] transition-colors">{t('footer.paymentMethods')}</Link>
-            <Link href="/privacy" className="hover:text-[hsl(var(--gold))] transition-colors">سياسة الخصوصية</Link>
-            <Link href="/terms" className="hover:text-[hsl(var(--gold))] transition-colors">شروط الاستخدام</Link>
+
+          {/* Social icons row */}
+          <div className="flex items-center justify-center gap-4">
+            {/* WhatsApp */}
+            {settings?.whatsappNumber && (
+              <a
+                href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.35)] hover:shadow-[0_0_18px_rgba(168,85,247,0.65)] transition-all"
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-[#25D366]">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+              </a>
+            )}
+
+            {/* Telegram */}
+            <a
+              href="https://t.me/alghareebcard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.35)] hover:shadow-[0_0_18px_rgba(168,85,247,0.65)] transition-all"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-[#2AABEE]">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+              </svg>
+            </a>
+
+            {/* Email */}
+            <a
+              href="mailto:info@alghareebcard.com"
+              className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.35)] hover:shadow-[0_0_18px_rgba(168,85,247,0.65)] transition-all"
+            >
+              <Mail className="w-6 h-6 text-purple-400" />
+            </a>
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-purple-800/30 mx-auto max-w-lg" />
+
+          {/* Links row */}
+          <div className="flex items-center justify-center gap-4 flex-wrap text-sm text-muted-foreground" dir="rtl">
+            <Link href="/about" className="flex items-center gap-1.5 hover:text-purple-400 transition-colors">
+              <Users className="w-4 h-4 text-purple-500" />
+              <span>{t('footer.aboutUs')}</span>
+            </Link>
+            <span className="text-purple-700">•</span>
+            <Link href="/terms" className="flex items-center gap-1.5 hover:text-purple-400 transition-colors">
+              <FileText className="w-4 h-4 text-purple-500" />
+              <span>{t('terms.title')}</span>
+            </Link>
+            <span className="text-purple-700">•</span>
+            <Link href="/privacy" className="flex items-center gap-1.5 hover:text-purple-400 transition-colors">
+              <Shield className="w-4 h-4 text-purple-500" />
+              <span>{t('privacy.title')}</span>
+            </Link>
+          </div>
+
+          {/* Copyright */}
+          <p className="text-xs text-muted-foreground/60">
+            © 2025 {t('site.name')}. {t('footer.copyright')}.
+          </p>
+
         </div>
       </footer>
     </div>
