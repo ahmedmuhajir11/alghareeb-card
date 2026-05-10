@@ -2,7 +2,7 @@ import { useI18n } from "@/lib/i18n";
 import { Shield } from "lucide-react";
 
 export default function PrivacyPage() {
-  const { lang } = useI18n();
+  const { t, lang } = useI18n();
   const isRtl = ['ar', 'fa', 'ku'].includes(lang);
 
   return (
@@ -11,58 +11,54 @@ export default function PrivacyPage() {
         <div className="flex justify-center">
           <Shield className="w-12 h-12 text-primary" />
         </div>
-        <h1 className="text-3xl font-black neon-text">سياسة الخصوصية</h1>
-        <p className="text-muted-foreground text-sm">آخر تحديث: مايو 2026</p>
+        <h1 className="text-3xl font-black neon-text">{t('privacy.title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('privacy.lastUpdated')}</p>
       </div>
 
-      <div className="space-y-6 text-right leading-relaxed">
+      <div className="space-y-6" style={{ textAlign: isRtl ? 'right' : 'left' }}>
 
         <section className="bg-card/50 border border-primary/20 rounded-2xl p-6 space-y-3">
-          <h2 className="text-lg font-bold text-primary">البيانات التي نجمعها</h2>
+          <h2 className="text-lg font-bold text-primary">{t('privacy.dataCollected.title')}</h2>
           <ul className="text-muted-foreground space-y-2 list-disc list-inside">
-            <li>الاسم والبريد الإلكتروني ورقم الهاتف عند التسجيل</li>
-            <li>الدولة والعملة المفضلة</li>
-            <li>سجل الطلبات والمعاملات المالية</li>
-            <li>صور إيصالات الإيداع المرفوعة</li>
+            <li>{t('privacy.dataCollected.item1')}</li>
+            <li>{t('privacy.dataCollected.item2')}</li>
+            <li>{t('privacy.dataCollected.item3')}</li>
+            <li>{t('privacy.dataCollected.item4')}</li>
           </ul>
         </section>
 
         <section className="bg-card/50 border border-primary/20 rounded-2xl p-6 space-y-3">
-          <h2 className="text-lg font-bold text-primary">كيف نستخدم بياناتك</h2>
+          <h2 className="text-lg font-bold text-primary">{t('privacy.howWeUse.title')}</h2>
           <ul className="text-muted-foreground space-y-2 list-disc list-inside">
-            <li>لإنشاء حسابك وإدارته</li>
-            <li>لمعالجة طلباتك وإشعارك بحالتها</li>
-            <li>لتقديم خدمة عملاء أفضل</li>
-            <li>لا نبيع بياناتك أو نشاركها مع أي طرف ثالث</li>
+            <li>{t('privacy.howWeUse.item1')}</li>
+            <li>{t('privacy.howWeUse.item2')}</li>
+            <li>{t('privacy.howWeUse.item3')}</li>
+            <li>{t('privacy.howWeUse.item4')}</li>
           </ul>
         </section>
 
         <section className="bg-card/50 border border-primary/20 rounded-2xl p-6 space-y-3">
-          <h2 className="text-lg font-bold text-primary">الأمان</h2>
-          <p className="text-muted-foreground">
-            كلمات المرور مشفرة ولا يمكن لأحد الاطلاع عليها. نستخدم اتصالاً آمناً (HTTPS) في جميع أنحاء الموقع لحماية بياناتك أثناء النقل.
-          </p>
+          <h2 className="text-lg font-bold text-primary">{t('privacy.security.title')}</h2>
+          <p className="text-muted-foreground">{t('privacy.security.text')}</p>
         </section>
 
         <section className="bg-card/50 border border-primary/20 rounded-2xl p-6 space-y-3">
-          <h2 className="text-lg font-bold text-primary">ملفات الارتباط (Cookies)</h2>
-          <p className="text-muted-foreground">
-            نستخدم ملفات الارتباط الضرورية فقط للحفاظ على جلسة تسجيل الدخول. لا نستخدم ملفات تتبع لأغراض إعلانية.
-          </p>
+          <h2 className="text-lg font-bold text-primary">{t('privacy.cookies.title')}</h2>
+          <p className="text-muted-foreground">{t('privacy.cookies.text')}</p>
         </section>
 
         <section className="bg-card/50 border border-primary/20 rounded-2xl p-6 space-y-3">
-          <h2 className="text-lg font-bold text-primary">حقوقك</h2>
+          <h2 className="text-lg font-bold text-primary">{t('privacy.rights.title')}</h2>
           <ul className="text-muted-foreground space-y-2 list-disc list-inside">
-            <li>يحق لك طلب حذف حسابك وبياناتك في أي وقت</li>
-            <li>يمكنك تصحيح بياناتك من خلال صفحة الملف الشخصي</li>
+            <li>{t('privacy.rights.item1')}</li>
+            <li>{t('privacy.rights.item2')}</li>
           </ul>
         </section>
 
         <section className="bg-card/50 border border-primary/20 rounded-2xl p-6 space-y-3">
-          <h2 className="text-lg font-bold text-primary">تواصل معنا</h2>
+          <h2 className="text-lg font-bold text-primary">{t('privacy.contact.title')}</h2>
           <p className="text-muted-foreground">
-            لأي استفسار يتعلق بخصوصيتك تواصل معنا عبر واتساب:{' '}
+            {t('privacy.contact.text')}{' '}
             <span className="text-primary font-bold">00905378221375</span>
           </p>
         </section>
