@@ -637,12 +637,13 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                         type="number"
                         step="0.0001"
                         min="0"
-                        value={formData.pricePerUnit}
-                        onChange={e => setFormData({ ...formData, pricePerUnit: parseFloat(e.target.value) || 0 })}
-                        className="bg-background/50 pr-16"
+                        value={formData.pricePerUnit === 0 ? "" : formData.pricePerUnit}
+                        onChange={e => setFormData({ ...formData, pricePerUnit: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })}
+                        className="bg-background/50 pr-28"
                         dir="ltr"
+                        placeholder="0.0001"
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                         $ / {formData.currencyUnit === "أخرى" ? formData.customCurrencyUnit || "وحدة" : formData.currencyUnit}
                       </span>
                     </div>
@@ -663,13 +664,13 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                         type="number"
                         step="0.0001"
                         min="0"
-                        value={formData.pricePerUnit}
-                        onChange={e => setFormData({ ...formData, pricePerUnit: parseFloat(e.target.value) || 0 })}
-                        className="bg-background/50 pr-16"
+                        value={formData.pricePerUnit === 0 ? "" : formData.pricePerUnit}
+                        onChange={e => setFormData({ ...formData, pricePerUnit: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })}
+                        className="bg-background/50 pr-28"
                         dir="ltr"
-                        placeholder="مثال: 0.0001"
+                        placeholder="0.0001"
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                         $ / {formData.currencyUnit === "أخرى" ? formData.customCurrencyUnit || "وحدة" : formData.currencyUnit}
                       </span>
                     </div>
@@ -704,8 +705,8 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                       type="number"
                       min="1"
                       step="1"
-                      value={formData.minQuantity}
-                      onChange={e => setFormData({ ...formData, minQuantity: parseFloat(e.target.value) || 1 })}
+                      value={formData.minQuantity === 0 ? "" : formData.minQuantity}
+                      onChange={e => setFormData({ ...formData, minQuantity: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })}
                       className="bg-background/50"
                       dir="ltr"
                       placeholder="مثال: 1000"
