@@ -348,6 +348,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex justify-center gap-6 mt-4 text-sm">
             <Link href="/about" className="hover:text-[hsl(var(--gold))] transition-colors">{t('footer.aboutUs')}</Link>
             <Link href="/payment-methods" className="hover:text-[hsl(var(--gold))] transition-colors">{t('footer.paymentMethods')}</Link>
+            <Link href="/privacy" className="hover:text-[hsl(var(--gold))] transition-colors">سياسة الخصوصية</Link>
+            <Link href="/terms" className="hover:text-[hsl(var(--gold))] transition-colors">شروط الاستخدام</Link>
           </div>
         </div>
       </footer>

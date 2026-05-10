@@ -16,6 +16,8 @@ import SectionPage from "@/pages/section";
 import ItemPage from "@/pages/item";
 import PaymentMethodsPage from "@/pages/payment-methods";
 import AboutPage from "@/pages/about";
+import PrivacyPage from "@/pages/privacy";
+import TermsPage from "@/pages/terms";
 import OrdersPage from "@/pages/orders";
 import WalletPage from "@/pages/wallet";
 import MyDepositsPage from "@/pages/my-deposits";
@@ -48,6 +50,12 @@ function Router() {
       </Route>
       <Route path="/about">
         <AppLayout><AboutPage /></AppLayout>
+      </Route>
+      <Route path="/privacy">
+        <AppLayout><PrivacyPage /></AppLayout>
+      </Route>
+      <Route path="/terms">
+        <AppLayout><TermsPage /></AppLayout>
       </Route>
       <Route path="/my-deposits">
         <AppLayout><MyDepositsPage /></AppLayout>
