@@ -24,6 +24,7 @@ function rateForCurrency(currency: string, settings: any): number | null {
     IQD: settings?.usd_to_iqd,
     SAR: settings?.usd_to_sar,
     EGP: settings?.usd_to_egp,
+    JOD: settings?.usd_to_jod,
   };
   const v = map[c];
   return typeof v === "number" && v > 0 ? v : null;

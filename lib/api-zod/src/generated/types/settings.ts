@@ -19,6 +19,7 @@ export interface Settings {
   usdToIqd: number;
   usdToSar: number;
   usdToEgp: number;
+  usdToJod: number;
   whatsappNumber: string;
   moneyTransferCurrencies: string;
   welcomeMessage: string;

@@ -70,6 +70,7 @@ type AppSettings = {
   usdToIqd?: number;
   usdToSar?: number;
   usdToEgp?: number;
+  usdToJod?: number;
 };
 
 const CURRENCY_LABEL_AR: Record<string, string> = {
@@ -84,6 +85,7 @@ const CURRENCY_LABEL_AR: Record<string, string> = {
   ILS: "شيكل",
   IQD: "دينار عراقي",
   EGP: "جنيه مصري",
+  JOD: "دينار أردني",
 };
 
 function rateForCurrency(currency: string, settings: AppSettings | undefined): number | null {
@@ -101,6 +103,7 @@ function rateForCurrency(currency: string, settings: AppSettings | undefined): n
     IQD: settings.usdToIqd,
     SAR: settings.usdToSar,
     EGP: settings.usdToEgp,
+    JOD: settings.usdToJod,
   };
   const v = map[c];
   return typeof v === "number" && v > 0 ? v : null;
@@ -124,6 +127,24 @@ function isShamCashMethod(method: PaymentMethod): boolean {
   const ar = (method.nameAr || "").trim();
   const en = (method.nameEn || "").toLowerCase();
   return ar.includes("شام") || en.includes("sham");
+}
+
+// Returns the locked currency for a payment method, or null if the user can freely choose.
+function getLockedCurrency(method: PaymentMethod): string | null {
+  const ar = method.nameAr || "";
+  const en = (method.nameEn || "").toLowerCase();
+  if (ar.includes("سعود") || en.includes("saudi")) return "SAR";
+  if (ar.includes("تركي") || ar.includes("تركيا") || en.includes("turk")) return "TRY";
+  if (ar.includes("مصر") || en.includes("egypt")) return "EGP";
+  if (ar.includes("لبنان") || ar.includes("لبناني") || en.includes("lebanon")) return "USD";
+  if (ar.includes("أردن") || ar.includes("اردن") || en.includes("jordan")) return "JOD";
+  if (ar.includes("مغرب") || en.includes("morocco")) return "MAD";
+  if (ar.includes("جزائر") || en.includes("algeria")) return "DZD";
+  if (ar.includes("أوروب") || ar.includes("اوروب") || en.includes("europ")) return "EUR";
+  if (ar.includes("عراق") || en.includes("iraq")) return "IQD";
+  if (ar.includes("بايبال") || ar.includes("باي بال") || en.includes("paypal")) return "USD";
+  if (ar.toLowerCase().includes("usdt") || en.includes("usdt") || ar.includes("عالمي") || en.includes("global")) return "USD";
+  return null;
 }
 
 function useFetchSettings() {
@@ -244,7 +265,9 @@ function DepositForm({ method }: { method: PaymentMethod }) {
   const [, navigate] = useLocation();
   const userCurrency = (user?.currency ?? "TRY").toUpperCase();
   const ALL_CURRENCIES = Object.keys(CURRENCY_LABEL_AR);
-  const [sentCurrency, setSentCurrency] = useState<string>(userCurrency);
+  const lockedCurrency = getLockedCurrency(method);
+  const [freeCurrency, setFreeCurrency] = useState<string>(userCurrency);
+  const sentCurrency = lockedCurrency ?? freeCurrency;
   const [amount, setAmount] = useState("");
   const [senderName, setSenderName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -252,9 +275,9 @@ function DepositForm({ method }: { method: PaymentMethod }) {
   const { data: settings } = useFetchSettings();
 
   const convertedToAccount = useMemo(() => {
-    if (sentCurrency.toUpperCase() === userCurrency) return null;
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return null;
+    if (sentCurrency.toUpperCase() === userCurrency) return amt;
     return convertAmount(amt, sentCurrency, userCurrency, settings);
   }, [sentCurrency, userCurrency, amount, settings]);
 
@@ -336,18 +359,27 @@ function DepositForm({ method }: { method: PaymentMethod }) {
 
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">{t('payment.sentCurrency')}</Label>
-        <Select value={sentCurrency} onValueChange={setSentCurrency}>
-          <SelectTrigger className="bg-background/60 h-10 font-bold">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ALL_CURRENCIES.map(c => (
-              <SelectItem key={c} value={c}>
-                {CURRENCY_LABEL_AR[c] ?? c} ({c})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {lockedCurrency ? (
+          <div className="bg-background/60 h-10 rounded-md border border-input flex items-center px-3 gap-2">
+            <Lock className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+            <span className="font-bold text-sm flex-1">
+              {CURRENCY_LABEL_AR[lockedCurrency] ?? lockedCurrency} ({lockedCurrency})
+            </span>
+          </div>
+        ) : (
+          <Select value={freeCurrency} onValueChange={setFreeCurrency}>
+            <SelectTrigger className="bg-background/60 h-10 font-bold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ALL_CURRENCIES.map(c => (
+                <SelectItem key={c} value={c}>
+                  {CURRENCY_LABEL_AR[c] ?? c} ({c})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {method.requireSenderName && (
