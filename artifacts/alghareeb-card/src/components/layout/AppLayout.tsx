@@ -139,8 +139,9 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                       : "text-foreground hover:bg-primary/10"
                   }`}
                 >
+                  <span className="text-base leading-none">{meta.flag}</span>
                   <span className="font-semibold">{meta.name}</span>
-                  {lang === code && <span className="mr-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                  {lang === code && <span className="mr-auto w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
                 </button>
               ))}
             </div>
