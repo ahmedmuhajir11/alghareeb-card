@@ -96,19 +96,43 @@ export default function KycPage() {
     }
   }
 
-  function handleFile(
+  function compressImage(file: File, maxPx = 1200, quality = 0.75): Promise<File> {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxPx || height > maxPx) {
+            if (width > height) { height = Math.round((height * maxPx) / width); width = maxPx; }
+            else { width = Math.round((width * maxPx) / height); height = maxPx; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }));
+            else resolve(file);
+          }, "image/jpeg", quality);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleFile(
     file: File | null,
     setFile: (f: File | null) => void,
     setPreview: (s: string | null) => void
   ) {
-    setFile(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = e => setPreview(e.target?.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setPreview(null);
-    }
+    if (!file) { setFile(null); setPreview(null); return; }
+    const compressed = await compressImage(file);
+    setFile(compressed);
+    const reader = new FileReader();
+    reader.onload = e => setPreview(e.target?.result as string);
+    reader.readAsDataURL(compressed);
   }
 
   async function handleSubmit(e: React.FormEvent) {

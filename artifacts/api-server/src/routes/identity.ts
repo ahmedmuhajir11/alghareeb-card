@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import multer from "multer";
 import { pool } from "@workspace/db";
 import { requireUser } from "../middleware/requireUser";
@@ -7,12 +7,24 @@ const router: IRouter = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp"];
     allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Only images allowed"));
   },
 });
+
+function handleMulterError(err: any, _req: Request, res: Response, next: NextFunction) {
+  if (err && err.code === "LIMIT_FILE_SIZE") {
+    res.status(400).json({ error: "حجم الصورة كبير جداً، الحد الأقصى 20MB" });
+    return;
+  }
+  if (err) {
+    res.status(400).json({ error: err.message || "خطأ في رفع الملف" });
+    return;
+  }
+  next();
+}
 
 function toBase64DataUrl(buffer: Buffer, mimetype: string): string {
   return `data:${mimetype};base64,${buffer.toString("base64")}`;
@@ -52,11 +64,13 @@ router.get("/identity", requireUser, async (req: Request, res: Response): Promis
 router.post(
   "/identity",
   requireUser,
-  upload.fields([
-    { name: "idPhotoFront", maxCount: 1 },
-    { name: "idPhotoBack", maxCount: 1 },
-    { name: "selfie", maxCount: 1 },
-  ]),
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.fields([
+      { name: "idPhotoFront", maxCount: 1 },
+      { name: "idPhotoBack", maxCount: 1 },
+      { name: "selfie", maxCount: 1 },
+    ])(req, res, (err) => handleMulterError(err, req, res, next));
+  },
   async (req: Request, res: Response): Promise<void> => {
     const user = (req as any).currentUser;
     const { fullName, idNumber, country, province, extraInfo } = req.body ?? {};
