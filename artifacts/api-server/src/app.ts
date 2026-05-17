@@ -69,16 +69,19 @@ app.use(
 
 const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://alghareebcard.replit.app/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>https://alghareebcard.replit.app/payment-methods</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alghareebcard.replit.app/section/1</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  <url><loc>https://alghareebcard.replit.app/section/2</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  <url><loc>https://alghareebcard.replit.app/section/3</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://alghareebcard.replit.app/section/4</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://alghareebcard.replit.app/section/5</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://alghareebcard.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://alghareebcard.com/payment-methods</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alghareebcard.com/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://alghareebcard.com/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://alghareebcard.com/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://alghareebcard.com/section/1</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://alghareebcard.com/section/2</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://alghareebcard.com/section/3</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://alghareebcard.com/section/4</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://alghareebcard.com/section/5</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>`;
 
-const ROBOTS = `User-agent: *\nAllow: /\n\nSitemap: https://alghareebcard.replit.app/sitemap.xml\n`;
+const ROBOTS = `User-agent: *\nAllow: /\n\nSitemap: https://alghareebcard.com/sitemap.xml\n`;
 
 app.get("/sitemap.xml", (_req, res) => {
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
