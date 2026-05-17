@@ -60,65 +60,65 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         dir="rtl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-primary/20 bg-gradient-to-l from-primary/10 to-transparent">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="الغريب كارد" className="h-10 w-auto object-contain drop-shadow-[0_0_8px_hsl(var(--gold)/0.4)]" />
-            <span className="font-black text-lg text-gradient-gold">{t('site.name')}</span>
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-primary/20 bg-gradient-to-l from-primary/10 to-transparent flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="الغريب كارد" className="h-8 w-auto object-contain drop-shadow-[0_0_8px_hsl(var(--gold)/0.4)]" />
+            <span className="font-black text-base text-gradient-gold">{t('site.name')}</span>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* User Info Card */}
         {isSignedIn && user ? (
-          <div className="mx-4 mt-4 p-4 rounded-xl bg-purple-600/10 border border-purple-500/20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-600/20 border border-purple-500/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="mx-3 mt-2.5 p-3 rounded-xl bg-purple-600/10 border border-purple-500/20 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-purple-600/20 border border-purple-500/40 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {user.avatarUrl ? (
                   <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                  <User className="w-5 h-5 text-purple-400" />
+                  <User className="w-4 h-4 text-purple-400" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-white text-sm truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{t('sidebar.accountNumber')} {user.accountNumber}</p>
+                <p className="font-bold text-white text-xs truncate">{user.name}</p>
+                <p className="text-[10px] text-muted-foreground">{t('sidebar.accountNumber')} {user.accountNumber}</p>
               </div>
               {user.isVerified && (
-                <div title="موثق" className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Shield className="w-3.5 h-3.5 text-green-400" />
+                <div title="موثق" className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Shield className="w-3 h-3 text-green-400" />
                 </div>
               )}
             </div>
-            <div className="mt-3 pt-3 border-t border-purple-500/20 flex items-center justify-between">
+            <div className="mt-2 pt-2 border-t border-purple-500/20 flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">{t('sidebar.balance')}</p>
-                <p className="font-black text-primary text-base">
-                  {user.balance.toFixed(2)} <span className="text-xs font-semibold text-muted-foreground">{user.currency}</span>
+                <p className="text-[10px] text-muted-foreground">{t('sidebar.balance')}</p>
+                <p className="font-black text-primary text-sm">
+                  {user.balance.toFixed(2)} <span className="text-[10px] font-semibold text-muted-foreground">{user.currency}</span>
                 </p>
               </div>
               <div className="text-start">
-                <p className="text-xs text-muted-foreground">{t('sidebar.level')}</p>
-                <p className="text-sm font-semibold text-purple-300">{user.level}</p>
+                <p className="text-[10px] text-muted-foreground">{t('sidebar.level')}</p>
+                <p className="text-xs font-semibold text-purple-300">{user.level}</p>
               </div>
             </div>
           </div>
         ) : (
-          <div className="mx-4 mt-4">
-            <Link href="/sign-in" onClick={onClose} className="flex items-center justify-center gap-2 w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all">
+          <div className="mx-3 mt-2.5 flex-shrink-0">
+            <Link href="/sign-in" onClick={onClose} className="flex items-center justify-center gap-2 w-full h-9 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all text-sm">
               <LogIn className="w-4 h-4" />
               {t('sidebar.login')}
             </Link>
-            <Link href="/sign-up" onClick={onClose} className="flex items-center justify-center gap-2 w-full h-10 mt-2 border border-purple-500/30 hover:bg-purple-600/10 text-purple-300 font-semibold rounded-xl transition-all text-sm">
+            <Link href="/sign-up" onClick={onClose} className="flex items-center justify-center gap-2 w-full h-8 mt-1.5 border border-purple-500/30 hover:bg-purple-600/10 text-purple-300 font-semibold rounded-xl transition-all text-xs">
               {t('sidebar.register')}
             </Link>
           </div>
         )}
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-4 overflow-y-auto flex flex-col gap-1">
-          <p className="text-xs text-muted-foreground font-semibold px-3 mb-3 tracking-wider">{t('sidebar.mainMenu')}</p>
+        <nav className="flex-1 px-3 pt-2 pb-1 flex flex-col gap-0.5 min-h-0">
+          <p className="text-[10px] text-muted-foreground font-semibold px-2 mb-1 tracking-wider">{t('sidebar.mainMenu')}</p>
           {navLinks.map((link) => {
             const isActive = location === link.href;
             return (
@@ -126,76 +126,74 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                 key={link.href}
                 href={link.href}
                 onClick={onClose}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
                   isActive
                     ? "bg-primary/20 text-primary border border-primary/30"
                     : "text-foreground hover:bg-primary/10 hover:text-primary"
                 }`}
               >
-                <span className={isActive ? "text-primary" : "text-muted-foreground"}>{link.icon}</span>
+                <span className={`flex-shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`}>{link.icon}</span>
                 {link.label}
               </Link>
             );
           })}
-
-          {/* Language Switcher — inside scroll so always reachable */}
-          <div className="mt-4 pt-4 border-t border-primary/10">
-            <p className="text-[11px] text-muted-foreground font-semibold px-2 mb-2 tracking-wider">{t('sidebar.language')}</p>
-            <div className="grid grid-cols-4 gap-1.5">
-              {(Object.entries(LANG_META) as [LangCode, typeof LANG_META[LangCode]][]).map(([code, meta]) => (
-                <button
-                  key={code}
-                  onClick={() => setLang(code)}
-                  title={meta.name}
-                  className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-xs transition-all ${
-                    lang === code
-                      ? "bg-primary/20 border border-primary/40 text-primary font-bold"
-                      : "hover:bg-muted/40 text-muted-foreground border border-transparent"
-                  }`}
-                >
-                  <span className="text-lg leading-none">{meta.flag}</span>
-                  <span className="text-[10px] font-medium uppercase">{code}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </nav>
 
-        {/* Social / Contact Links */}
-        <div className="px-4 py-3 border-t border-primary/20 space-y-2">
-          <p className="text-[11px] text-muted-foreground font-semibold px-2 mb-1.5 tracking-wider">{t('sidebar.contactUs')}</p>
-          <div className="grid grid-cols-2 gap-2">
+        {/* Language Switcher */}
+        <div className="px-3 pt-1 pb-1 border-t border-primary/10 flex-shrink-0">
+          <div className="grid grid-cols-6 gap-1">
+            {(Object.entries(LANG_META) as [LangCode, typeof LANG_META[LangCode]][]).map(([code, meta]) => (
+              <button
+                key={code}
+                onClick={() => setLang(code)}
+                title={meta.name}
+                className={`flex flex-col items-center gap-0 py-1 px-0.5 rounded-md text-xs transition-all ${
+                  lang === code
+                    ? "bg-primary/20 border border-primary/40 text-primary font-bold"
+                    : "hover:bg-muted/40 text-muted-foreground border border-transparent"
+                }`}
+              >
+                <span className="text-base leading-none">{meta.flag}</span>
+                <span className="text-[9px] font-medium uppercase mt-0.5">{code}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Social / Contact + Logout */}
+        <div className="px-3 py-2 border-t border-primary/20 flex-shrink-0">
+          <p className="text-[10px] text-muted-foreground font-semibold px-1 mb-1 tracking-wider">{t('sidebar.contactUs')}</p>
+          <div className={`grid gap-1.5 ${isSignedIn ? "grid-cols-3" : "grid-cols-2"}`}>
             <a
               href="https://wa.me/905378221375"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-2 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 font-semibold text-sm transition-all duration-200"
+              className="flex items-center justify-center gap-1 px-1 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 font-semibold text-xs transition-all duration-200"
             >
-              <MessageCircle className="w-4 h-4" /> {t('sidebar.whatsapp')}
+              <MessageCircle className="w-3.5 h-3.5 flex-shrink-0" /> {t('sidebar.whatsapp')}
             </a>
             <a
               href="https://t.me/ahmedmuhajir"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-2 py-2 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 font-semibold text-sm transition-all duration-200"
+              className="flex items-center justify-center gap-1 px-1 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 font-semibold text-xs transition-all duration-200"
             >
-              <Send className="w-4 h-4" /> {t('sidebar.telegram')}
+              <Send className="w-3.5 h-3.5 flex-shrink-0" /> {t('sidebar.telegram')}
             </a>
+            {isSignedIn && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-1 px-1 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-semibold text-xs transition-all duration-200"
+              >
+                <LogOut className="w-3.5 h-3.5 flex-shrink-0" /> {t('sidebar.logout')}
+              </button>
+            )}
           </div>
-
-          {isSignedIn && (
-            <button
-              onClick={handleLogout}
-              className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-semibold text-sm transition-all duration-200"
-            >
-              <LogOut className="w-4 h-4" /> {t('sidebar.logout')}
-            </button>
-          )}
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-primary/10 text-center">
-          <p className="text-xs text-muted-foreground">{t('footer.copyright')}</p>
+        <div className="px-4 py-1.5 border-t border-primary/10 text-center flex-shrink-0">
+          <p className="text-[10px] text-muted-foreground">{t('footer.copyright')}</p>
         </div>
       </div>
     </>
