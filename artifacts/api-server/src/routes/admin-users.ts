@@ -294,13 +294,16 @@ router.put("/admin/identities/:id/approve", requireAdmin, async (req: Request, r
   const { id } = req.params;
   const { adminNote } = req.body ?? {};
   try {
-    const iv = await pool.query("SELECT user_id FROM identity_verifications WHERE id=$1", [id]);
+    const iv = await pool.query("SELECT user_id, full_name FROM identity_verifications WHERE id=$1", [id]);
     if (iv.rows.length === 0) { res.status(404).json({ error: "الطلب غير موجود" }); return; }
     await pool.query(
       "UPDATE identity_verifications SET status='approved', admin_note=$1, updated_at=NOW() WHERE id=$2",
       [adminNote || null, id]
     );
-    await pool.query("UPDATE users SET is_verified=true, updated_at=NOW() WHERE id=$1", [iv.rows[0].user_id]);
+    await pool.query(
+      "UPDATE users SET is_verified=true, name=$1, updated_at=NOW() WHERE id=$2",
+      [iv.rows[0].full_name, iv.rows[0].user_id]
+    );
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
