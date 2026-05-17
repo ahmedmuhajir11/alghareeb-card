@@ -11,4 +11,10 @@ title = "ملف الترجمة — AlGhareeb Card"
 id = "3hOot_c0kCAkq9I1QzmVH"
 uri = "file://artifacts/alghareeb-card/public/logo.png"
 type = "image"
-title = "شعار الغريب كارد (بدون خلفية)"
+title = "شعار القائمة والناف بار (بدون خلفية)"
+
+[[outputs]]
+id = "vnYygEqmT95PpZ1UaHmXJ"
+uri = "file://artifacts/alghareeb-card/public/loading-logo.png"
+type = "image"
+title = "شعار شاشة التحميل (بدون خلفية)"
