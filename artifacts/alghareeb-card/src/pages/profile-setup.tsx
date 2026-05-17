@@ -11,19 +11,19 @@ import { Lock, User, Phone, Globe, Coins } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-const CURRENCIES = [
-  { value: "USD", label: "دولار أمريكي", symbol: "$" },
-  { value: "EUR", label: "يورو", symbol: "€" },
-  { value: "TRY", label: "ليرة تركية", symbol: "₺" },
-  { value: "SYP", label: "ليرة سورية", symbol: "ل.س" },
-  { value: "OMR", label: "ريال عماني", symbol: "ر.ع" },
-  { value: "MAD", label: "درهم مغربي", symbol: "د.م" },
-  { value: "DZD", label: "دينار جزائري", symbol: "د.ج" },
-  { value: "ILS", label: "شيكل", symbol: "₪" },
-  { value: "IQD", label: "دينار عراقي", symbol: "ع.د" },
-  { value: "SAR", label: "ريال سعودي", symbol: "ر.س" },
-  { value: "EGP", label: "جنيه مصري", symbol: "ج.م" },
-  { value: "JOD", label: "دينار أردني", symbol: "د.أ" },
+const CURRENCIES_FALLBACK = [
+  { value: "USD", label: "دولار أمريكي" },
+  { value: "EUR", label: "يورو" },
+  { value: "TRY", label: "ليرة تركية" },
+  { value: "SYP", label: "ليرة سورية" },
+  { value: "OMR", label: "ريال عماني" },
+  { value: "MAD", label: "درهم مغربي" },
+  { value: "DZD", label: "دينار جزائري" },
+  { value: "ILS", label: "شيكل" },
+  { value: "IQD", label: "دينار عراقي" },
+  { value: "SAR", label: "ريال سعودي" },
+  { value: "EGP", label: "جنيه مصري" },
+  { value: "JOD", label: "دينار أردني" },
 ];
 
 const COUNTRY_CURRENCY: Record<string, string> = {
@@ -141,6 +141,18 @@ export default function ProfileSetupPage() {
   const [currency, setCurrency] = useState("");
   const [saving, setSaving] = useState(false);
   const [currencyLocked, setCurrencyLocked] = useState(false);
+  const [currencies, setCurrencies] = useState<{ value: string; label: string }[]>(CURRENCIES_FALLBACK);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/currencies`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCurrencies(data.map((c: any) => ({ value: c.code, label: c.nameAr })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -305,11 +317,10 @@ export default function ProfileSetupPage() {
                 <SelectValue placeholder={t('profile.selectCurrency')} />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a2e] border-purple-500/30">
-                {CURRENCIES.map(c => (
+                {currencies.map(c => (
                   <SelectItem key={c.value} value={c.value} className="text-white hover:bg-purple-600/20 focus:bg-purple-600/20">
                     <span className="flex items-center gap-2">
-                      <span className="font-bold text-purple-400">{c.symbol}</span>
-                      <span>{c.value}</span>
+                      <span className="font-bold text-purple-400">{c.value}</span>
                       <span className="text-muted-foreground text-xs">— {c.label}</span>
                     </span>
                   </SelectItem>

@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown, BadgeCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -38,6 +38,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
           { href: "/wallet", label: t('sidebar.myWallet'), icon: <Wallet className="w-5 h-5" /> },
           { href: "/level", label: t('sidebar.myLevel'), icon: <Trophy className="w-5 h-5" /> },
           { href: "/orders", label: t('sidebar.myOrders'), icon: <ShoppingBag className="w-5 h-5" /> },
+          { href: "/kyc", label: t('sidebar.verifyAccount'), icon: <BadgeCheck className="w-5 h-5" /> },
         ]
       : []),
     { href: "/about", label: t('sidebar.aboutUs'), icon: <Info className="w-5 h-5" /> },
@@ -87,8 +88,8 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                 <p className="text-[10px] text-muted-foreground">{t('sidebar.accountNumber')} {user.accountNumber}</p>
               </div>
               {user.isVerified && (
-                <div title="موثق" className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Shield className="w-3 h-3 text-green-400" />
+                <div title="حساب موثّق">
+                  <BadgeCheck className="w-5 h-5 text-blue-400" />
                 </div>
               )}
             </div>

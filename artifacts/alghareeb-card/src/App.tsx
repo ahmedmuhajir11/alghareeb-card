@@ -27,6 +27,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
 import ProfileSetupPage from "@/pages/profile-setup";
+import KycPage from "@/pages/kyc";
 import AppLayout from "@/components/layout/AppLayout";
 import AdminLayout from "@/components/layout/AdminLayout";
 
@@ -68,6 +69,9 @@ function Router() {
       </Route>
       <Route path="/level">
         <AppLayout><LevelPage /></AppLayout>
+      </Route>
+      <Route path="/kyc">
+        <KycPage />
       </Route>
 
       <Route path="/section/:id">

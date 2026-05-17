@@ -18,6 +18,7 @@ import walletRouter from "./wallet";
 import ordersUserRouter from "./orders-user";
 import levelRouter from "./level";
 import searchRouter from "./search";
+import currenciesRouter from "./currencies";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(walletRouter);
 router.use(ordersUserRouter);
 router.use(levelRouter);
 router.use(searchRouter);
+router.use(currenciesRouter);
 
 export default router;

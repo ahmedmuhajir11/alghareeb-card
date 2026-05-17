@@ -174,11 +174,15 @@ router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Resp
 
       let amountToCredit = sentAmount;
       if (sentCurrency !== userCurrency) {
-        const settingsRes = await client.query(`SELECT * FROM settings LIMIT 1`);
-        const converted = convertCurrency(sentAmount, sentCurrency, userCurrency, settingsRes.rows[0]);
+        const currRates = await client.query("SELECT code, usd_rate FROM currencies");
+        const rMap: Record<string, number> = { USD: 1 };
+        for (const row of currRates.rows) rMap[row.code] = parseFloat(row.usd_rate);
+        const fromRate = rMap[sentCurrency] ?? null;
+        const toRate = rMap[userCurrency] ?? null;
+        const converted = (fromRate && toRate && isFinite(sentAmount)) ? (sentAmount / fromRate) * toRate : null;
         if (converted === null || !isFinite(converted) || converted <= 0) {
           await client.query("ROLLBACK");
-          res.status(400).json({ error: `تعذّر تحويل ${sentCurrency} إلى ${userCurrency}. تأكّد من أسعار الصرف في الإعدادات.` });
+          res.status(400).json({ error: `تعذّر تحويل ${sentCurrency} إلى ${userCurrency}. تأكّد من أسعار الصرف في إدارة العملات.` });
           return;
         }
         amountToCredit = converted;

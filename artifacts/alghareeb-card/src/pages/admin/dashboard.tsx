@@ -9,7 +9,9 @@ import TickerManager from "@/components/admin/TickerManager";
 import DepositsManager from "@/components/admin/DepositsManager";
 import OrdersManager from "@/components/admin/OrdersManager";
 import UsersManager from "@/components/admin/UsersManager";
-import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users } from "lucide-react";
+import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users, BadgeCheck } from "lucide-react";
+import IdentitiesManager from "@/components/admin/IdentitiesManager";
+import CurrenciesManager from "@/components/admin/CurrenciesManager";
 
 const TAB_CLASS = "flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-colors";
 
@@ -25,7 +27,7 @@ export default function AdminDashboard() {
 
       <Tabs defaultValue="orders" className="w-full">
         <div className="overflow-x-auto pb-1">
-          <TabsList className="flex w-max min-w-full md:grid md:grid-cols-9 bg-card border border-primary/20 h-auto p-1 gap-1">
+          <TabsList className="flex w-max min-w-full md:grid md:grid-cols-10 bg-card border border-primary/20 h-auto p-1 gap-1">
             <TabsTrigger value="orders" className={TAB_CLASS}>
               <ShoppingBag className="w-4 h-4 flex-shrink-0" />
               طلبات الشحن
@@ -57,6 +59,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="notifications" className={TAB_CLASS}>
               <Bell className="w-4 h-4 flex-shrink-0" />
               إرسال إشعار
+            </TabsTrigger>
+            <TabsTrigger value="identities" className={TAB_CLASS}>
+              <BadgeCheck className="w-4 h-4 flex-shrink-0" />
+              التوثيق
             </TabsTrigger>
             <TabsTrigger value="settings" className={TAB_CLASS}>
               <Settings className="w-4 h-4 flex-shrink-0" />
@@ -113,9 +119,19 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="settings" className="mt-6">
+        <TabsContent value="identities" className="mt-6">
           <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm">
+            <IdentitiesManager />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-6">
+          <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm space-y-8">
             <SettingsManager />
+            <div className="border-t border-border/40 pt-6">
+              <h3 className="text-base font-bold mb-4">إدارة العملات وأسعار الصرف</h3>
+              <CurrenciesManager />
+            </div>
           </div>
         </TabsContent>
       </Tabs>

@@ -5,23 +5,6 @@ import { sendPushToAdmins } from "./push";
 
 const router: IRouter = Router();
 
-const SUPPORTED_CURRENCIES = ["USD", "EUR", "TRY", "SYP", "OMR", "MAD", "DZD", "ILS", "IQD", "SAR"] as const;
-type Currency = typeof SUPPORTED_CURRENCIES[number];
-
-function ratesFromSettings(settings: any): Record<Currency, number> {
-  return {
-    USD: 1,
-    EUR: parseFloat(settings.usd_to_eur),
-    TRY: parseFloat(settings.usd_to_try),
-    SYP: parseFloat(settings.usd_to_syp),
-    OMR: parseFloat(settings.usd_to_omr),
-    MAD: parseFloat(settings.usd_to_mad),
-    DZD: parseFloat(settings.usd_to_dzd),
-    ILS: parseFloat(settings.usd_to_ils),
-    IQD: parseFloat(settings.usd_to_iqd),
-    SAR: parseFloat(settings.usd_to_sar),
-  };
-}
 
 // Create new order: server computes price from canonical item/package data
 router.post("/orders", requireUser, async (req: Request, res: Response): Promise<void> => {
@@ -98,27 +81,19 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       return;
     }
 
-    // Convert USD → user's currency using server-side rates
-    const userCurrency = (user.currency || "USD") as Currency;
-    if (!SUPPORTED_CURRENCIES.includes(userCurrency)) {
-      await client.query("ROLLBACK");
-      res.status(400).json({ error: "عملة المستخدم غير مدعومة" });
-      return;
-    }
-    const settingsRes = await client.query(`SELECT * FROM settings ORDER BY id LIMIT 1`);
-    if (settingsRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      res.status(500).json({ error: "إعدادات أسعار الصرف غير موجودة" });
-      return;
-    }
-    const rates = ratesFromSettings(settingsRes.rows[0]);
+    // Convert USD → user's currency using currencies table
+    const userCurrency = (user.currency || "USD").toUpperCase();
+    const currenciesRes = await client.query("SELECT code, usd_rate FROM currencies");
+    const rates: Record<string, number> = { USD: 1 };
+    for (const row of currenciesRes.rows) rates[row.code] = parseFloat(row.usd_rate);
     const rate = rates[userCurrency];
     if (!rate || isNaN(rate)) {
       await client.query("ROLLBACK");
-      res.status(500).json({ error: "سعر الصرف غير محدد" });
+      res.status(400).json({ error: `سعر الصرف غير محدد لعملة ${userCurrency}. يرجى التواصل مع الإدارة.` });
       return;
     }
-    const cost = +(priceUsd * rate).toFixed(userCurrency === "SYP" || userCurrency === "DZD" || userCurrency === "IQD" ? 0 : userCurrency === "OMR" ? 3 : 2);
+    const isHighUnit = ["SYP", "DZD", "IQD"].includes(userCurrency);
+    const cost = +(priceUsd * rate).toFixed(isHighUnit ? 0 : userCurrency === "OMR" ? 3 : 2);
 
     // Lock balance + check
     const u = await client.query("SELECT balance FROM users WHERE id=$1 FOR UPDATE", [user.id]);
