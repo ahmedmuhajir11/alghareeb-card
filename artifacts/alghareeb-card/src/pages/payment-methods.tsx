@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { Copy, Check, Download, ZoomIn, ChevronDown, ChevronUp, AlertTriangle, Lock, ShieldCheck, BadgeCheck, Upload, Send, Image as ImageIcon, ArrowDown } from "lucide-react";
+import { Copy, Check, Download, ZoomIn, ChevronDown, AlertTriangle, Lock, ShieldCheck, BadgeCheck, Upload, Send, Image as ImageIcon, ArrowDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -257,7 +256,7 @@ function QRSection({ url, name }: { url: string; name: string }) {
   );
 }
 
-function DepositForm({ method }: { method: PaymentMethod }) {
+function DepositForm({ method, compact = false }: { method: PaymentMethod; compact?: boolean }) {
   const { lang, t } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const methodName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
@@ -363,17 +362,19 @@ function DepositForm({ method }: { method: PaymentMethod }) {
     }
   }
 
+  const inp = compact ? "h-8" : "h-10";
+
   return (
-    <form onSubmit={handleSubmit} className="bg-purple-500/5 border border-purple-500/30 rounded-xl p-4 space-y-3">
-      <div className="flex items-center gap-2 mb-1">
+    <form onSubmit={handleSubmit} className={`bg-purple-500/5 border border-purple-500/30 rounded-xl ${compact ? "p-3 space-y-2" : "p-4 space-y-3"}`}>
+      <div className="flex items-center gap-2">
         <Send className="w-4 h-4 text-purple-400" />
         <span className="text-sm font-bold text-purple-300">{t('payment.depositFormTitle')}</span>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">{t('payment.sentCurrency')}</Label>
         {lockedCurrency ? (
-          <div className="bg-background/60 h-10 rounded-md border border-input flex items-center px-3 gap-2">
+          <div className={`bg-background/60 ${inp} rounded-md border border-input flex items-center px-3 gap-2`}>
             <Lock className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
             <span className="font-bold text-sm flex-1">
               {CURRENCY_LABEL_AR[lockedCurrency] ?? lockedCurrency} ({lockedCurrency})
@@ -381,7 +382,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
           </div>
         ) : (
           <Select value={freeCurrency} onValueChange={setFreeCurrency}>
-            <SelectTrigger className="bg-background/60 h-10 font-bold">
+            <SelectTrigger className={`bg-background/60 ${inp} font-bold`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -396,20 +397,20 @@ function DepositForm({ method }: { method: PaymentMethod }) {
       </div>
 
       {method.requireSenderName && (
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">{t('payment.senderName')}</Label>
           <Input
             type="text"
             placeholder={t('payment.senderPh')}
             value={senderName}
             onChange={e => setSenderName(e.target.value)}
-            className="bg-background/60 h-10 font-bold"
+            className={`bg-background/60 ${inp} font-bold`}
             dir="rtl"
           />
         </div>
       )}
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">
           {t('payment.amountLabel')} ({sentCurrency})
         </Label>
@@ -421,11 +422,11 @@ function DepositForm({ method }: { method: PaymentMethod }) {
           placeholder={t('payment.amountPh')}
           value={amount}
           onChange={e => setAmount(e.target.value)}
-          className="bg-background/60 h-10 text-center font-bold"
+          className={`bg-background/60 ${inp} text-center font-bold`}
           dir="ltr"
         />
         {convertedToAccount !== null && (
-          <div className="mt-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2 flex items-center justify-between gap-2">
+          <div className="rounded-lg bg-primary/10 border border-primary/30 px-3 py-1.5 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <ArrowDown className="w-3 h-3 text-primary" />
               <span>{t('payment.addedToBalance')}</span>
@@ -440,9 +441,9 @@ function DepositForm({ method }: { method: PaymentMethod }) {
         )}
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">{t('payment.receiptLabel')}</Label>
-        <label className="flex items-center justify-center gap-2 cursor-pointer h-20 rounded-lg border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-background/40 transition-colors">
+        <label className={`flex items-center justify-center gap-2 cursor-pointer ${compact ? "h-14" : "h-20"} rounded-lg border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-background/40 transition-colors`}>
           <input
             type="file"
             accept="image/*"
@@ -471,47 +472,78 @@ function DepositForm({ method }: { method: PaymentMethod }) {
         {submitting ? t('payment.sending') : t('payment.sendDeposit')}
       </Button>
 
-      <p className="text-[11px] text-muted-foreground text-center">
-        {t('payment.depositNote')}
-      </p>
+      {!compact && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          {t('payment.depositNote')}
+        </p>
+      )}
     </form>
   );
 }
 
-function PaymentCard({ method }: { method: PaymentMethod }) {
-  const [open, setOpen] = useState(false);
-  const { lang, t } = useI18n();
+function PaymentCard({ method, onSelect }: { method: PaymentMethod; onSelect: () => void }) {
+  const { lang } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
   const subName = isRtlLang ? method.nameEn : method.nameAr;
   return (
-    <Card className={`overflow-hidden transition-all duration-300 ${open ? "neon-border" : "border-border/50 bg-card/30 hover:border-primary/40"}`}>
-      <button
-        className="w-full p-4 flex items-center justify-between gap-3 text-right"
-        onClick={() => setOpen(!open)}
-      >
-        <div className="flex items-center gap-3">
-          {method.flagEmoji?.startsWith("http") || method.flagEmoji?.startsWith("/") ? (
-            <img src={method.flagEmoji} alt="" className="w-10 h-10 object-contain rounded-lg flex-shrink-0" />
-          ) : (
-            <span className="text-3xl leading-none">{method.flagEmoji}</span>
-          )}
-          <div className="text-right">
-            <h3 className="font-bold text-base">{displayName}</h3>
-            <p className="text-xs text-muted-foreground">{subName}</p>
+    <button
+      onClick={onSelect}
+      className="w-full text-right flex items-center gap-3 p-4 border border-border/50 bg-card/30 hover:border-primary/40 hover:bg-card/60 rounded-2xl transition-colors"
+    >
+      {method.flagEmoji?.startsWith("http") || method.flagEmoji?.startsWith("/") ? (
+        <img src={method.flagEmoji} alt="" className="w-10 h-10 object-contain rounded-lg flex-shrink-0" />
+      ) : (
+        <span className="text-3xl leading-none flex-shrink-0">{method.flagEmoji}</span>
+      )}
+      <div className="flex-1 text-right min-w-0">
+        <h3 className="font-bold text-base">{displayName}</h3>
+        <p className="text-xs text-muted-foreground">{subName}</p>
+      </div>
+      <ChevronDown className="w-5 h-5 text-muted-foreground flex-shrink-0 -rotate-90" />
+    </button>
+  );
+}
+
+function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: () => void }) {
+  const { lang, t } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
+  const subName = isRtlLang ? method.nameEn : method.nameAr;
+
+  return (
+    <div>
+      {/* Sticky header */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-primary/20 -mx-4 px-4 mb-4">
+        <div className="max-w-2xl mx-auto py-2.5 flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 rounded-full bg-card border border-border/50 flex items-center justify-center hover:border-primary/40 hover:bg-primary/10 transition-colors flex-shrink-0"
+          >
+            <ChevronDown className="w-4 h-4 rotate-90" />
+          </button>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {method.flagEmoji?.startsWith("http") || method.flagEmoji?.startsWith("/") ? (
+              <img src={method.flagEmoji} alt="" className="w-8 h-8 object-contain rounded-lg flex-shrink-0" />
+            ) : (
+              <span className="text-2xl leading-none flex-shrink-0">{method.flagEmoji}</span>
+            )}
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-tight truncate">{displayName}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{subName}</p>
+            </div>
           </div>
         </div>
-        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${open ? "bg-primary/20 text-primary" : "bg-card text-muted-foreground"}`}>
-          {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </div>
-      </button>
+      </div>
 
-      {open && (
-        <CardContent className="pt-0 px-4 pb-4 space-y-4 border-t border-primary/20">
-          <div className="space-y-3 pt-4">
+      {/* Compact content */}
+      <div className="max-w-2xl mx-auto space-y-3">
+        {/* Fields */}
+        {method.fields.length > 0 && (
+          <div className="space-y-2">
             {method.fields.map((field, i) => (
-              <div key={i} className="bg-background/50 rounded-xl p-3 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">{translateFieldLabel(field.label, lang)}</p>
+              <div key={i} className="bg-background/50 rounded-xl p-2.5 border border-border/50">
+                <p className="text-[11px] text-muted-foreground mb-0.5">{translateFieldLabel(field.label, lang)}</p>
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-mono text-sm font-semibold break-all" dir="ltr">{field.value}</p>
                   {field.isCopyable && <CopyButton value={field.value} />}
@@ -519,33 +551,30 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
               </div>
             ))}
           </div>
+        )}
 
-          {method.qrImageUrl && <QRSection url={method.qrImageUrl} name={method.nameEn} />}
+        {/* QR */}
+        {method.qrImageUrl && <QRSection url={method.qrImageUrl} name={method.nameEn} />}
 
-          {method.notes.length > 0 && (
-            <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 space-y-1">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                <span className="text-sm font-bold text-yellow-400">{t('payment.notice')}</span>
-              </div>
-              {method.notes.map((note, i) => {
-                const parts = note.split('||');
-                const displayNote = parts.length >= 2
-                  ? (isRtlLang ? parts[0].trim() : parts[1].trim())
-                  : note;
-                return (
-                  <p key={i} className="text-xs text-muted-foreground">
-                    ({i + 1})- {displayNote}
-                  </p>
-                );
-              })}
+        {/* Notes */}
+        {method.notes.length > 0 && (
+          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-2.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+              <span className="text-xs font-bold text-yellow-400">{t('payment.notice')}</span>
             </div>
-          )}
+            {method.notes.map((note, i) => {
+              const parts = note.split('||');
+              const displayNote = parts.length >= 2 ? (isRtlLang ? parts[0].trim() : parts[1].trim()) : note;
+              return <p key={i} className="text-xs text-muted-foreground">({i + 1})- {displayNote}</p>;
+            })}
+          </div>
+        )}
 
-          <DepositForm method={method} />
-        </CardContent>
-      )}
-    </Card>
+        {/* Deposit form — compact */}
+        <DepositForm method={method} compact />
+      </div>
+    </div>
   );
 }
 
@@ -553,6 +582,11 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
 export default function PaymentMethodsPage() {
   const { data: methods, isLoading } = useFetchPaymentMethods();
   const { t } = useI18n();
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+
+  if (selectedMethod) {
+    return <MethodDetailView method={selectedMethod} onBack={() => setSelectedMethod(null)} />;
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -615,7 +649,7 @@ export default function PaymentMethodsPage() {
       ) : (
         <div className="space-y-3">
           {methods.map(method => (
-            <PaymentCard key={method.id} method={method} />
+            <PaymentCard key={method.id} method={method} onSelect={() => setSelectedMethod(method)} />
           ))}
         </div>
       )}
