@@ -117,6 +117,10 @@ export default function KycPage() {
       toast({ variant: "destructive", title: "الاسم الكامل ورقم الهوية مطلوبان" });
       return;
     }
+    if (!idFrontFile || !idBackFile || !selfieFile) {
+      toast({ variant: "destructive", title: "الصور مطلوبة", description: "يجب إرفاق صورة الوجه الأمامي والخلفي للهوية وصورة السيلفي" });
+      return;
+    }
     setSubmitting(true);
     try {
       const formData = new FormData();
@@ -253,22 +257,22 @@ export default function KycPage() {
             </div>
 
             <div className="border-t border-border/40 pt-4">
-              <p className="text-sm text-muted-foreground mb-4">الصور المطلوبة (يمكن إرسال الطلب بدونها ولكن يُنصح بإرفاقها)</p>
+              <p className="text-sm text-muted-foreground mb-4">الصور مطلوبة لإتمام طلب التوثيق</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FileUploadField
-                  label="الوجه الأمامي للهوية"
+                  label="الوجه الأمامي للهوية *"
                   name="idPhotoFront"
                   preview={idFrontPreview}
                   onFile={f => handleFile(f, setIdFrontFile, setIdFrontPreview)}
                 />
                 <FileUploadField
-                  label="الوجه الخلفي للهوية"
+                  label="الوجه الخلفي للهوية *"
                   name="idPhotoBack"
                   preview={idBackPreview}
                   onFile={f => handleFile(f, setIdBackFile, setIdBackPreview)}
                 />
                 <FileUploadField
-                  label="صورة شخصية مع الهوية"
+                  label="صورة سيلفي وأنت تحمل الهوية *"
                   name="selfie"
                   preview={selfiePreview}
                   onFile={f => handleFile(f, setSelfieFile, setSelfiePreview)}
