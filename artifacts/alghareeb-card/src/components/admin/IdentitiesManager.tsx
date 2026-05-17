@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Eye, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Check, X, Eye, ChevronDown, ChevronUp, Loader2, Download } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -52,13 +52,53 @@ const STATUS_VARIANT: Record<IdentityStatus, "default" | "secondary" | "destruct
   rejected: "destructive",
 };
 
-function PhotoLink({ url, label }: { url?: string; label: string }) {
+function PhotoViewer({ url, label }: { url?: string; label: string }) {
+  const [open, setOpen] = useState(false);
   if (!url) return null;
+
+  function handleDownload() {
+    const a = document.createElement("a");
+    a.href = url!;
+    a.download = `${label}.jpg`;
+    a.click();
+  }
+
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-      <Eye className="w-3 h-3" />{label}
-    </a>
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+      >
+        <Eye className="w-3 h-3" />{label}
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 gap-3"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="relative max-w-lg w-full"
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-white text-sm font-bold mb-2 text-center">{label}</p>
+            <img
+              src={url}
+              alt={label}
+              className="w-full rounded-xl object-contain max-h-[70vh] bg-white"
+            />
+            <div className="flex gap-2 mt-3 justify-center">
+              <Button size="sm" variant="secondary" onClick={handleDownload} className="gap-1">
+                <Download className="w-4 h-4" /> تحميل
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => setOpen(false)}>
+                إغلاق
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -117,9 +157,9 @@ function IdentityRow({ identity, onUpdate }: { identity: Identity; onUpdate: () 
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <PhotoLink url={identity.idPhotoFrontUrl} label="الوجه الأمامي" />
-            <PhotoLink url={identity.idPhotoBackUrl} label="الوجه الخلفي" />
-            <PhotoLink url={identity.selfieUrl} label="صورة مع الهوية" />
+            <PhotoViewer url={identity.idPhotoFrontUrl} label="الوجه الأمامي" />
+            <PhotoViewer url={identity.idPhotoBackUrl} label="الوجه الخلفي" />
+            <PhotoViewer url={identity.selfieUrl} label="صورة مع الهوية" />
           </div>
 
           {identity.status === "pending" && (
