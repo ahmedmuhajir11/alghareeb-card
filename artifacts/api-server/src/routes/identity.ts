@@ -1,39 +1,21 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { randomUUID } from "crypto";
 import { pool } from "@workspace/db";
 import { requireUser } from "../middleware/requireUser";
-import { objectStorageClient } from "../lib/objectStorage";
 
 const router: IRouter = Router();
 
-const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || "";
-const USE_OBJECT_STORAGE = !!BUCKET_ID;
-const LOCAL_UPLOADS_DIR = "/tmp/uploads";
-if (!USE_OBJECT_STORAGE) fs.mkdirSync(LOCAL_UPLOADS_DIR, { recursive: true });
-
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp"];
     allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Only images allowed"));
   },
 });
 
-async function saveFile(buffer: Buffer, mimetype: string, originalname: string): Promise<string> {
-  const ext = path.extname(originalname) || ".jpg";
-  const filename = `${randomUUID()}${ext}`;
-  if (USE_OBJECT_STORAGE) {
-    const objectName = `uploads/${filename}`;
-    const bucket = objectStorageClient.bucket(BUCKET_ID);
-    await bucket.file(objectName).save(buffer, { contentType: mimetype, resumable: false });
-  } else {
-    fs.writeFileSync(path.join(LOCAL_UPLOADS_DIR, filename), buffer);
-  }
-  return `/api/uploads/${filename}`;
+function toBase64DataUrl(buffer: Buffer, mimetype: string): string {
+  return `data:${mimetype};base64,${buffer.toString("base64")}`;
 }
 
 router.get("/identity", requireUser, async (req: Request, res: Response): Promise<void> => {
@@ -99,15 +81,15 @@ router.post(
 
       if (files?.idPhotoFront?.[0]) {
         const f = files.idPhotoFront[0];
-        idPhotoFrontUrl = await saveFile(f.buffer, f.mimetype, f.originalname);
+        idPhotoFrontUrl = toBase64DataUrl(f.buffer, f.mimetype);
       }
       if (files?.idPhotoBack?.[0]) {
         const f = files.idPhotoBack[0];
-        idPhotoBackUrl = await saveFile(f.buffer, f.mimetype, f.originalname);
+        idPhotoBackUrl = toBase64DataUrl(f.buffer, f.mimetype);
       }
       if (files?.selfie?.[0]) {
         const f = files.selfie[0];
-        selfieUrl = await saveFile(f.buffer, f.mimetype, f.originalname);
+        selfieUrl = toBase64DataUrl(f.buffer, f.mimetype);
       }
 
       if (existing.rows.length > 0) {
