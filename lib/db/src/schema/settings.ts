@@ -19,6 +19,7 @@ export const settingsTable = pgTable("settings", {
   whatsappNumber: text("whatsapp_number").notNull().default("00905378221375"),
   moneyTransferCurrencies: text("money_transfer_currencies").notNull().default("دولار,ليرة تركية,يورو,سوري"),
   welcomeMessage: text("welcome_message").notNull().default("تنبيه هام: قبل إرسال أي مبلغ، تأكد دائماً من بيانات طريقة الدفع الحالية في صفحة (إضافة رصيد). معلومات الدفع قد تتغير في أي وقت، لا ترسل لأي بيانات قديمة محفوظة عندك."),
+  welcomeMessageEn: text("welcome_message_en").notNull().default("Important: Before sending any amount, always verify the current payment method details on the (Add Balance) page. Payment information may change at any time — never send to old saved details."),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 

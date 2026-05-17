@@ -30,6 +30,7 @@ async function runMigrations() {
     `ALTER TABLE settings ADD COLUMN IF NOT EXISTS usd_to_ils DOUBLE PRECISION NOT NULL DEFAULT 3.7`,
     `ALTER TABLE settings ADD COLUMN IF NOT EXISTS usd_to_iqd DOUBLE PRECISION NOT NULL DEFAULT 1310.0`,
     `ALTER TABLE settings ADD COLUMN IF NOT EXISTS usd_to_sar DOUBLE PRECISION NOT NULL DEFAULT 3.75`,
+    `ALTER TABLE settings ADD COLUMN IF NOT EXISTS welcome_message_en TEXT NOT NULL DEFAULT 'Important: Before sending any amount, always verify the current payment method details on the (Add Balance) page. Payment information may change at any time — never send to old saved details.'`,
   ];
   for (const sql of migrations) {
     try {

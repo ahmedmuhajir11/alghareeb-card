@@ -9,7 +9,8 @@ const STORAGE_KEY = "welcome_modal_shown";
 
 export default function WelcomeModal() {
   const { isSignedIn } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const { data: settings } = useGetSettings();
   const [open, setOpen] = useState(false);
 
@@ -26,14 +27,16 @@ export default function WelcomeModal() {
     setOpen(false);
   };
 
-  const message = settings?.welcomeMessage;
+  const messageAr = settings?.welcomeMessage;
+  const messageEn = (settings as any)?.welcomeMessageEn;
+  const message = isRtlLang ? messageAr : (messageEn || messageAr);
 
   if (!open || !message) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-[#0e0e1f] shadow-[0_0_40px_hsl(40_80%_50%/0.15)] p-6" dir="rtl">
+      <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-[#0e0e1f] shadow-[0_0_40px_hsl(40_80%_50%/0.15)] p-6" dir={isRtlLang ? "rtl" : "ltr"}>
         <button
           onClick={handleClose}
           className="absolute top-3 start-3 p-1.5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
