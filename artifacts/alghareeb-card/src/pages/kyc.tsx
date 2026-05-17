@@ -100,7 +100,7 @@ export default function KycPage() {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
+        const img = document.createElement('img');
         img.onload = () => {
           let { width, height } = img;
           if (width > maxPx || height > maxPx) {

@@ -169,6 +169,7 @@ type PaymentMethod = {
   qrImageUrl: string | null;
   notes: string[];
   requireSenderName: boolean;
+  requireKyc: boolean;
   sortOrder: number;
   allowedCurrencies?: string;
 };
@@ -508,9 +509,12 @@ function PaymentCard({ method, onSelect }: { method: PaymentMethod; onSelect: ()
 
 function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: () => void }) {
   const { lang, t } = useI18n();
+  const { user, isSignedIn } = useAuth();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
   const subName = isRtlLang ? method.nameEn : method.nameAr;
+
+  const kycBlocked = method.requireKyc && isSignedIn && !user?.isVerified;
 
   return (
     <div>
@@ -537,8 +541,31 @@ function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: (
         </div>
       </div>
 
-      {/* Compact content */}
-      <div className="max-w-2xl mx-auto space-y-3">
+      {/* KYC Lock Block */}
+      {kycBlocked && (
+        <div className="max-w-2xl mx-auto">
+          <div className="rounded-2xl border border-orange-500/40 bg-orange-500/5 p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-orange-400" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-bold text-lg text-orange-300">التحقق من الهوية مطلوب</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                لا يمكنك رؤية تفاصيل الدفع (الآيبان وبيانات الحساب) إلا بعد التحقق من هويتك.
+              </p>
+            </div>
+            <Link href="/kyc">
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white font-bold gap-2 w-full max-w-xs">
+                <ShieldCheck className="w-4 h-4" />
+                توثيق الحساب الآن
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Compact content — hidden when KYC blocked */}
+      {!kycBlocked && <div className="max-w-2xl mx-auto space-y-3">
         {/* Fields */}
         {method.fields.length > 0 && (
           <div className="space-y-2">
@@ -574,7 +601,7 @@ function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: (
 
         {/* Deposit form — compact */}
         <DepositForm method={method} compact />
-      </div>
+      </div>}
     </div>
   );
 }

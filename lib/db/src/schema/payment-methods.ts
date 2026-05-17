@@ -9,6 +9,7 @@ export const paymentMethodsTable = pgTable("payment_methods", {
   qrImageUrl: text("qr_image_url"),
   notes: json("notes").notNull().default([]),
   requireSenderName: boolean("require_sender_name").notNull().default(false),
+  requireKyc: boolean("require_kyc").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   allowedCurrencies: text("allowed_currencies").notNull().default(""),

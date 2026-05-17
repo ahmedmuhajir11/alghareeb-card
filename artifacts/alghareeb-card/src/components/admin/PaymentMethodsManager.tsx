@@ -19,6 +19,7 @@ type PaymentMethod = {
   qrImageUrl: string | null;
   notes: string[];
   requireSenderName: boolean;
+  requireKyc: boolean;
   isActive: boolean;
   sortOrder: number;
   allowedCurrencies: string;
@@ -52,10 +53,14 @@ function usePaymentMethods() {
   });
 }
 
+function isTurkeyMethod(nameAr: string, nameEn: string): boolean {
+  return nameAr.includes("تركي") || nameAr.includes("تركيا") || nameEn.toLowerCase().includes("turk");
+}
+
 const emptyForm = () => ({
   nameAr: "", nameEn: "", flagEmoji: "🌍",
   fields: [{ label: "", value: "", isCopyable: true }] as PaymentField[],
-  qrImageUrl: "", notes: [""], requireSenderName: false, isActive: true, sortOrder: 0,
+  qrImageUrl: "", notes: [""], requireSenderName: false, requireKyc: false, isActive: true, sortOrder: 0,
   allowedCurrencies: "",
 });
 
@@ -155,6 +160,7 @@ export default function PaymentMethodsManager() {
       qrImageUrl: m.qrImageUrl ?? "",
       notes: m.notes.length ? m.notes : [""],
       requireSenderName: m.requireSenderName ?? false,
+      requireKyc: m.requireKyc ?? false,
       isActive: m.isActive, sortOrder: m.sortOrder,
       allowedCurrencies: m.allowedCurrencies ?? "",
     });
@@ -411,6 +417,18 @@ export default function PaymentMethodsManager() {
                 <p className="text-xs text-muted-foreground">عند التفعيل سيُطلب من المستخدم كتابة اسم المرسل قبل رفع الإيصال</p>
               </div>
             </div>
+
+            {isTurkeyMethod(form.nameAr, form.nameEn) && (
+              <div className="flex items-center gap-3 p-3 bg-background/30 rounded-lg border border-orange-500/30">
+                <Switch checked={form.requireKyc} onCheckedChange={v => setForm(f => ({ ...f, requireKyc: v }))} id="requireKyc" />
+                <div>
+                  <label htmlFor="requireKyc" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                    🔒 إلزام التحقق من الهوية
+                  </label>
+                  <p className="text-xs text-muted-foreground">عند التفعيل لن يرى المستخدم تفاصيل الدفع (الآيبان) حتى يتحقق من هويته</p>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-3 p-3 bg-background/30 rounded-lg border border-border/30">
               <Switch checked={form.isActive} onCheckedChange={v => setForm(f => ({ ...f, isActive: v }))} id="isActive" />
