@@ -236,16 +236,12 @@ function DepositForm({ method }: { method: PaymentMethod }) {
   const { lang, t } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const methodName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
-  const isShamCash = isShamCashMethod(method);
   const { isSignedIn, user, refetch } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const userCurrency = (user?.currency ?? "TRY").toUpperCase();
-  const SHAM_CASH_CURRENCIES = ["USD", "TRY", "SYP"];
-  const [sentCurrency, setSentCurrency] = useState<string>(() => {
-    if (!isShamCash) return userCurrency;
-    return SHAM_CASH_CURRENCIES.includes(userCurrency) ? userCurrency : "USD";
-  });
+  const ALL_CURRENCIES = Object.keys(CURRENCY_LABEL_AR);
+  const [sentCurrency, setSentCurrency] = useState<string>(userCurrency);
   const [amount, setAmount] = useState("");
   const [senderName, setSenderName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -253,12 +249,11 @@ function DepositForm({ method }: { method: PaymentMethod }) {
   const { data: settings } = useFetchSettings();
 
   const convertedToAccount = useMemo(() => {
-    if (!isShamCash) return null;
     if (sentCurrency.toUpperCase() === userCurrency) return null;
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return null;
     return convertAmount(amt, sentCurrency, userCurrency, settings);
-  }, [isShamCash, sentCurrency, userCurrency, amount, settings]);
+  }, [sentCurrency, userCurrency, amount, settings]);
 
   if (!isSignedIn) {
     return (
@@ -293,7 +288,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
       const fd = new FormData();
       fd.append("paymentMethodName", methodName);
       fd.append("amount", String(amt));
-      fd.append("currency", isShamCash ? sentCurrency : (user?.currency ?? "TRY"));
+      fd.append("currency", sentCurrency);
       if (method.requireSenderName && senderName.trim()) fd.append("senderName", senderName.trim());
       fd.append("receipt", file);
       const res = await fetch(`${API_BASE}/api/deposits`, {
@@ -336,26 +331,21 @@ function DepositForm({ method }: { method: PaymentMethod }) {
         <span className="text-sm font-bold text-purple-300">{t('payment.depositFormTitle')}</span>
       </div>
 
-      {isShamCash && (
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">{t('payment.sentCurrency')}</Label>
-          <Select value={sentCurrency} onValueChange={setSentCurrency}>
-            <SelectTrigger className="bg-background/60 h-10 font-bold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SHAM_CASH_CURRENCIES.map(c => (
-                <SelectItem key={c} value={c}>
-                  {CURRENCY_LABEL_AR[c] ?? c} ({c})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-[11px] text-muted-foreground">
-            {t('payment.shamNote')}
-          </p>
-        </div>
-      )}
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">{t('payment.sentCurrency')}</Label>
+        <Select value={sentCurrency} onValueChange={setSentCurrency}>
+          <SelectTrigger className="bg-background/60 h-10 font-bold">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ALL_CURRENCIES.map(c => (
+              <SelectItem key={c} value={c}>
+                {CURRENCY_LABEL_AR[c] ?? c} ({c})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {method.requireSenderName && (
         <div className="space-y-1.5">
@@ -373,7 +363,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
 
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">
-          {t('payment.amountLabel')} ({isShamCash ? sentCurrency : user?.currency})
+          {t('payment.amountLabel')} ({sentCurrency})
         </Label>
         <Input
           type="number"
@@ -386,7 +376,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
           className="bg-background/60 h-10 text-center font-bold"
           dir="ltr"
         />
-        {isShamCash && convertedToAccount !== null && (
+        {convertedToAccount !== null && (
           <div className="mt-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <ArrowDown className="w-3 h-3 text-primary" />
@@ -397,7 +387,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
             </div>
           </div>
         )}
-        {isShamCash && convertedToAccount === null && amount && parseFloat(amount) > 0 && sentCurrency.toUpperCase() !== userCurrency && (
+        {convertedToAccount === null && amount && parseFloat(amount) > 0 && sentCurrency.toUpperCase() !== userCurrency && (
           <p className="text-[11px] text-amber-400">{t('payment.calculating')}</p>
         )}
       </div>

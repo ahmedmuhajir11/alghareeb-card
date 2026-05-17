@@ -37,6 +37,28 @@ const COUNTRY_CURRENCY: Record<string, string> = {
   "السعودية": "SAR",
 };
 
+const PHONE_RULES: Record<string, { digits: number; noLeadingZero?: boolean }> = {
+  "+90":  { digits: 10, noLeadingZero: true },
+  "+963": { digits: 9 },
+  "+966": { digits: 9 },
+  "+971": { digits: 9 },
+  "+964": { digits: 10 },
+  "+20":  { digits: 10 },
+  "+962": { digits: 9 },
+  "+965": { digits: 8 },
+  "+974": { digits: 8 },
+  "+973": { digits: 8 },
+  "+968": { digits: 8 },
+  "+961": { digits: 8 },
+  "+967": { digits: 9 },
+  "+970": { digits: 9 },
+  "+218": { digits: 9 },
+  "+216": { digits: 8 },
+  "+213": { digits: 9 },
+  "+212": { digits: 9 },
+  "+249": { digits: 9 },
+};
+
 const COUNTRIES = [
   { name: "سوريا", nameEn: "Syria", code: "+963", flag: "🇸🇾" },
   { name: "تركيا", nameEn: "Turkey", code: "+90", flag: "🇹🇷" },
@@ -111,6 +133,7 @@ export default function ProfileSetupPage() {
 
   const [country, setCountry] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [currency, setCurrency] = useState("");
   const [saving, setSaving] = useState(false);
   const [currencyLocked, setCurrencyLocked] = useState(false);
@@ -126,11 +149,37 @@ export default function ProfileSetupPage() {
 
   const selectedCountry = COUNTRIES.find(c => c.name === country);
   const phoneCode = selectedCountry?.code ?? "";
+  const phoneRule = PHONE_RULES[phoneCode];
+
+  function validatePhone(value: string, code: string): string {
+    const rule = PHONE_RULES[code];
+    if (!value) return "";
+    if (!/^\d+$/.test(value)) return "أرقام فقط، لا حروف أو رموز";
+    if (rule) {
+      if (rule.noLeadingZero && value.startsWith("0")) return `لا يجب أن يبدأ الرقم بـ 0 (مثال: 5378221375)`;
+      if (value.length !== rule.digits) return `يجب أن يكون الرقم ${rule.digits} أرقام بالضبط`;
+    }
+    return "";
+  }
+
+  function handlePhoneChange(val: string) {
+    const digitsOnly = val.replace(/\D/g, "");
+    const maxLen = phoneRule?.digits ?? 15;
+    const trimmed = digitsOnly.slice(0, maxLen);
+    setPhone(trimmed);
+    setPhoneError(validatePhone(trimmed, phoneCode));
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!country || !phone || !currency) {
       toast({ title: t('signIn.error'), description: t('profile.fillAll'), variant: "destructive" });
+      return;
+    }
+    const err = validatePhone(phone, phoneCode);
+    if (err) {
+      setPhoneError(err);
+      toast({ title: t('signIn.error'), description: err, variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -218,13 +267,24 @@ export default function ProfileSetupPage() {
               </div>
               <Input
                 type="tel"
+                inputMode="numeric"
                 value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder="501234567"
-                className="flex-1 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11"
+                onChange={e => handlePhoneChange(e.target.value)}
+                placeholder={phoneRule ? `${"0".repeat(phoneRule.digits - 1)}1` : "501234567"}
+                className={`flex-1 bg-[#0f0f1a] border-purple-500/30 text-white placeholder:text-slate-600 h-11 ${phoneError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                 required
               />
             </div>
+            {phoneError && (
+              <p className="text-xs text-red-400 flex items-center gap-1 mt-1">
+                <span>⚠</span> {phoneError}
+              </p>
+            )}
+            {phoneRule && !phoneError && phone.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {phone.length} / {phoneRule.digits} أرقام
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
