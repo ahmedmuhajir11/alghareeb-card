@@ -7,6 +7,7 @@ const router: IRouter = Router();
 type LevelDef = {
   key: string;
   nameAr: string;
+  nameEn: string;
   emoji: string;
   minUsd: number;
   maxUsd: number | null;
@@ -14,11 +15,11 @@ type LevelDef = {
 };
 
 const LEVELS: LevelDef[] = [
-  { key: "bronze",   nameAr: "البرونزي",  emoji: "🥉", minUsd: 0,     maxUsd: 500,    color: "#cd7f32" },
-  { key: "silver",   nameAr: "الفضي",     emoji: "🥈", minUsd: 500,   maxUsd: 2000,   color: "#c0c0c0" },
-  { key: "gold",     nameAr: "الذهبي",    emoji: "🥇", minUsd: 2000,  maxUsd: 15000,  color: "#ffd700" },
-  { key: "platinum", nameAr: "البلاتيني", emoji: "💠", minUsd: 15000, maxUsd: 40000,  color: "#7ec0ee" },
-  { key: "diamond",  nameAr: "الماسي",    emoji: "💎", minUsd: 40000, maxUsd: null,   color: "#b9f2ff" },
+  { key: "bronze",   nameAr: "البرونزي",  nameEn: "Bronze",   emoji: "🥉", minUsd: 0,     maxUsd: 500,    color: "#cd7f32" },
+  { key: "silver",   nameAr: "الفضي",     nameEn: "Silver",   emoji: "🥈", minUsd: 500,   maxUsd: 2000,   color: "#c0c0c0" },
+  { key: "gold",     nameAr: "الذهبي",    nameEn: "Gold",     emoji: "🥇", minUsd: 2000,  maxUsd: 15000,  color: "#ffd700" },
+  { key: "platinum", nameAr: "البلاتيني", nameEn: "Platinum", emoji: "💠", minUsd: 15000, maxUsd: 40000,  color: "#7ec0ee" },
+  { key: "diamond",  nameAr: "الماسي",    nameEn: "Diamond",  emoji: "💎", minUsd: 40000, maxUsd: null,   color: "#b9f2ff" },
 ];
 
 const RATE_KEYS: Record<string, string> = {
@@ -82,6 +83,7 @@ router.get("/me/level", requireUser, async (req: Request, res: Response): Promis
     const allLevels = LEVELS.map((lv, i) => ({
       key: lv.key,
       nameAr: lv.nameAr,
+      nameEn: lv.nameEn,
       emoji: lv.emoji,
       color: lv.color,
       minUsd: lv.minUsd,
@@ -98,12 +100,14 @@ router.get("/me/level", requireUser, async (req: Request, res: Response): Promis
       currentLevel: {
         key: currentLevel.key,
         nameAr: currentLevel.nameAr,
+        nameEn: currentLevel.nameEn,
         emoji: currentLevel.emoji,
         color: currentLevel.color,
       },
       nextLevel: nextLevel ? {
         key: nextLevel.key,
         nameAr: nextLevel.nameAr,
+        nameEn: nextLevel.nameEn,
         emoji: nextLevel.emoji,
         minUsd: nextLevel.minUsd,
         minUserCcy: toUserCcy(nextLevel.minUsd),

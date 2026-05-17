@@ -88,6 +88,21 @@ const CURRENCY_LABEL_AR: Record<string, string> = {
   JOD: "دينار أردني",
 };
 
+const CURRENCY_LABEL_EN: Record<string, string> = {
+  USD: "US Dollar",
+  TRY: "Turkish Lira",
+  SYP: "Syrian Pound",
+  EUR: "Euro",
+  SAR: "Saudi Riyal",
+  OMR: "Omani Rial",
+  MAD: "Moroccan Dirham",
+  DZD: "Algerian Dinar",
+  ILS: "Israeli Shekel",
+  IQD: "Iraqi Dinar",
+  EGP: "Egyptian Pound",
+  JOD: "Jordanian Dinar",
+};
+
 function rateForCurrency(currency: string, settings: AppSettings | undefined): number | null {
   if (!settings) return null;
   const c = currency.toUpperCase();
@@ -379,7 +394,7 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
           <div className={`bg-background/60 ${inp} rounded-md border border-input flex items-center px-3 gap-2`}>
             <Lock className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
             <span className="font-bold text-sm flex-1">
-              {CURRENCY_LABEL_AR[lockedCurrency] ?? lockedCurrency} ({lockedCurrency})
+              {(isRtlLang ? CURRENCY_LABEL_AR[lockedCurrency] : CURRENCY_LABEL_EN[lockedCurrency]) ?? lockedCurrency} ({lockedCurrency})
             </span>
           </div>
         ) : (
@@ -390,7 +405,7 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
             <SelectContent>
               {(displayCurrencies.length > 0 ? displayCurrencies : Object.keys(CURRENCY_LABEL_AR)).map(c => (
                 <SelectItem key={c} value={c}>
-                  {CURRENCY_LABEL_AR[c] ?? c} ({c})
+                  {(isRtlLang ? CURRENCY_LABEL_AR[c] : CURRENCY_LABEL_EN[c]) ?? c} ({c})
                 </SelectItem>
               ))}
             </SelectContent>

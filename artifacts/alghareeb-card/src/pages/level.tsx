@@ -10,6 +10,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "";
 type LevelInfo = {
   key: string;
   nameAr: string;
+  nameEn: string;
   emoji: string;
   color: string;
   minUsd: number;
@@ -23,8 +24,8 @@ type LevelData = {
   currency: string;
   totalDepositsUsd: number;
   totalDepositsUserCcy: number;
-  currentLevel: { key: string; nameAr: string; emoji: string; color: string };
-  nextLevel: { key: string; nameAr: string; emoji: string; minUsd: number; minUserCcy: number } | null;
+  currentLevel: { key: string; nameAr: string; nameEn: string; emoji: string; color: string };
+  nextLevel: { key: string; nameAr: string; nameEn: string; emoji: string; minUsd: number; minUserCcy: number } | null;
   progressToNext: number;
   amountToNextUsd: number;
   amountToNextUserCcy: number;
@@ -40,7 +41,8 @@ function fmtNum(n: number, decimals = 2): string {
 
 export default function LevelPage() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
 
   const { data, isLoading, error } = useQuery<LevelData>({
     queryKey: ["my-level"],
@@ -104,14 +106,14 @@ export default function LevelPage() {
           <h1 className="text-3xl md:text-4xl font-black flex items-center gap-3">
             <span>{data.currentLevel.emoji}</span>
             <span style={{ color: data.currentLevel.color }} className="neon-text">
-              {t('level.prefix')} {data.currentLevel.nameAr}
+              {t('level.prefix')} {isRtlLang ? data.currentLevel.nameAr : (data.currentLevel.nameEn || data.currentLevel.nameAr)}
             </span>
           </h1>
           <p className="text-sm text-purple-100/80 mt-3 leading-relaxed">
             {data.nextLevel ? (
               <>
                 {t('level.upgradeMsg')}{" "}
-                <span className="font-bold text-white">{data.nextLevel.nameAr}</span>{" "}
+                <span className="font-bold text-white">{isRtlLang ? data.nextLevel.nameAr : (data.nextLevel.nameEn || data.nextLevel.nameAr)}</span>{" "}
                 {t('level.upgradeMsg2')}
               </>
             ) : (
@@ -138,7 +140,7 @@ export default function LevelPage() {
           <div className="mt-4">
             <div className="flex justify-between text-xs mb-1.5">
               <span className="text-muted-foreground">
-                {t('level.remaining')} {data.nextLevel.nameAr} {data.nextLevel.emoji}
+                {t('level.remaining')} {isRtlLang ? data.nextLevel.nameAr : (data.nextLevel.nameEn || data.nextLevel.nameAr)} {data.nextLevel.emoji}
               </span>
               <span className="font-bold text-primary">
                 {data.progressToNext.toFixed(1)}%
@@ -192,7 +194,7 @@ export default function LevelPage() {
                         className={`font-bold text-base ${isCurrent ? "neon-text" : ""}`}
                         style={isCurrent ? { color: lv.color } : {}}
                       >
-                        {t('level.prefix')} {lv.nameAr}
+                        {t('level.prefix')} {isRtlLang ? lv.nameAr : (lv.nameEn || lv.nameAr)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {lv.maxUserCcy === null
