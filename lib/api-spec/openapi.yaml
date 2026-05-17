@@ -504,6 +504,8 @@ components:
           type: number
         usdToSar:
           type: number
+        usdToEgp:
+          type: number
         whatsappNumber:
           type: string
         moneyTransferCurrencies:
@@ -524,6 +526,7 @@ components:
         - usdToIls
         - usdToIqd
         - usdToSar
+        - usdToEgp
         - whatsappNumber
         - moneyTransferCurrencies
         - welcomeMessage
@@ -551,6 +554,8 @@ components:
         usdToIqd:
           type: number
         usdToSar:
+          type: number
+        usdToEgp:
           type: number
         whatsappNumber:
           type: string

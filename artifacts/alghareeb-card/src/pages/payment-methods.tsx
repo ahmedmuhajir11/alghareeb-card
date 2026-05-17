@@ -69,6 +69,7 @@ type AppSettings = {
   usdToIls?: number;
   usdToIqd?: number;
   usdToSar?: number;
+  usdToEgp?: number;
 };
 
 const CURRENCY_LABEL_AR: Record<string, string> = {
@@ -82,6 +83,7 @@ const CURRENCY_LABEL_AR: Record<string, string> = {
   DZD: "دينار جزائري",
   ILS: "شيكل",
   IQD: "دينار عراقي",
+  EGP: "جنيه مصري",
 };
 
 function rateForCurrency(currency: string, settings: AppSettings | undefined): number | null {
@@ -98,6 +100,7 @@ function rateForCurrency(currency: string, settings: AppSettings | undefined): n
     ILS: settings.usdToIls,
     IQD: settings.usdToIqd,
     SAR: settings.usdToSar,
+    EGP: settings.usdToEgp,
   };
   const v = map[c];
   return typeof v === "number" && v > 0 ? v : null;

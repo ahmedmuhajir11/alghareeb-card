@@ -22,6 +22,7 @@ const CURRENCIES = [
   { value: "ILS", label: "شيكل", symbol: "₪" },
   { value: "IQD", label: "دينار عراقي", symbol: "ع.د" },
   { value: "SAR", label: "ريال سعودي", symbol: "ر.س" },
+  { value: "EGP", label: "جنيه مصري", symbol: "ج.م" },
 ];
 
 const COUNTRY_CURRENCY: Record<string, string> = {
@@ -35,6 +36,7 @@ const COUNTRY_CURRENCY: Record<string, string> = {
   "فلسطين": "ILS",
   "العراق": "IQD",
   "السعودية": "SAR",
+  "مصر": "EGP",
 };
 
 const PHONE_RULES: Record<string, { digits: number; noLeadingZero?: boolean }> = {

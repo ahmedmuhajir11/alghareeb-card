@@ -21,6 +21,7 @@ export interface Settings {
   usdToIls: number;
   usdToIqd: number;
   usdToSar: number;
+  usdToEgp: number;
   whatsappNumber: string;
   moneyTransferCurrencies: string;
   welcomeMessage: string;
@@ -38,6 +39,7 @@ export interface UpdateSettingsBody {
   usdToIls?: number;
   usdToIqd?: number;
   usdToSar?: number;
+  usdToEgp?: number;
   whatsappNumber?: string;
   moneyTransferCurrencies?: string;
   welcomeMessage?: string;

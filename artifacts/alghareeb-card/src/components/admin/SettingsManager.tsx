@@ -22,6 +22,7 @@ export default function SettingsManager() {
     usdToIls: 0,
     usdToIqd: 0,
     usdToSar: 0,
+    usdToEgp: 0,
     marqueeText: "",
     whatsappNumber: "",
     moneyTransferCurrencies: "",
@@ -41,6 +42,7 @@ export default function SettingsManager() {
         usdToIls: settings.usdToIls || 0,
         usdToIqd: settings.usdToIqd || 0,
         usdToSar: settings.usdToSar || 0,
+        usdToEgp: (settings as any).usdToEgp || 0,
         marqueeText: settings.marqueeText || "",
         whatsappNumber: settings.whatsappNumber || "",
         moneyTransferCurrencies: settings.moneyTransferCurrencies || "دولار,ليرة تركية,يورو,سوري",
@@ -74,6 +76,7 @@ export default function SettingsManager() {
     { key: "usdToIls", label: "سعر صرف الشيكل الإسرائيلي (ILS)", placeholder: "مثال: 3.7" },
     { key: "usdToIqd", label: "سعر صرف الدينار العراقي (IQD)", placeholder: "مثال: 1310" },
     { key: "usdToSar", label: "سعر صرف الريال السعودي (SAR)", placeholder: "مثال: 3.75" },
+    { key: "usdToEgp", label: "سعر صرف الجنيه المصري (EGP)", placeholder: "مثال: 50.9" },
   ];
 
   const handleSave = () => {
