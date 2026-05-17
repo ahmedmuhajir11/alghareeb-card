@@ -21,7 +21,23 @@ type PaymentMethod = {
   requireSenderName: boolean;
   isActive: boolean;
   sortOrder: number;
+  allowedCurrencies: string;
 };
+
+const ALL_CURRENCIES: { code: string; label: string }[] = [
+  { code: "USD", label: "دولار أمريكي (USD)" },
+  { code: "TRY", label: "ليرة تركية (TRY)" },
+  { code: "SYP", label: "ليرة سورية (SYP)" },
+  { code: "EUR", label: "يورو (EUR)" },
+  { code: "SAR", label: "ريال سعودي (SAR)" },
+  { code: "EGP", label: "جنيه مصري (EGP)" },
+  { code: "JOD", label: "دينار أردني (JOD)" },
+  { code: "IQD", label: "دينار عراقي (IQD)" },
+  { code: "MAD", label: "درهم مغربي (MAD)" },
+  { code: "DZD", label: "دينار جزائري (DZD)" },
+  { code: "OMR", label: "ريال عماني (OMR)" },
+  { code: "ILS", label: "شيكل (ILS)" },
+];
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const api = (path: string) => `${BASE}/api${path}`;
@@ -36,13 +52,11 @@ function usePaymentMethods() {
   });
 }
 
-const emptyForm = (): {
-  nameAr: string; nameEn: string; flagEmoji: string;
-  fields: PaymentField[]; qrImageUrl: string; notes: string[]; requireSenderName: boolean; isActive: boolean; sortOrder: number;
-} => ({
+const emptyForm = () => ({
   nameAr: "", nameEn: "", flagEmoji: "🌍",
-  fields: [{ label: "", value: "", isCopyable: true }],
+  fields: [{ label: "", value: "", isCopyable: true }] as PaymentField[],
   qrImageUrl: "", notes: [""], requireSenderName: false, isActive: true, sortOrder: 0,
+  allowedCurrencies: "",
 });
 
 export default function PaymentMethodsManager() {
@@ -142,6 +156,7 @@ export default function PaymentMethodsManager() {
       notes: m.notes.length ? m.notes : [""],
       requireSenderName: m.requireSenderName ?? false,
       isActive: m.isActive, sortOrder: m.sortOrder,
+      allowedCurrencies: m.allowedCurrencies ?? "",
     });
     setIsDialogOpen(true);
   };
@@ -342,6 +357,51 @@ export default function PaymentMethodsManager() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>عملات الإيداع المسموح بها</Label>
+              <p className="text-xs text-muted-foreground">
+                اختر العملات التي يمكن للمستخدم الإيداع بها. إذا اخترت عملة واحدة فقط، تُقفل تلقائياً ولا يمكن تغييرها. إذا تركتها فارغة، تظهر كل العملات.
+              </p>
+              <div className="grid grid-cols-2 gap-2 p-3 bg-background/30 rounded-lg border border-border/30">
+                {ALL_CURRENCIES.map(({ code, label }) => {
+                  const selected = form.allowedCurrencies
+                    ? form.allowedCurrencies.split(",").map(s => s.trim()).filter(Boolean).includes(code)
+                    : false;
+                  return (
+                    <label
+                      key={code}
+                      className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border transition-colors ${selected ? "border-primary/60 bg-primary/10" : "border-transparent hover:bg-background/50"}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={e => {
+                          const current = form.allowedCurrencies
+                            ? form.allowedCurrencies.split(",").map(s => s.trim()).filter(Boolean)
+                            : [];
+                          const next = e.target.checked
+                            ? [...current, code]
+                            : current.filter(c => c !== code);
+                          setForm(f => ({ ...f, allowedCurrencies: next.join(",") }));
+                        }}
+                        className="w-4 h-4 accent-purple-500"
+                      />
+                      <span className="text-xs">{label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {form.allowedCurrencies && (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-destructive underline"
+                  onClick={() => setForm(f => ({ ...f, allowedCurrencies: "" }))}
+                >
+                  مسح الاختيار (إظهار كل العملات)
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-3 p-3 bg-background/30 rounded-lg border border-blue-500/20">

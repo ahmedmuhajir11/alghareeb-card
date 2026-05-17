@@ -170,6 +170,7 @@ type PaymentMethod = {
   notes: string[];
   requireSenderName: boolean;
   sortOrder: number;
+  allowedCurrencies?: string;
 };
 
 function useFetchPaymentMethods() {
@@ -265,8 +266,20 @@ function DepositForm({ method }: { method: PaymentMethod }) {
   const [, navigate] = useLocation();
   const userCurrency = (user?.currency ?? "TRY").toUpperCase();
   const ALL_CURRENCIES = Object.keys(CURRENCY_LABEL_AR);
-  const lockedCurrency = getLockedCurrency(method);
-  const [freeCurrency, setFreeCurrency] = useState<string>(userCurrency);
+  // DB-driven allowed currencies take priority over hardcoded logic
+  const dbAllowed: string[] = method.allowedCurrencies
+    ? method.allowedCurrencies.split(",").map(s => s.trim()).filter(Boolean)
+    : [];
+  const lockedCurrency = dbAllowed.length === 1
+    ? dbAllowed[0]
+    : dbAllowed.length === 0
+      ? getLockedCurrency(method)
+      : null;
+  const displayCurrencies = dbAllowed.length >= 2 ? dbAllowed : (dbAllowed.length === 0 && !lockedCurrency ? Object.keys(CURRENCY_LABEL_AR) : []);
+  const defaultFree = dbAllowed.length >= 2
+    ? (dbAllowed.includes(userCurrency) ? userCurrency : dbAllowed[0])
+    : userCurrency;
+  const [freeCurrency, setFreeCurrency] = useState<string>(defaultFree);
   const sentCurrency = lockedCurrency ?? freeCurrency;
   const [amount, setAmount] = useState("");
   const [senderName, setSenderName] = useState("");
@@ -372,7 +385,7 @@ function DepositForm({ method }: { method: PaymentMethod }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ALL_CURRENCIES.map(c => (
+              {(displayCurrencies.length > 0 ? displayCurrencies : Object.keys(CURRENCY_LABEL_AR)).map(c => (
                 <SelectItem key={c} value={c}>
                   {CURRENCY_LABEL_AR[c] ?? c} ({c})
                 </SelectItem>

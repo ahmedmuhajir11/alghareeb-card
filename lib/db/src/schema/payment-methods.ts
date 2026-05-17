@@ -11,6 +11,7 @@ export const paymentMethodsTable = pgTable("payment_methods", {
   requireSenderName: boolean("require_sender_name").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  allowedCurrencies: text("allowed_currencies").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
