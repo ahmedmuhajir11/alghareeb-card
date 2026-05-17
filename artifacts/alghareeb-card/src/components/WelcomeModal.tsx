@@ -28,7 +28,7 @@ export default function WelcomeModal() {
   };
 
   const messageAr = settings?.welcomeMessage;
-  const messageEn = (settings as any)?.welcomeMessageEn;
+  const messageEn = settings?.welcomeMessageEn;
   const message = isRtlLang ? messageAr : (messageEn || messageAr);
 
   if (!open || !message) return null;

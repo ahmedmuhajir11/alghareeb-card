@@ -44,13 +44,13 @@ export default function SettingsManager() {
         usdToIls: settings.usdToIls || 0,
         usdToIqd: settings.usdToIqd || 0,
         usdToSar: settings.usdToSar || 0,
-        usdToEgp: (settings as any).usdToEgp || 0,
-    usdToJod: (settings as any).usdToJod || 0,
+        usdToEgp: settings.usdToEgp || 0,
+        usdToJod: settings.usdToJod || 0,
         marqueeText: settings.marqueeText || "",
         whatsappNumber: settings.whatsappNumber || "",
         moneyTransferCurrencies: settings.moneyTransferCurrencies || "دولار,ليرة تركية,يورو,سوري",
         welcomeMessage: settings.welcomeMessage || "",
-        welcomeMessageEn: (settings as any).welcomeMessageEn || "",
+        welcomeMessageEn: settings.welcomeMessageEn || "",
       });
     }
   }, [settings]);
@@ -160,8 +160,8 @@ export default function SettingsManager() {
           />
           <label className="text-sm font-medium block mt-3">Welcome Message — English (shown to non-Arabic users)</label>
           <Textarea
-            value={(formData as any).welcomeMessageEn || ""}
-            onChange={e => setFormData({...formData, welcomeMessageEn: e.target.value} as any)}
+            value={formData.welcomeMessageEn || ""}
+            onChange={e => setFormData({...formData, welcomeMessageEn: e.target.value})}
             className="bg-background/50 min-h-[100px] resize-y"
             placeholder="Example: Important: Always verify payment method details before sending any amount..."
             dir="ltr"

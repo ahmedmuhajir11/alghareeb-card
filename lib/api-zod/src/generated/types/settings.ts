@@ -23,5 +23,6 @@ export interface Settings {
   whatsappNumber: string;
   moneyTransferCurrencies: string;
   welcomeMessage: string;
+  welcomeMessageEn: string;
   updatedAt: string;
 }

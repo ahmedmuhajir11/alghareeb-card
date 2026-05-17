@@ -34,6 +34,7 @@ export const GetSettingsResponse = zod.object({
   whatsappNumber: zod.string(),
   moneyTransferCurrencies: zod.string(),
   welcomeMessage: zod.string(),
+  welcomeMessageEn: zod.string(),
   updatedAt: zod.string(),
 });
 
@@ -56,6 +57,7 @@ export const UpdateSettingsBody = zod.object({
   whatsappNumber: zod.string().optional(),
   moneyTransferCurrencies: zod.string().optional(),
   welcomeMessage: zod.string().optional(),
+  welcomeMessageEn: zod.string().optional(),
 });
 
 export const UpdateSettingsResponse = zod.object({
@@ -75,6 +77,7 @@ export const UpdateSettingsResponse = zod.object({
   whatsappNumber: zod.string(),
   moneyTransferCurrencies: zod.string(),
   welcomeMessage: zod.string(),
+  welcomeMessageEn: zod.string(),
   updatedAt: zod.string(),
 });
 

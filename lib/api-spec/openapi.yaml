@@ -514,6 +514,8 @@ components:
           type: string
         welcomeMessage:
           type: string
+        welcomeMessageEn:
+          type: string
         updatedAt:
           type: string
       required:
@@ -533,6 +535,7 @@ components:
         - whatsappNumber
         - moneyTransferCurrencies
         - welcomeMessage
+        - welcomeMessageEn
         - updatedAt
 
     UpdateSettingsBody:
@@ -567,6 +570,8 @@ components:
         moneyTransferCurrencies:
           type: string
         welcomeMessage:
+          type: string
+        welcomeMessageEn:
           type: string
 
     Section:
