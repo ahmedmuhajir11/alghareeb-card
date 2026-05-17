@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -27,6 +27,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
   const [location] = useLocation();
   const { user, isSignedIn, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
+  const [langOpen, setLangOpen] = useState(false);
 
   const navLinks = [
     { href: "/", label: t('sidebar.home'), icon: <Home className="w-5 h-5" /> },
@@ -116,8 +117,38 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
           </div>
         )}
 
+        {/* Language Dropdown Button */}
+        <div className="px-3 pt-2 pb-1 flex-shrink-0 relative">
+          <button
+            onClick={() => setLangOpen(o => !o)}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 text-foreground transition-all duration-200"
+          >
+            <Globe className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="flex-1 text-right text-sm font-semibold">{LANG_META[lang].name}</span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0 ${langOpen ? "rotate-180" : ""}`} />
+          </button>
+          {langOpen && (
+            <div className="absolute top-full left-3 right-3 z-10 mt-1 rounded-xl border border-primary/20 bg-[#0d0d1a] shadow-xl overflow-hidden">
+              {(Object.entries(LANG_META) as [LangCode, typeof LANG_META[LangCode]][]).map(([code, meta]) => (
+                <button
+                  key={code}
+                  onClick={() => { setLang(code); setLangOpen(false); }}
+                  className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-colors ${
+                    lang === code
+                      ? "bg-primary/20 text-primary font-bold"
+                      : "text-foreground hover:bg-primary/10"
+                  }`}
+                >
+                  <span className="font-semibold">{meta.name}</span>
+                  {lang === code && <span className="mr-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Navigation Links */}
-        <nav className="flex-1 px-3 pt-2 pb-1 flex flex-col gap-0.5 min-h-0">
+        <nav className="flex-1 px-3 pt-1 pb-1 flex flex-col gap-0.5 min-h-0">
           <p className="text-[10px] text-muted-foreground font-semibold px-2 mb-1 tracking-wider">{t('sidebar.mainMenu')}</p>
           {navLinks.map((link) => {
             const isActive = location === link.href;
@@ -138,27 +169,6 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
             );
           })}
         </nav>
-
-        {/* Language Switcher */}
-        <div className="px-3 pt-1 pb-1 border-t border-primary/10 flex-shrink-0">
-          <div className="grid grid-cols-6 gap-1">
-            {(Object.entries(LANG_META) as [LangCode, typeof LANG_META[LangCode]][]).map(([code, meta]) => (
-              <button
-                key={code}
-                onClick={() => setLang(code)}
-                title={meta.name}
-                className={`flex flex-col items-center gap-0 py-1 px-0.5 rounded-md text-xs transition-all ${
-                  lang === code
-                    ? "bg-primary/20 border border-primary/40 text-primary font-bold"
-                    : "hover:bg-muted/40 text-muted-foreground border border-transparent"
-                }`}
-              >
-                <span className="text-base leading-none">{meta.flag}</span>
-                <span className="text-[9px] font-medium uppercase mt-0.5">{code}</span>
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Social / Contact + Logout */}
         <div className="px-3 py-2 border-t border-primary/20 flex-shrink-0">
