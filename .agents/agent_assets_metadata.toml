@@ -6,3 +6,9 @@ id = "ulu0YSjDEuQsjcKaZyy8_"
 uri = "file://translations.json"
 type = "unspecified"
 title = "ملف الترجمة — AlGhareeb Card"
+
+[[outputs]]
+id = "3hOot_c0kCAkq9I1QzmVH"
+uri = "file://artifacts/alghareeb-card/public/logo.png"
+type = "image"
+title = "شعار الغريب كارد (بدون خلفية)"
