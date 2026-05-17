@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useEffect } from "react";
 import { useGetSection, useListItems } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
@@ -52,6 +53,22 @@ export default function SectionPage({ id }: { id: number }) {
 
   return (
     <div className="space-y-6">
+      <Helmet>
+        <title>{section ? `${section.nameAr} | الغريب كارد` : 'الغريب كارد'}</title>
+        <meta name="description" content={section ? `اشحن ${section.nameAr} بأفضل الأسعار وأسرع خدمة عبر الغريب كارد. اختر الباقة المناسبة وأرسل طلبك عبر واتساب.` : 'الغريب كارد لشحن الألعاب والتطبيقات'} />
+        <meta property="og:title" content={section ? `${section.nameAr} | الغريب كارد` : 'الغريب كارد'} />
+        <meta property="og:description" content={section ? `اشحن ${section.nameAr} بأفضل الأسعار عبر الغريب كارد` : ''} />
+        <meta property="og:url" content={`https://alghareebcard.com/section/${id}`} />
+        <link rel="canonical" href={`https://alghareebcard.com/section/${id}`} />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "الرئيسية", "item": "https://alghareebcard.com/" },
+            { "@type": "ListItem", "position": 2, "name": section?.nameAr ?? "", "item": `https://alghareebcard.com/section/${id}` }
+          ]
+        })}</script>
+      </Helmet>
       {sectionLoading ? (
         <Skeleton className="h-10 w-48 mb-6" />
       ) : (

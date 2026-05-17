@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { Rocket, Shield, Globe, CreditCard, Headphones, Gamepad2, Banknote, Target, Phone, Mail, MapPin, User } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -7,6 +8,14 @@ export default function AboutPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-10 text-right">
+      <Helmet>
+        <title>من نحن | الغريب كارد</title>
+        <meta name="description" content="تعرف على الغريب كارد، منصة شحن الألعاب والتطبيقات وتحويل الأموال. تأسست على يد أحمد مهاجري لتقديم خدمات شحن موثوقة وسريعة." />
+        <meta property="og:title" content="من نحن | الغريب كارد" />
+        <meta property="og:description" content="تعرف على الغريب كارد، منصة شحن الألعاب والتطبيقات وتحويل الأموال." />
+        <meta property="og:url" content="https://alghareebcard.com/about" />
+        <link rel="canonical" href="https://alghareebcard.com/about" />
+      </Helmet>
 
       {/* Hero */}
       <div className="text-center space-y-3 py-6">

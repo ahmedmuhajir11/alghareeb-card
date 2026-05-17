@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { useGetItem } from "@workspace/api-client-react";
 import type { Package } from "@workspace/api-client-react";
@@ -139,6 +140,23 @@ export default function ItemPage({ id }: { id: number }) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
+      <Helmet>
+        <title>{itemName ? `شحن ${itemName} | الغريب كارد` : 'الغريب كارد'}</title>
+        <meta name="description" content={itemName ? `اشحن ${itemName} بأفضل الأسعار وأسرع خدمة. اختر الباقة المناسبة وأرسل طلبك عبر واتساب مباشرة.` : ''} />
+        <meta property="og:title" content={itemName ? `شحن ${itemName} | الغريب كارد` : 'الغريب كارد'} />
+        <meta property="og:description" content={itemName ? `اشحن ${itemName} بأفضل الأسعار عبر الغريب كارد` : ''} />
+        <meta property="og:url" content={`https://alghareebcard.com/item/${id}`} />
+        <link rel="canonical" href={`https://alghareebcard.com/item/${id}`} />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "الرئيسية", "item": "https://alghareebcard.com/" },
+            { "@type": "ListItem", "position": 2, "name": (item as any)?.sectionNameAr ?? "الأقسام", "item": `https://alghareebcard.com/section/${item?.sectionId ?? ''}` },
+            { "@type": "ListItem", "position": 3, "name": item?.nameAr ?? "", "item": `https://alghareebcard.com/item/${id}` }
+          ]
+        })}</script>
+      </Helmet>
       <div className={`flex flex-col md:flex-row items-center gap-6 p-6 rounded-2xl neon-border ${isUnavailable ? "bg-card/20 opacity-70" : "bg-card/30"}`}>
         {item.logoUrl ? (
           <img src={item.logoUrl} alt={item.nameAr} className={`w-24 h-24 object-cover rounded-2xl drop-shadow-[0_0_15px_rgba(139,92,246,0.5)] ${isUnavailable ? "grayscale" : ""}`} />

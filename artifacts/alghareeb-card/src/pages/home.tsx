@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Link, useLocation } from "wouter";
 import { useListSections, useListSliderImages } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -194,6 +195,14 @@ export default function Home() {
 
   return (
     <div>
+      <Helmet>
+        <title>الغريب كارد | شحن الألعاب والتطبيقات وتحويل الأموال</title>
+        <meta name="description" content="الغريب كارد - شحن PUBG وببجي وفري فاير وبيغو لايف وتحويل الأموال وسحب الرواتب بأفضل الأسعار وأسرع خدمة." />
+        <meta property="og:title" content="الغريب كارد | شحن الألعاب والتطبيقات" />
+        <meta property="og:description" content="منصتك الموثوقة لشحن الألعاب والتطبيقات وتحويل الأموال بسرعة وأمان." />
+        <meta property="og:url" content="https://alghareebcard.com/" />
+        <link rel="canonical" href="https://alghareebcard.com/" />
+      </Helmet>
       <Slider />
       <GlobalSearch />
 

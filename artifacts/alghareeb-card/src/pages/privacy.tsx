@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useI18n } from "@/lib/i18n";
 import { Shield } from "lucide-react";
 
@@ -7,6 +8,14 @@ export default function PrivacyPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 py-6" dir={isRtl ? 'rtl' : 'ltr'}>
+      <Helmet>
+        <title>سياسة الخصوصية | الغريب كارد</title>
+        <meta name="description" content="سياسة الخصوصية لموقع الغريب كارد. تعرف على كيفية جمع واستخدام وحماية بياناتك الشخصية." />
+        <meta property="og:title" content="سياسة الخصوصية | الغريب كارد" />
+        <meta property="og:url" content="https://alghareebcard.com/privacy" />
+        <link rel="canonical" href="https://alghareebcard.com/privacy" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
       <div className="text-center space-y-3">
         <div className="flex justify-center">
           <Shield className="w-12 h-12 text-primary" />

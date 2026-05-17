@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- SEO: العنوان والوصف -->
     <title>الغريب كارد | شحن الألعاب والتطبيقات وتحويل الأموال</title>
@@ -26,6 +24,10 @@
     <meta property="og:url" content="https://alghareebcard.com/" />
     <meta property="og:title" content="الغريب كارد | شحن الألعاب والتطبيقات" />
     <meta property="og:description" content="منصتك الموثوقة لشحن الألعاب والتطبيقات وتحويل الأموال بسرعة وأمان. اشحن رصيدك الآن!" />
+    <meta property="og:image" content="https://alghareebcard.com/opengraph.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="الغريب كارد - شحن الألعاب والتطبيقات" />
     <meta property="og:locale" content="ar_AR" />
     <meta property="og:site_name" content="الغريب كارد" />
 
@@ -33,6 +35,8 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="الغريب كارد | شحن الألعاب والتطبيقات" />
     <meta name="twitter:description" content="منصتك الموثوقة لشحن الألعاب والتطبيقات وتحويل الأموال بسرعة وأمان." />
+    <meta name="twitter:image" content="https://alghareebcard.com/opengraph.jpg" />
+    <meta name="twitter:image:alt" content="الغريب كارد - شحن الألعاب والتطبيقات" />
 
     <!-- بيانات منظمة لجوجل (JSON-LD) — معلومات المتجر -->
     <script type="application/ld+json">
@@ -43,6 +47,8 @@
       "alternateName": ["AlGhareeb Card", "Al Ghareeb Card"],
       "description": "متجر إلكتروني لشحن الألعاب والتطبيقات والحوالات المالية، تأسس على يد أحمد مهاجري من ريف حلب، سوريا.",
       "url": "https://alghareebcard.com",
+      "image": "https://alghareebcard.com/opengraph.jpg",
+      "logo": "https://alghareebcard.com/logo.png",
       "email": "ahmed.muhajir11@gmail.com",
       "telephone": "+905378221375",
       "foundingLocation": {
@@ -122,9 +128,69 @@
     }
     </script>
 
+    <!-- FAQ Schema للصفحة الرئيسية -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "كيف أشحن ببجي عبر الغريب كارد؟",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "اختر قسم الألعاب، ابحث عن PUBG أو ببجي، اختر الباقة المناسبة، أدخل معرفك، وسيُفتح واتساب تلقائياً مع رسالة الطلب."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "ما هي العملات المدعومة في الغريب كارد؟",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "يدعم الغريب كارد الدولار الأمريكي (USD)، الليرة التركية (TRY)، الليرة السورية (SYP)، اليورو (EUR)، وعملات عربية وعالمية أخرى."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "هل الدفع عبر الغريب كارد آمن؟",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "نعم، جميع المعاملات تتم عبر واتساب مع التحقق اليدوي من كل طلب، مما يضمن أمان عملية الشحن."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "كم يستغرق وقت الشحن؟",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "يتم تنفيذ معظم الطلبات فورياً أو خلال دقائق معدودة بعد التأكيد عبر واتساب."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- WebSite Schema لشريط البحث -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "الغريب كارد",
+      "url": "https://alghareebcard.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://alghareebcard.com/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>

@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -590,6 +591,13 @@ export default function PaymentMethodsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <Helmet>
+        <title>طرق الدفع وإضافة الرصيد | الغريب كارد</title>
+        <meta name="description" content="أضف رصيداً لحسابك في الغريب كارد عبر طرق دفع متعددة. ادفع بالدولار أو الليرة التركية أو السورية." />
+        <meta property="og:title" content="طرق الدفع | الغريب كارد" />
+        <meta property="og:url" content="https://alghareebcard.com/payment-methods" />
+        <link rel="canonical" href="https://alghareebcard.com/payment-methods" />
+      </Helmet>
       <div className="text-right">
         <h1 className="text-2xl font-bold neon-text mb-1">{t('payment.title')}</h1>
         <p className="text-muted-foreground text-sm">{t('payment.subtitle')}</p>

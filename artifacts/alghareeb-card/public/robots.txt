@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /profile-setup
+Disallow: /kyc
+Disallow: /orders
+Disallow: /wallet
+Disallow: /my-deposits
 
 Sitemap: https://alghareebcard.com/sitemap.xml
