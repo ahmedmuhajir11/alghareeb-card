@@ -339,4 +339,74 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 });
 
+// ── Admin Stats ──────────────────────────────────────────────────────────────
+router.get("/admin/stats", requireAdmin, async (_req, res) => {
+  const client = await pool.connect();
+  try {
+    const [
+      usersTotal,
+      usersToday,
+      usersWeek,
+      usersMonth,
+      ordersTotal,
+      ordersToday,
+      ordersWeek,
+      ordersPending,
+      salesTotal,
+      salesToday,
+      salesWeek,
+      depositsPending,
+      depositsApprovedTotal,
+      topServices,
+    ] = await Promise.all([
+      client.query(`SELECT COUNT(*) AS count FROM users`),
+      client.query(`SELECT COUNT(*) AS count FROM users WHERE created_at >= NOW() - INTERVAL '1 day'`),
+      client.query(`SELECT COUNT(*) AS count FROM users WHERE created_at >= NOW() - INTERVAL '7 days'`),
+      client.query(`SELECT COUNT(*) AS count FROM users WHERE created_at >= NOW() - INTERVAL '30 days'`),
+      client.query(`SELECT COUNT(*) AS count FROM orders`),
+      client.query(`SELECT COUNT(*) AS count FROM orders WHERE created_at >= NOW() - INTERVAL '1 day'`),
+      client.query(`SELECT COUNT(*) AS count FROM orders WHERE created_at >= NOW() - INTERVAL '7 days'`),
+      client.query(`SELECT COUNT(*) AS count FROM orders WHERE status = 'pending'`),
+      client.query(`SELECT COALESCE(SUM(amount::numeric), 0) AS total FROM orders WHERE status IN ('approved','completed') AND currency = 'TRY'`),
+      client.query(`SELECT COALESCE(SUM(amount::numeric), 0) AS total FROM orders WHERE status IN ('approved','completed') AND currency = 'TRY' AND created_at >= NOW() - INTERVAL '1 day'`),
+      client.query(`SELECT COALESCE(SUM(amount::numeric), 0) AS total FROM orders WHERE status IN ('approved','completed') AND currency = 'TRY' AND created_at >= NOW() - INTERVAL '7 days'`),
+      client.query(`SELECT COUNT(*) AS count FROM deposit_requests WHERE status = 'pending'`),
+      client.query(`SELECT COALESCE(SUM(amount::numeric), 0) AS total FROM deposit_requests WHERE status = 'approved'`),
+      client.query(`SELECT item_name, COUNT(*) AS count FROM orders GROUP BY item_name ORDER BY count DESC LIMIT 7`),
+    ]);
+
+    res.json({
+      users: {
+        total: parseInt(usersTotal.rows[0].count),
+        today: parseInt(usersToday.rows[0].count),
+        week: parseInt(usersWeek.rows[0].count),
+        month: parseInt(usersMonth.rows[0].count),
+      },
+      orders: {
+        total: parseInt(ordersTotal.rows[0].count),
+        today: parseInt(ordersToday.rows[0].count),
+        week: parseInt(ordersWeek.rows[0].count),
+        pending: parseInt(ordersPending.rows[0].count),
+      },
+      sales: {
+        total: parseFloat(salesTotal.rows[0].total),
+        today: parseFloat(salesToday.rows[0].total),
+        week: parseFloat(salesWeek.rows[0].total),
+      },
+      deposits: {
+        pending: parseInt(depositsPending.rows[0].count),
+        approvedTotal: parseFloat(depositsApprovedTotal.rows[0].total),
+      },
+      topServices: topServices.rows.map((r: any) => ({
+        name: r.item_name,
+        count: parseInt(r.count),
+      })),
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;

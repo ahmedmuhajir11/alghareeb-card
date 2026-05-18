@@ -9,9 +9,10 @@ import TickerManager from "@/components/admin/TickerManager";
 import DepositsManager from "@/components/admin/DepositsManager";
 import OrdersManager from "@/components/admin/OrdersManager";
 import UsersManager from "@/components/admin/UsersManager";
-import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users, BadgeCheck } from "lucide-react";
+import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users, BadgeCheck, BarChart2 } from "lucide-react";
 import IdentitiesManager from "@/components/admin/IdentitiesManager";
 import CurrenciesManager from "@/components/admin/CurrenciesManager";
+import StatsManager from "@/components/admin/StatsManager";
 
 const TAB_CLASS = "flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-colors";
 
@@ -25,9 +26,13 @@ export default function AdminDashboard() {
 
       <AdminPushBanner />
 
-      <Tabs defaultValue="orders" className="w-full">
+      <Tabs defaultValue="stats" className="w-full">
         <div className="overflow-x-auto pb-1">
-          <TabsList className="flex w-max min-w-full md:grid md:grid-cols-10 bg-card border border-primary/20 h-auto p-1 gap-1">
+          <TabsList className="flex w-max min-w-full md:grid md:grid-cols-11 bg-card border border-primary/20 h-auto p-1 gap-1">
+            <TabsTrigger value="stats" className={TAB_CLASS}>
+              <BarChart2 className="w-4 h-4 flex-shrink-0" />
+              الإحصاءات
+            </TabsTrigger>
             <TabsTrigger value="orders" className={TAB_CLASS}>
               <ShoppingBag className="w-4 h-4 flex-shrink-0" />
               طلبات الشحن
@@ -70,6 +75,12 @@ export default function AdminDashboard() {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="stats" className="mt-6">
+          <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm">
+            <StatsManager />
+          </div>
+        </TabsContent>
 
         <TabsContent value="orders" className="mt-6">
           <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm">
