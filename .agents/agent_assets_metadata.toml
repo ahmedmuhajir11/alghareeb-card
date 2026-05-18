@@ -18,3 +18,9 @@ id = "vnYygEqmT95PpZ1UaHmXJ"
 uri = "file://artifacts/alghareeb-card/public/loading-logo.png"
 type = "image"
 title = "شعار شاشة التحميل (بدون خلفية)"
+
+[[outputs]]
+id = "ce7WK9CkKxHmn2ccoBKfU"
+uri = "file://all_apps.csv"
+type = "table"
+title = "قائمة جميع التطبيقات (174 تطبيق)"
