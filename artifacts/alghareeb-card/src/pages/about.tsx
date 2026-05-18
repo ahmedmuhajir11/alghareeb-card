@@ -100,7 +100,7 @@ export default function AboutPage() {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-              <span dir="ltr">ahmed.muhajir11@gmail.com</span>
+              <span dir="ltr">support@alghareebcard.com</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed pt-1">
               {t('about.founderBio')}
