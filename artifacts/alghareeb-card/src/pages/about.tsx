@@ -118,13 +118,13 @@ export default function AboutPage() {
         <p className="text-muted-foreground text-sm">{t('about.contactSub')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <a
-            href="mailto:alghareebcard+support@gmail.com"
+            href="mailto:support@alghareebcard.com"
             className="flex items-center gap-3 bg-card/50 border border-border/50 rounded-xl p-4 hover:border-primary/40 transition-colors"
           >
             <Mail className="w-5 h-5 text-primary flex-shrink-0" />
             <div>
               <p className="text-xs text-muted-foreground">{t('about.emailLabel')}</p>
-              <p className="text-sm font-medium" dir="ltr">alghareebcard+support@gmail.com</p>
+              <p className="text-sm font-medium" dir="ltr">support@alghareebcard.com</p>
             </div>
           </a>
           <a

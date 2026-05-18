@@ -42,7 +42,7 @@ function isRequestAdmin(req: Request): boolean {
   }
 })();
 
-webpush.setVapidDetails("mailto:alghareebcard+support@gmail.com", VAPID_PUBLIC, VAPID_PRIVATE);
+webpush.setVapidDetails("mailto:support@alghareebcard.com", VAPID_PUBLIC, VAPID_PRIVATE);
 
 router.get("/push/vapid-key", (_req, res) => {
   res.json({ publicKey: VAPID_PUBLIC });
