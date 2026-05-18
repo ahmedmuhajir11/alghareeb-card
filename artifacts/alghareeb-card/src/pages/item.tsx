@@ -139,7 +139,7 @@ export default function ItemPage({ id }: { id: number }) {
   const unitLabel = t(unitKey) !== unitKey ? t(unitKey) : rawUnit;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-2xl mx-auto space-y-3">
       <Helmet>
         <title>{itemName ? `شحن ${itemName} | الغريب كارد` : 'الغريب كارد'}</title>
         <meta name="description" content={itemName ? `اشحن ${itemName} بأفضل الأسعار وأسرع خدمة. اختر الباقة المناسبة وأرسل طلبك عبر واتساب مباشرة.` : ''} />
@@ -157,21 +157,21 @@ export default function ItemPage({ id }: { id: number }) {
           ]
         })}</script>
       </Helmet>
-      <div className={`flex flex-col md:flex-row items-center gap-6 p-6 rounded-2xl neon-border ${isUnavailable ? "bg-card/20 opacity-70" : "bg-card/30"}`}>
+      <div className={`flex flex-row items-center gap-3 p-3 rounded-2xl neon-border ${isUnavailable ? "bg-card/20 opacity-70" : "bg-card/30"}`}>
         {item.logoUrl ? (
-          <img src={item.logoUrl} alt={item.nameAr} className={`w-24 h-24 object-cover rounded-2xl drop-shadow-[0_0_15px_rgba(139,92,246,0.5)] ${isUnavailable ? "grayscale" : ""}`} />
+          <img src={item.logoUrl} alt={item.nameAr} className={`w-14 h-14 object-cover rounded-xl drop-shadow-[0_0_15px_rgba(139,92,246,0.5)] flex-shrink-0 ${isUnavailable ? "grayscale" : ""}`} />
         ) : (
-          <div className={`w-24 h-24 rounded-2xl bg-primary/20 flex items-center justify-center ${isUnavailable ? "grayscale" : ""}`}>
-            <span className="text-4xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
+          <div className={`w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 ${isUnavailable ? "grayscale" : ""}`}>
+            <span className="text-2xl font-bold text-primary">{item.nameAr.charAt(0)}</span>
           </div>
         )}
-        <div className="text-center md:text-start">
-          <h1 className="text-3xl font-bold neon-text mb-2">{itemName}</h1>
-          <p className="text-muted-foreground">
+        <div className="text-start flex-1">
+          <h1 className="text-2xl font-bold neon-text leading-tight">{itemName}</h1>
+          <p className="text-muted-foreground text-sm">
             {item.description || (isPerQuantity ? `${t('item.enterQty')} ${unitLabel}` : t('item.choosePackage'))}
           </p>
           {isPerQuantity && item.pricePerUnit && (
-            <p className="text-sm text-primary/80 mt-1">
+            <p className="text-sm text-primary/80">
               {t('item.pricePerUnit')} {unitLabel}: {formatPrice(item.pricePerUnit)}
             </p>
           )}
@@ -179,30 +179,30 @@ export default function ItemPage({ id }: { id: number }) {
       </div>
 
       {isUnavailable && (
-        <div className="flex items-center gap-3 bg-red-950/60 border border-red-500/50 rounded-2xl p-5 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
-          <span className="text-3xl">🚫</span>
+        <div className="flex items-center gap-3 bg-red-950/60 border border-red-500/50 rounded-2xl p-3 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
+          <span className="text-2xl">🚫</span>
           <div>
-            <p className="font-bold text-red-400 text-lg">المنتج غير متاح بالوقت الحالي</p>
-            <p className="text-sm text-red-300/70 mt-0.5">يرجى التواصل معنا أو المحاولة لاحقاً</p>
+            <p className="font-bold text-red-400 text-base">المنتج غير متاح بالوقت الحالي</p>
+            <p className="text-sm text-red-300/70">يرجى التواصل معنا أو المحاولة لاحقاً</p>
           </div>
         </div>
       )}
 
       {isPerQuantity ? (
-        <div className="space-y-4">
+        <div className="space-y-2">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
             {t('item.enterQty')}
           </h2>
-          <div className="bg-card/30 rounded-2xl neon-border p-6 space-y-4">
-            <div className="space-y-2">
+          <div className="bg-card/30 rounded-2xl neon-border p-3 space-y-2">
+            <div className="space-y-1">
               <label className="text-sm font-medium">{t('item.quantityOf')} {unitLabel}</label>
               <Input
                 type="number"
                 min="1"
                 step="1"
                 placeholder={`${minQuantity > 1 ? minQuantity : 1000} ${unitLabel}`}
-                className={`h-14 text-xl bg-background/50 focus-visible:border-primary text-center ${isBelowMin ? "border-red-500" : "border-primary/20"}`}
+                className={`h-10 text-base bg-background/50 focus-visible:border-primary text-center ${isBelowMin ? "border-red-500" : "border-primary/20"}`}
                 value={quantity}
                 onChange={e => setQuantity(e.target.value)}
                 dir="ltr"
@@ -219,9 +219,9 @@ export default function ItemPage({ id }: { id: number }) {
               )}
             </div>
             {calculatedPrice !== null && (
-              <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">{t('item.totalPrice')} {quantity} {unitLabel}</p>
-                <p className="text-3xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
+              <div className="bg-primary/10 border border-primary/30 rounded-xl p-2 text-center">
+                <p className="text-sm text-muted-foreground">{t('item.totalPrice')} {quantity} {unitLabel}</p>
+                <p className="text-2xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
               </div>
             )}
           </div>
@@ -276,25 +276,25 @@ export default function ItemPage({ id }: { id: number }) {
         </div>
       )}
 
-      <div className="space-y-4 bg-card/30 p-6 rounded-2xl neon-border">
-        <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+      <div className="space-y-2 bg-card/30 p-3 rounded-2xl neon-border">
+        <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
           <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
           {t('item.shippingData')}
         </h2>
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label className="text-sm font-medium">
             {item.sectionId === 5 ? t('item.phoneLabel') : t('item.idLabel')}
           </label>
           <Input
             placeholder={item.sectionId === 5 ? t('item.phonePh') : t('item.idPh')}
-            className="h-12 text-lg bg-background/50 border-primary/20 focus-visible:border-primary text-center"
+            className="h-10 text-base bg-background/50 border-primary/20 focus-visible:border-primary text-center"
             value={userId}
             onChange={e => setUserId(e.target.value)}
             dir="ltr"
           />
         </div>
         <Button
-          className="w-full h-14 text-lg font-bold mt-6 shadow-[0_0_15px_var(--color-primary)] hover:shadow-[0_0_25px_var(--color-primary)] transition-all gap-2 bg-purple-600 hover:bg-purple-700 text-white border-none disabled:opacity-60"
+          className="w-full h-11 text-lg font-bold mt-2 shadow-[0_0_15px_var(--color-primary)] hover:shadow-[0_0_25px_var(--color-primary)] transition-all gap-2 bg-purple-600 hover:bg-purple-700 text-white border-none disabled:opacity-60"
           onClick={handleOrder}
           disabled={submitting || isUnavailable}
         >
@@ -302,7 +302,7 @@ export default function ItemPage({ id }: { id: number }) {
           {submitting ? t('item.sending') : isUnavailable ? "المنتج غير متاح" : t('item.sendOrder')}
         </Button>
         {user && (
-          <p className="text-xs text-center text-muted-foreground mt-2">
+          <p className="text-xs text-center text-muted-foreground mt-1">
             {t('item.currentBalance')} <span className="text-primary font-bold">{user.balance.toFixed(2)} {user.currency}</span>
           </p>
         )}
