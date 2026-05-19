@@ -102,7 +102,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
               </div>
               <div className="text-start">
                 <p className="text-[10px] text-muted-foreground">{t('sidebar.level')}</p>
-                <p className="text-xs font-semibold text-purple-300">{user.level}</p>
+                <p className="text-xs font-semibold text-purple-300">{t(`level.${user.level}`) || user.level}</p>
               </div>
             </div>
           </div>

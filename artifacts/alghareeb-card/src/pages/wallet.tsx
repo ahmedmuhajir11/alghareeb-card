@@ -8,8 +8,8 @@ import { useI18n } from "@/lib/i18n";
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 type LevelSummary = {
-  currentLevel: { nameAr: string; nameEn: string; emoji: string; color: string };
-  nextLevel: { nameAr: string; nameEn: string; emoji: string } | null;
+  currentLevel: { key: string; nameAr: string; nameEn: string; emoji: string; color: string };
+  nextLevel: { key: string; nameAr: string; nameEn: string; emoji: string } | null;
   progressToNext: number;
   amountToNextUserCcy: number;
   currency: string;
@@ -155,7 +155,7 @@ export default function WalletPage() {
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-purple-200/80">{t('wallet.currentLevel')}</p>
                       <p className="font-black text-base" style={{ color: levelData.currentLevel.color }}>
-                        {isRtlLang ? levelData.currentLevel.nameAr : (levelData.currentLevel.nameEn || levelData.currentLevel.nameAr)}
+                        {isRtlLang ? (levelData.currentLevel.nameAr || t(`level.${levelData.currentLevel.key}`)) : (levelData.currentLevel.nameEn || t(`level.${levelData.currentLevel.key}`) || levelData.currentLevel.nameAr)}
                       </p>
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export default function WalletPage() {
                       <span className="font-bold text-purple-300">
                         {levelData.amountToNextUserCcy.toFixed(2)} {levelData.currency}
                       </span>{" "}
-                      {t('wallet.toReach')} {isRtlLang ? levelData.nextLevel.nameAr : (levelData.nextLevel.nameEn || levelData.nextLevel.nameAr)} {levelData.nextLevel.emoji}
+                      {t('wallet.toReach')} {isRtlLang ? (levelData.nextLevel.nameAr || t(`level.${levelData.nextLevel.key}`)) : (levelData.nextLevel.nameEn || t(`level.${levelData.nextLevel.key}`) || levelData.nextLevel.nameAr)} {levelData.nextLevel.emoji}
                     </p>
                   </>
                 )}
