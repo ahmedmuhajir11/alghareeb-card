@@ -38,8 +38,6 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     let priceUsd = 0;
     let packageName: string | null = null;
 
-    const MARKUP = 1.10;
-
     const isPerQuantity = item.section_pricing_type === "per_quantity";
     if (isPerQuantity) {
       const qty = parseFloat(quantity);
@@ -54,7 +52,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         res.status(400).json({ error: "سعر الوحدة غير محدد لهذا المنتج" });
         return;
       }
-      priceUsd = unitPrice * MARKUP * qty;
+      priceUsd = unitPrice * qty;
       packageName = `${qty} ${item.currency_unit ?? "وحدة"}`;
     } else {
       const pkgIdNum = parseInt(packageId, 10);
@@ -73,7 +71,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         return;
       }
       const pkg = pkgRes.rows[0];
-      priceUsd = parseFloat(pkg.price_usd) * MARKUP;
+      priceUsd = parseFloat(pkg.price_usd);
       packageName = pkg.label;
     }
 

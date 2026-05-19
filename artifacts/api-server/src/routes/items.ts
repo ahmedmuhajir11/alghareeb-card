@@ -102,23 +102,11 @@ router.get("/items/:id", async (req, res): Promise<void> => {
       .where(eq(packagesTable.itemId, item.id))
       .orderBy(asc(packagesTable.sortOrder), asc(packagesTable.quantity));
 
-    const MARKUP = 1.10;
-
-    const serializedItem = serializeRow(item) as Record<string, any>;
-    if (serializedItem.pricePerUnit != null) {
-      serializedItem.pricePerUnit = +(parseFloat(serializedItem.pricePerUnit) * MARKUP).toFixed(6);
-    }
-
-    const markedUpPackages = serializeRows(packages).map((pkg: Record<string, any>) => ({
-      ...pkg,
-      priceUsd: +(parseFloat(pkg.priceUsd) * MARKUP).toFixed(4),
-    }));
-
     res.json(
       GetItemResponse.parse({
-        ...serializedItem,
+        ...serializeRow(item),
         sectionPricingType: sectionPricingType ?? "packages",
-        packages: markedUpPackages,
+        packages: serializeRows(packages),
       })
     );
   } catch (err: any) {
