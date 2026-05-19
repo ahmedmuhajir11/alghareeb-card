@@ -136,7 +136,8 @@ export default function ItemPage({ id }: { id: number }) {
 
   const rawUnit = item.currencyUnit || "وحدة";
   const unitKey = `unit.${rawUnit}` as Parameters<typeof t>[0];
-  const unitLabel = t(unitKey) !== unitKey ? t(unitKey) : rawUnit;
+  const unitLabelFull = t(unitKey) !== unitKey ? t(unitKey) : rawUnit;
+  const unitLabel = item.sectionId === 2 ? "" : unitLabelFull;
 
   return (
     <div className="max-w-2xl mx-auto space-y-3">
