@@ -3,8 +3,8 @@ import { count } from "drizzle-orm";
 
 export async function ensureCriticalSections() {
   await db.insert(sectionsTable).values([
-    { id: 1, nameAr: "شحن الألعاب الفوري", nameEn: "Instant Game Top-Up", sortOrder: 1, pricingType: "packages" },
-    { id: 2, nameAr: "شحن التطبيقات الفوري", nameEn: "Instant App Top-Up", sortOrder: 2, pricingType: "per_quantity" },
+    { id: 1, nameAr: "شحن الألعاب", nameEn: "Game Top-Up", sortOrder: 1, pricingType: "packages" },
+    { id: 2, nameAr: "شحن التطبيقات", nameEn: "App Top-Up", sortOrder: 2, pricingType: "per_quantity" },
     { id: 3, nameAr: "الحوالات المالية", nameEn: "Money Transfers", sortOrder: 3, pricingType: "per_quantity" },
     { id: 4, nameAr: "سحب رواتب المضيفين", nameEn: "Host Salary Withdrawal", sortOrder: 4, pricingType: "per_quantity" },
     { id: 5, nameAr: "تعبئة الرصيد", nameEn: "Credit Recharge", sortOrder: 5, pricingType: "packages" },
@@ -26,8 +26,8 @@ export async function seedIfEmpty() {
   }).onConflictDoNothing();
 
   await db.insert(sectionsTable).values([
-    { id: 1, nameAr: "شحن الألعاب الفوري", nameEn: "Instant Game Top-Up", sortOrder: 1, pricingType: "packages" },
-    { id: 2, nameAr: "شحن التطبيقات الفوري", nameEn: "Instant App Top-Up", sortOrder: 2, pricingType: "per_quantity" },
+    { id: 1, nameAr: "شحن الألعاب", nameEn: "Game Top-Up", sortOrder: 1, pricingType: "packages" },
+    { id: 2, nameAr: "شحن التطبيقات", nameEn: "App Top-Up", sortOrder: 2, pricingType: "per_quantity" },
     { id: 3, nameAr: "الحوالات المالية", nameEn: "Money Transfers", sortOrder: 3, pricingType: "per_quantity" },
     { id: 4, nameAr: "سحب رواتب المضيفين", nameEn: "Host Salary Withdrawal", sortOrder: 4, pricingType: "per_quantity" },
     { id: 5, nameAr: "تعبئة الرصيد", nameEn: "Credit Recharge", sortOrder: 5, pricingType: "packages" },

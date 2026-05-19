@@ -287,7 +287,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const queryClient = useQueryClient();
 
   const isPerQuantity = section.pricingType === "per_quantity";
-  const isAppCharging = section.id === 2 || section.nameEn === "Instant App Top-Up" || section.nameAr === "شحن التطبيقات الفوري";
+  const isAppCharging = section.id === 2;
   const isMoneyTransfer = section.id === 3 || section.nameEn === "Money Transfers" || section.nameAr === "الحوالات المالية";
 
   const emptyForm = { nameAr: "", nameEn: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true, isAvailable: true };

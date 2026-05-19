@@ -216,18 +216,8 @@ const PAYMENT_METHODS = [
 ];
 
 export async function recoverDataIfNeeded(): Promise<void> {
-  const existing = await db
-    .select({ id: itemsTable.id, nameAr: itemsTable.nameAr })
-    .from(itemsTable)
-    .where(eq(itemsTable.id, RECOVERY_SENTINEL_ITEM_ID))
-    .limit(1);
-
-  if (existing.length > 0 && existing[0].nameAr === RECOVERY_SENTINEL_NAME) {
-    logger.info("Data recovery already completed, skipping");
-    return;
-  }
-
-  logger.info("Starting one-time data recovery from old AlGhareeb Card project");
+  logger.info("Data recovery permanently disabled — skipping");
+  return;
 
   for (const s of SECTIONS) {
     await db
