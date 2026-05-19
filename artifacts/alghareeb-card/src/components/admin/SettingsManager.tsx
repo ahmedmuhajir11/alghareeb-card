@@ -28,6 +28,7 @@ export default function SettingsManager() {
     whatsappNumber: "",
     moneyTransferCurrencies: "",
     welcomeMessage: "",
+    welcomeMessageAr: "",
     welcomeMessageEn: "",
   });
   const [newCurrency, setNewCurrency] = useState("");
@@ -50,7 +51,8 @@ export default function SettingsManager() {
         whatsappNumber: settings.whatsappNumber || "",
         moneyTransferCurrencies: settings.moneyTransferCurrencies || "دولار,ليرة تركية,يورو,سوري",
         welcomeMessage: settings.welcomeMessage || "",
-        welcomeMessageEn: settings.welcomeMessageEn || "",
+        welcomeMessageAr: (settings.welcomeMessage || "").split("||")[0]?.trim() || "",
+        welcomeMessageEn: (settings.welcomeMessage || "").split("||")[1]?.trim() || "",
       });
     }
   }, [settings]);
@@ -85,7 +87,11 @@ export default function SettingsManager() {
   ];
 
   const handleSave = () => {
-    updateSettings.mutate({ data: formData }, {
+    const arText = formData.welcomeMessageAr.trim();
+    const enText = formData.welcomeMessageEn.trim();
+    const combined = enText ? `${arText}||${enText}` : arText;
+    const dataToSave = { ...formData, welcomeMessage: combined };
+    updateSettings.mutate({ data: dataToSave }, {
       onSuccess: () => {
         toast({
           title: "تم الحفظ",
@@ -151,22 +157,24 @@ export default function SettingsManager() {
         </div>
 
         <div className="space-y-2 border-t border-primary/10 pt-4">
-          <label className="text-sm font-medium">رسالة الترحيب — العربية (تظهر للمستخدمين ذوي اللغة العربية/الفارسية)</label>
+          <p className="text-xs text-muted-foreground bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
+            💡 رسالة الترحيب تظهر في نافذة منبثقة بعد كل تسجيل دخول. اتركها فارغة لإلغاء تفعيلها.
+          </p>
+          <label className="text-sm font-medium">رسالة الترحيب — العربية</label>
           <Textarea
-            value={formData.welcomeMessage}
-            onChange={e => setFormData({...formData, welcomeMessage: e.target.value})}
-            className="bg-background/50 min-h-[100px] resize-y"
+            value={formData.welcomeMessageAr}
+            onChange={e => setFormData({...formData, welcomeMessageAr: e.target.value})}
+            className="bg-background/50 min-h-[90px] resize-y"
             placeholder="مثال: تنبيه هام: تأكد دائماً من بيانات طريقة الدفع قبل إرسال أي مبلغ..."
           />
-          <label className="text-sm font-medium block mt-3">Welcome Message — English (shown to non-Arabic users)</label>
+          <label className="text-sm font-medium block mt-3">Welcome Message — English</label>
           <Textarea
-            value={formData.welcomeMessageEn || ""}
+            value={formData.welcomeMessageEn}
             onChange={e => setFormData({...formData, welcomeMessageEn: e.target.value})}
-            className="bg-background/50 min-h-[100px] resize-y"
-            placeholder="Example: Important: Always verify payment method details before sending any amount..."
+            className="bg-background/50 min-h-[90px] resize-y"
+            placeholder="Important: Always verify payment method details before sending any amount..."
             dir="ltr"
           />
-          <p className="text-xs text-muted-foreground">ستظهر هذه الرسالة في نافذة منبثقة بعد كل تسجيل دخول. اتركها فارغة لإلغاء تفعيلها.</p>
         </div>
 
         <div className="space-y-3 border-t border-primary/10 pt-4">

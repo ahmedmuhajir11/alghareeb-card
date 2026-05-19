@@ -27,8 +27,10 @@ export default function WelcomeModal() {
     setOpen(false);
   };
 
-  const messageAr = settings?.welcomeMessage;
-  const messageEn = settings?.welcomeMessageEn;
+  const raw = settings?.welcomeMessage || "";
+  const parts = raw.split("||").map(s => s.trim());
+  const messageAr = parts[0] || "";
+  const messageEn = parts[1] || "";
   const message = isRtlLang ? messageAr : (messageEn || messageAr);
 
   if (!open || !message) return null;
