@@ -203,14 +203,15 @@ function useFetchPaymentMethods() {
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { t } = useI18n();
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      toast({ title: "تم النسخ!", description: value.length > 30 ? value.slice(0, 30) + "..." : value });
+      toast({ title: t('payment.copied'), description: value.length > 30 ? value.slice(0, 30) + "..." : value });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast({ variant: "destructive", title: "خطأ في النسخ" });
+      toast({ variant: "destructive", title: t('payment.errorLabel') });
     }
   };
   return (

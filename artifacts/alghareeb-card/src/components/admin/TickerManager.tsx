@@ -22,13 +22,27 @@ function useTickerMessages() {
   });
 }
 
+function splitBilingual(text: string): { ar: string; en: string } {
+  const parts = text.split("||");
+  return { ar: parts[0]?.trim() ?? text, en: parts[1]?.trim() ?? "" };
+}
+
+function joinBilingual(ar: string, en: string): string {
+  const a = ar.trim();
+  const e = en.trim();
+  if (!e) return a;
+  return `${a}||${e}`;
+}
+
 export default function TickerManager() {
   const { data: messages = [], isLoading } = useTickerMessages();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [newText, setNewText] = useState("");
+  const [newAr, setNewAr] = useState("");
+  const [newEn, setNewEn] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
-  const [editText, setEditText] = useState("");
+  const [editAr, setEditAr] = useState("");
+  const [editEn, setEditEn] = useState("");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["ticker-messages"] });
 
@@ -41,7 +55,7 @@ export default function TickerManager() {
       });
       if (!res.ok) throw new Error((await res.json()).error);
     },
-    onSuccess: () => { invalidate(); setNewText(""); toast({ title: "✅ تمت الإضافة" }); },
+    onSuccess: () => { invalidate(); setNewAr(""); setNewEn(""); toast({ title: "✅ تمت الإضافة" }); },
     onError: (e: any) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
@@ -79,18 +93,27 @@ export default function TickerManager() {
       </div>
 
       {/* Add new */}
-      <div className="flex gap-2">
+      <div className="space-y-2 p-3 bg-background/30 rounded-xl border border-primary/20">
+        <p className="text-xs font-semibold text-muted-foreground">إضافة رسالة جديدة</p>
         <Input
-          value={newText}
-          onChange={e => setNewText(e.target.value)}
-          placeholder="اكتب رسالة جديدة... مثال: 🔥 خصم خاص اليوم فقط"
-          className="flex-1 bg-background/50 border-primary/20 focus-visible:border-primary"
-          onKeyDown={e => e.key === "Enter" && newText.trim() && addMutation.mutate(newText.trim())}
+          value={newAr}
+          onChange={e => setNewAr(e.target.value)}
+          placeholder="🔥 النص العربي — مثال: خصم خاص اليوم فقط"
+          className="bg-background/50 border-primary/20 focus-visible:border-primary"
+          dir="rtl"
+        />
+        <Input
+          value={newEn}
+          onChange={e => setNewEn(e.target.value)}
+          placeholder="🔥 English text — e.g. Special discount today only (optional)"
+          className="bg-background/50 border-primary/20 focus-visible:border-primary"
+          dir="ltr"
+          onKeyDown={e => e.key === "Enter" && newAr.trim() && addMutation.mutate(joinBilingual(newAr, newEn))}
         />
         <Button
-          onClick={() => newText.trim() && addMutation.mutate(newText.trim())}
-          disabled={!newText.trim() || addMutation.isPending}
-          className="gap-2 shrink-0"
+          onClick={() => newAr.trim() && addMutation.mutate(joinBilingual(newAr, newEn))}
+          disabled={!newAr.trim() || addMutation.isPending}
+          className="gap-2 w-full"
         >
           <Plus className="w-4 h-4" />
           إضافة
@@ -122,25 +145,43 @@ export default function TickerManager() {
               </span>
 
               {editId === msg.id ? (
-                <Input
-                  value={editText}
-                  onChange={e => setEditText(e.target.value)}
-                  className="flex-1 h-8 text-sm bg-background border-primary/40"
-                  autoFocus
-                  onKeyDown={e => {
-                    if (e.key === "Enter") updateMutation.mutate({ id: msg.id, text: editText });
-                    if (e.key === "Escape") setEditId(null);
-                  }}
-                />
+                <div className="flex-1 flex flex-col gap-1">
+                  <Input
+                    value={editAr}
+                    onChange={e => setEditAr(e.target.value)}
+                    className="h-7 text-sm bg-background border-primary/40"
+                    placeholder="النص العربي"
+                    dir="rtl"
+                    autoFocus
+                  />
+                  <Input
+                    value={editEn}
+                    onChange={e => setEditEn(e.target.value)}
+                    className="h-7 text-sm bg-background border-primary/40"
+                    placeholder="English text (optional)"
+                    dir="ltr"
+                    onKeyDown={e => {
+                      if (e.key === "Enter") updateMutation.mutate({ id: msg.id, text: joinBilingual(editAr, editEn) });
+                      if (e.key === "Escape") setEditId(null);
+                    }}
+                  />
+                </div>
               ) : (
-                <span className="flex-1 text-sm">{msg.text}</span>
+                <div className="flex-1 min-w-0">
+                  {(() => { const s = splitBilingual(msg.text); return (
+                    <>
+                      <p className="text-sm">{s.ar}</p>
+                      {s.en && <p className="text-xs text-muted-foreground" dir="ltr">{s.en}</p>}
+                    </>
+                  ); })()}
+                </div>
               )}
 
               <div className="flex items-center gap-1 shrink-0">
                 {editId === msg.id ? (
                   <>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-green-400 hover:bg-green-400/10"
-                      onClick={() => updateMutation.mutate({ id: msg.id, text: editText })}>
+                      onClick={() => updateMutation.mutate({ id: msg.id, text: joinBilingual(editAr, editEn) })}>
                       <Check className="w-3.5 h-3.5" />
                     </Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground"
@@ -151,7 +192,7 @@ export default function TickerManager() {
                 ) : (
                   <>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-primary hover:bg-primary/10"
-                      onClick={() => { setEditId(msg.id); setEditText(msg.text); }}>
+                      onClick={() => { const s = splitBilingual(msg.text); setEditId(msg.id); setEditAr(s.ar); setEditEn(s.en); }}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
                     <Button size="icon" variant="ghost"

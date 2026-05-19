@@ -352,16 +352,37 @@ export default function PaymentMethodsManager() {
                   <Plus className="w-3 h-3" /> إضافة ملاحظة
                 </Button>
               </div>
-              <div className="space-y-2">
-                {form.notes.map((note, i) => (
-                  <div key={i} className="flex gap-2 items-center">
-                    <span className="text-xs text-muted-foreground w-6 text-left flex-shrink-0">({i + 1})</span>
-                    <Input value={note} onChange={e => updateNote(i, e.target.value)} className="bg-background/50 text-sm flex-1" placeholder="أدخل الملاحظة..." />
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => removeNote(i)}>
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ))}
+              <p className="text-[11px] text-muted-foreground">يمكنك كتابة نسخة عربية ونسخة إنجليزية — تُعرض النسخة المناسبة حسب لغة المستخدم.</p>
+              <div className="space-y-3">
+                {form.notes.map((note, i) => {
+                  const parts = note.split("||");
+                  const arVal = parts[0]?.trim() ?? note;
+                  const enVal = parts[1]?.trim() ?? "";
+                  return (
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className="text-xs text-muted-foreground w-6 text-left flex-shrink-0 mt-2">({i + 1})</span>
+                      <div className="flex-1 flex flex-col gap-1">
+                        <Input
+                          value={arVal}
+                          onChange={e => updateNote(i, e.target.value.trim() || enVal ? `${e.target.value}||${enVal}` : e.target.value)}
+                          className="bg-background/50 text-sm"
+                          placeholder="الملاحظة بالعربية..."
+                          dir="rtl"
+                        />
+                        <Input
+                          value={enVal}
+                          onChange={e => updateNote(i, e.target.value.trim() || arVal ? `${arVal}||${e.target.value}` : arVal)}
+                          className="bg-background/50 text-sm"
+                          placeholder="Note in English... (optional)"
+                          dir="ltr"
+                        />
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0 mt-1" onClick={() => removeNote(i)}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
