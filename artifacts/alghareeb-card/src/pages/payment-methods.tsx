@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -526,6 +526,10 @@ function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: (
   const { lang, t } = useI18n();
   const { user, isSignedIn } = useAuth();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
   const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
   const subName = isRtlLang ? method.nameEn : method.nameAr;
 
