@@ -48,7 +48,7 @@ export default function LevelPage() {
     queryKey: ["my-level"],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/me/level`, { credentials: "include" });
-      if (!res.ok) throw new Error("فشل تحميل المستوى");
+      if (!res.ok) throw new Error(t('level.loadError'));
       return res.json();
     },
     enabled: isSignedIn,
@@ -86,7 +86,7 @@ export default function LevelPage() {
   if (error || !data) {
     return (
       <div className="text-rose-400 text-center py-12 bg-rose-500/5 border border-rose-500/20 rounded-xl max-w-2xl mx-auto">
-        {(error as Error)?.message || "حدث خطأ"}
+        {(error as Error)?.message || t('level.genericError')}
       </div>
     );
   }
