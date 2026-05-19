@@ -296,6 +296,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const [formData, setFormData] = useState(emptyForm);
   const [bulkItemRows, setBulkItemRows] = useState<BulkItemRow[]>([emptyItemRow()]);
   const [isBulkItemSaving, setIsBulkItemSaving] = useState(false);
+  const [itemSearch, setItemSearch] = useState("");
 
   const openCreate = () => {
     setEditTarget(null);
@@ -493,8 +494,27 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
         ) : isLoading ? (
           <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
         ) : (
+          <div className="space-y-4">
+            <div className="relative">
+              <Input
+                placeholder="ابحث عن تطبيق أو لعبة..."
+                value={itemSearch}
+                onChange={e => setItemSearch(e.target.value)}
+                className="pr-4 h-10 bg-background/50 border-primary/20 focus-visible:border-primary"
+                dir="rtl"
+              />
+              {itemSearch && (
+                <button
+                  onClick={() => setItemSearch("")}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
+                >✕</button>
+              )}
+            </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {items?.map(item => (
+            {(itemSearch ? items?.filter(item =>
+              item.nameAr.toLowerCase().includes(itemSearch.toLowerCase()) ||
+              (item.nameEn || "").toLowerCase().includes(itemSearch.toLowerCase())
+            ) : items)?.map(item => (
               <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card hover:border-primary/50 transition-colors">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {item.logoUrl ? (
@@ -532,9 +552,16 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                 </div>
               </div>
             ))}
-            {items?.length === 0 && (
+            {items?.length === 0 && !itemSearch && (
               <div className="col-span-2 text-center py-8 text-muted-foreground">لا توجد منتجات. أضف منتجاً جديداً.</div>
             )}
+            {itemSearch && (items?.filter(item =>
+              item.nameAr.toLowerCase().includes(itemSearch.toLowerCase()) ||
+              (item.nameEn || "").toLowerCase().includes(itemSearch.toLowerCase())
+            ) ?? []).length === 0 && (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">لا توجد نتائج لـ "{itemSearch}"</div>
+            )}
+          </div>
           </div>
         )}
       </CardContent>
