@@ -9,6 +9,15 @@ import WelcomeModal from "@/components/WelcomeModal";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
+const LEVEL_KEY_MAP: Record<string, string> = {
+  'عادي': 'normal', 'برونزي': 'bronze', 'البرونزي': 'bronze', 'برونز': 'bronze',
+  'فضي': 'silver', 'الفضي': 'silver', 'ذهبي': 'gold', 'الذهبي': 'gold',
+  'بلاتيني': 'platinum', 'البلاتيني': 'platinum', 'ألماسي': 'diamond', 'الماسي': 'diamond',
+};
+function toLevelKey(level: string): string {
+  return LEVEL_KEY_MAP[level] ?? level;
+}
+
 type TickerMessage = { id: number; text: string; is_active: boolean };
 
 function useTickerMessages() {
@@ -102,7 +111,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
               </div>
               <div className="text-start">
                 <p className="text-[10px] text-muted-foreground">{t('sidebar.level')}</p>
-                <p className="text-xs font-semibold text-purple-300">{t(`level.${user.level}`) || user.level}</p>
+                <p className="text-xs font-semibold text-purple-300">{t(`level.${toLevelKey(user.level)}`) || user.level}</p>
               </div>
             </div>
           </div>
