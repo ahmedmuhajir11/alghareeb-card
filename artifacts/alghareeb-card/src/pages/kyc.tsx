@@ -5,15 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/lib/i18n";
 import AppLayout from "@/components/layout/AppLayout";
 import { BadgeCheck, Clock, XCircle, Upload, Image } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-const COUNTRIES = [
+const COUNTRIES_AR = [
   "سوريا","تركيا","السعودية","الإمارات","العراق","مصر","الأردن","الكويت",
   "قطر","البحرين","عُمان","لبنان","اليمن","فلسطين","ليبيا","تونس",
   "الجزائر","المغرب","السودان","الولايات المتحدة","ألمانيا","غيرها",
+];
+const COUNTRIES_EN = [
+  "Syria","Turkey","Saudi Arabia","UAE","Iraq","Egypt","Jordan","Kuwait",
+  "Qatar","Bahrain","Oman","Lebanon","Yemen","Palestine","Libya","Tunisia",
+  "Algeria","Morocco","Sudan","United States","Germany","Other",
 ];
 
 interface KycStatus {
@@ -23,9 +29,9 @@ interface KycStatus {
 }
 
 function FileUploadField({
-  label, name, preview, onFile,
+  label, name, preview, onFile, tapLabel,
 }: {
-  label: string; name: string; preview: string | null; onFile: (f: File | null) => void;
+  label: string; name: string; preview: string | null; onFile: (f: File | null) => void; tapLabel: string;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
@@ -40,7 +46,7 @@ function FileUploadField({
         ) : (
           <>
             <Image className="w-8 h-8 text-primary/50" />
-            <span className="text-xs text-muted-foreground">اضغط لاختيار صورة</span>
+            <span className="text-xs text-muted-foreground">{tapLabel}</span>
           </>
         )}
       </div>
@@ -60,6 +66,8 @@ export default function KycPage() {
   const { user, isLoaded } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t, lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
 
   const [kycStatus, setKycStatus] = useState<KycStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -138,11 +146,11 @@ export default function KycPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!fullName || !idNumber) {
-      toast({ variant: "destructive", title: "الاسم الكامل ورقم الهوية مطلوبان" });
+      toast({ variant: "destructive", title: t('kyc.requiredMsg') });
       return;
     }
     if (!idFrontFile || !idBackFile || !selfieFile) {
-      toast({ variant: "destructive", title: "الصور مطلوبة", description: "يجب إرفاق صورة الوجه الأمامي والخلفي للهوية وصورة السيلفي" });
+      toast({ variant: "destructive", title: t('kyc.photosRequiredMsg'), description: t('kyc.photosRequiredDesc') });
       return;
     }
     setSubmitting(true);
@@ -163,27 +171,28 @@ export default function KycPage() {
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "حدث خطأ");
-      toast({ title: "✅ تم إرسال طلب التوثيق", description: "سيتم مراجعته من قِبل الإدارة" });
+      if (!res.ok) throw new Error(data.error ?? t('kyc.errorTitle'));
+      toast({ title: t('kyc.successTitle'), description: t('kyc.successDesc') });
       await fetchStatus();
     } catch (err: any) {
-      toast({ variant: "destructive", title: "خطأ", description: err.message });
+      toast({ variant: "destructive", title: t('kyc.errorTitle'), description: err.message });
     } finally {
       setSubmitting(false);
     }
   }
 
   const showForm = kycStatus?.status === "none" || kycStatus?.status === "rejected";
+  const countries = isRtlLang ? COUNTRIES_AR : COUNTRIES_EN;
 
   return (
     <AppLayout>
       <div className="max-w-xl mx-auto py-6 px-4">
         <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">
           <BadgeCheck className="w-6 h-6 text-blue-400" />
-          توثيق الحساب
+          {t('kyc.title')}
         </h1>
         <p className="text-muted-foreground text-sm mb-6">
-          قدّم وثائقك للحصول على شارة التوثيق الزرقاء على حسابك
+          {t('kyc.subtitle')}
         </p>
 
         {loading && (
@@ -195,16 +204,16 @@ export default function KycPage() {
         {!loading && kycStatus?.status === "pending" && (
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 flex flex-col items-center gap-3 text-center">
             <Clock className="w-12 h-12 text-yellow-400" />
-            <h2 className="text-lg font-semibold text-yellow-300">طلبك قيد المراجعة</h2>
-            <p className="text-muted-foreground text-sm">سيتم مراجعة طلبك من قِبل الإدارة وإشعارك بالنتيجة.</p>
+            <h2 className="text-lg font-semibold text-yellow-300">{t('kyc.pendingTitle')}</h2>
+            <p className="text-muted-foreground text-sm">{t('kyc.pendingSub')}</p>
           </div>
         )}
 
         {!loading && kycStatus?.status === "approved" && (
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6 flex flex-col items-center gap-3 text-center">
             <BadgeCheck className="w-14 h-14 text-blue-400" />
-            <h2 className="text-xl font-bold text-blue-300">تم توثيق حسابك!</h2>
-            <p className="text-muted-foreground text-sm">حسابك موثّق. تظهر الشارة الزرقاء على ملفك الشخصي.</p>
+            <h2 className="text-xl font-bold text-blue-300">{t('kyc.approvedTitle')}</h2>
+            <p className="text-muted-foreground text-sm">{t('kyc.approvedSub')}</p>
           </div>
         )}
 
@@ -212,11 +221,11 @@ export default function KycPage() {
           <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-6 flex items-start gap-3">
             <XCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-red-300 font-semibold text-sm">تم رفض طلبك</p>
+              <p className="text-red-300 font-semibold text-sm">{t('kyc.rejectedTitle')}</p>
               {kycStatus.adminNote && (
-                <p className="text-muted-foreground text-sm mt-1">السبب: {kycStatus.adminNote}</p>
+                <p className="text-muted-foreground text-sm mt-1">{t('kyc.rejectedReason')} {kycStatus.adminNote}</p>
               )}
-              <p className="text-muted-foreground text-xs mt-2">يمكنك إعادة تقديم الطلب بالبيانات الصحيحة أدناه.</p>
+              <p className="text-muted-foreground text-xs mt-2">{t('kyc.rejectedSub')}</p>
             </div>
           </div>
         )}
@@ -224,22 +233,22 @@ export default function KycPage() {
         {!loading && showForm && (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">الاسم الثلاثي <span className="text-destructive">*</span></label>
+              <label className="text-sm font-medium">{t('kyc.fullName')} <span className="text-destructive">*</span></label>
               <Input
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
-                placeholder="مثال: محمد أحمد الصالح"
+                placeholder={t('kyc.fullNamePh')}
                 className="bg-background/50"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">رقم الهوية / جواز السفر <span className="text-destructive">*</span></label>
+              <label className="text-sm font-medium">{t('kyc.idNumber')} <span className="text-destructive">*</span></label>
               <Input
                 value={idNumber}
                 onChange={e => setIdNumber(e.target.value)}
-                placeholder="أدخل رقم الهوية أو رقم الجواز"
+                placeholder={t('kyc.idNumberPh')}
                 className="bg-background/50"
                 dir="ltr"
                 required
@@ -248,57 +257,60 @@ export default function KycPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">الدولة</label>
+                <label className="text-sm font-medium">{t('kyc.country')}</label>
                 <select
                   value={country}
                   onChange={e => setCountry(e.target.value)}
                   className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <option value="">اختر الدولة</option>
-                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  <option value="">{t('kyc.countryPh')}</option>
+                  {countries.map((c, i) => <option key={i} value={COUNTRIES_AR[i]}>{c}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">المحافظة / المنطقة</label>
+                <label className="text-sm font-medium">{t('kyc.province')}</label>
                 <Input
                   value={province}
                   onChange={e => setProvince(e.target.value)}
-                  placeholder="مثال: دمشق"
+                  placeholder={t('kyc.provincePh')}
                   className="bg-background/50"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">معلومات إضافية (اختياري)</label>
+              <label className="text-sm font-medium">{t('kyc.extra')}</label>
               <Textarea
                 value={extraInfo}
                 onChange={e => setExtraInfo(e.target.value)}
-                placeholder="أي تفاصيل إضافية تريد إضافتها..."
+                placeholder={t('kyc.extraPh')}
                 className="bg-background/50 resize-none"
                 rows={2}
               />
             </div>
 
             <div className="border-t border-border/40 pt-4">
-              <p className="text-sm text-muted-foreground mb-4">الصور مطلوبة لإتمام طلب التوثيق</p>
+              <p className="text-sm text-muted-foreground mb-4">{t('kyc.photosRequired')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FileUploadField
-                  label="الوجه الأمامي للهوية *"
+                  label={t('kyc.idFront')}
                   name="idPhotoFront"
                   preview={idFrontPreview}
+                  tapLabel={t('kyc.tapToChoose')}
                   onFile={f => handleFile(f, setIdFrontFile, setIdFrontPreview)}
                 />
                 <FileUploadField
-                  label="الوجه الخلفي للهوية *"
+                  label={t('kyc.idBack')}
                   name="idPhotoBack"
                   preview={idBackPreview}
+                  tapLabel={t('kyc.tapToChoose')}
                   onFile={f => handleFile(f, setIdBackFile, setIdBackPreview)}
                 />
                 <FileUploadField
-                  label="صورة سيلفي وأنت تحمل الهوية *"
+                  label={t('kyc.selfie')}
                   name="selfie"
                   preview={selfiePreview}
+                  tapLabel={t('kyc.tapToChoose')}
                   onFile={f => handleFile(f, setSelfieFile, setSelfiePreview)}
                 />
               </div>
@@ -306,7 +318,7 @@ export default function KycPage() {
 
             <Button type="submit" disabled={submitting} className="w-full">
               <Upload className="w-4 h-4 ml-2" />
-              {submitting ? "جاري الإرسال..." : "إرسال طلب التوثيق"}
+              {submitting ? t('kyc.submitting') : t('kyc.submit')}
             </Button>
           </form>
         )}
