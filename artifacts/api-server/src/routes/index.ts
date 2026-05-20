@@ -22,6 +22,7 @@ import currenciesRouter from "./currencies";
 import identityRouter from "./identity";
 import sitemapRouter from "./sitemap";
 import mockChargingRouter from "./mock-charging";
+import userItemPricesRouter from "./user-item-prices";
 
 const router: IRouter = Router();
 
@@ -48,5 +49,6 @@ router.use(levelRouter);
 router.use(searchRouter);
 router.use(currenciesRouter);
 router.use(identityRouter);
+router.use(userItemPricesRouter);
 
 export default router;

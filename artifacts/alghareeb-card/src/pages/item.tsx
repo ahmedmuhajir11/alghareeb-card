@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetItem, useGetSettings } from "@workspace/api-client-react";
 import type { Package } from "@workspace/api-client-react";
 import { useCurrency } from "@/lib/currency";
@@ -34,10 +34,22 @@ export default function ItemPage({ id }: { id: number }) {
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
   const [userId, setUserId] = useState("");
   const [quantity, setQuantity] = useState<string>("");
+  const [customPricePerUnit, setCustomPricePerUnit] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isSignedIn || !isPerQuantity || !id) return;
+    fetch(`${API_BASE}/api/user-item-prices/item/${id}`, { credentials: "include" })
+      .then(r => r.json())
+      .then(data => { if (data.customPricePerUnit != null) setCustomPricePerUnit(data.customPricePerUnit); })
+      .catch(() => {});
+  }, [isSignedIn, isPerQuantity, id]);
+
+  const effectivePricePerUnit = customPricePerUnit ?? item?.pricePerUnit ?? null;
+
   const parsedQty = parseFloat(quantity);
   const isBelowMin = isPerQuantity && quantity !== "" && parsedQty > 0 && parsedQty < minQuantity;
-  const calculatedPrice = isPerQuantity && item?.pricePerUnit && parsedQty > 0 && !isBelowMin
-    ? parsedQty * item.pricePerUnit
+  const calculatedPrice = isPerQuantity && effectivePricePerUnit && parsedQty > 0 && !isBelowMin
+    ? parsedQty * effectivePricePerUnit
     : null;
 
   const submitOrder = async (params: {
@@ -211,9 +223,12 @@ export default function ItemPage({ id }: { id: number }) {
           <p className="text-muted-foreground text-sm">
             {item.description || (isPerQuantity ? `${t('item.enterQty')} ${unitLabel}` : t('item.choosePackage'))}
           </p>
-          {isPerQuantity && item.pricePerUnit && (
+          {isPerQuantity && effectivePricePerUnit && (
             <p className="text-sm text-primary/80">
-              {t('item.pricePerUnit')} {unitLabel}: {formatPrice(item.pricePerUnit)}
+              {t('item.pricePerUnit')} {unitLabel}: {formatPrice(effectivePricePerUnit)}
+              {customPricePerUnit != null && (
+                <span className="mr-1 text-xs text-yellow-400/90 font-semibold">⭐ سعر خاص</span>
+              )}
             </p>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   useListSections, useCreateSection, useUpdateSection, useDeleteSection,
   useListItems, useCreateItem, useUpdateItem, useDeleteItem,
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Edit, Plus, Upload, Image as ImageIcon, ChevronLeft, ArrowRight, Package as PackageIcon } from "lucide-react";
+import { Trash2, Edit, Plus, Upload, Image as ImageIcon, ChevronLeft, ArrowRight, Package as PackageIcon, Tag } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -297,6 +297,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const [bulkItemRows, setBulkItemRows] = useState<BulkItemRow[]>([emptyItemRow()]);
   const [isBulkItemSaving, setIsBulkItemSaving] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
+  const [customPricesItem, setCustomPricesItem] = useState<Item | null>(null);
 
   const openCreate = () => {
     setEditTarget(null);
@@ -555,6 +556,11 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                       <PackageIcon className="w-4 h-4" />
                     </Button>
                   )}
+                  {isPerQuantity && (
+                    <Button variant="ghost" size="icon" onClick={() => setCustomPricesItem(item)} className="text-yellow-300 hover:text-yellow-300 hover:bg-yellow-300/10 h-8 w-8" title="أسعار مخصصة">
+                      <Tag className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" onClick={() => openEdit(item)} className="text-yellow-400 hover:text-yellow-400 hover:bg-yellow-400/10 h-8 w-8">
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -577,6 +583,8 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
           </div>
         )}
       </CardContent>
+
+      <CustomPricesDialog item={customPricesItem} onClose={() => setCustomPricesItem(null)} />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[520px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
@@ -1086,5 +1094,106 @@ function PackagesView({ item, onBack }: { item: Item; onBack: () => void }) {
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+type CustomPriceEntry = { id: number; accountNumber: string; itemId: number; pricePerUnit: number; createdAt: string; userName: string | null };
+
+function CustomPricesDialog({ item, onClose }: { item: Item | null; onClose: () => void }) {
+  const { toast } = useToast();
+  const API_BASE = import.meta.env.VITE_API_URL ?? "";
+  const [entries, setEntries] = useState<CustomPriceEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [accountNumber, setAccountNumber] = useState("");
+  const [pricePerUnit, setPricePerUnit] = useState("");
+
+  const fetchEntries = async (itemId: number) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/user-item-prices/${itemId}`, { credentials: "include" });
+      if (res.ok) setEntries(await res.json());
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (item) { setEntries([]); setAccountNumber(""); setPricePerUnit(""); fetchEntries(item.id); }
+  }, [item]);
+
+  const handleSave = async () => {
+    if (!item || !accountNumber.trim() || !pricePerUnit) { toast({ variant: "destructive", title: "أدخل رقم الحساب والسعر" }); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/user-item-prices`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountNumber: accountNumber.trim(), itemId: item.id, pricePerUnit: parseFloat(pricePerUnit) }),
+      });
+      if (!res.ok) { const d = await res.json(); toast({ variant: "destructive", title: d.error || "خطأ" }); return; }
+      toast({ title: "تم الحفظ بنجاح" });
+      setAccountNumber(""); setPricePerUnit("");
+      await fetchEntries(item.id);
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id: number) => {
+    await fetch(`${API_BASE}/api/admin/user-item-prices/${id}`, { method: "DELETE", credentials: "include" });
+    if (item) await fetchEntries(item.id);
+  };
+
+  return (
+    <Dialog open={!!item} onOpenChange={open => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-[460px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Tag className="w-4 h-4 text-yellow-300" />
+            أسعار مخصصة — {item?.nameAr}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
+            <p className="text-xs text-muted-foreground">أضف سعراً خاصاً لمستخدم معين بدلاً من السعر العام</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">رقم الحساب</Label>
+                <Input placeholder="مثال: 1001" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="h-8 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">السعر بالدولار (لكل وحدة)</Label>
+                <Input placeholder="مثال: 0.05" type="number" step="0.001" min="0" value={pricePerUnit} onChange={e => setPricePerUnit(e.target.value)} className="h-8 text-sm" />
+              </div>
+            </div>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="w-full">
+              {saving ? "جاري الحفظ..." : "حفظ السعر"}
+            </Button>
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-center text-muted-foreground py-4">جاري التحميل...</p>
+          ) : entries.length === 0 ? (
+            <p className="text-sm text-center text-muted-foreground py-4">لا توجد أسعار مخصصة لهذا المنتج</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-semibold">الأسعار المخصصة الحالية</p>
+              {entries.map(e => (
+                <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-card/50 border border-border/50 text-sm">
+                  <div>
+                    <span className="font-mono font-bold text-primary">{e.accountNumber}</span>
+                    {e.userName && <span className="mr-2 text-xs text-muted-foreground">{e.userName}</span>}
+                    <span className="mr-2 text-yellow-300 font-semibold">${e.pricePerUnit} / {item?.currencyUnit || "وحدة"}</span>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)} className="h-7 w-7 text-destructive hover:bg-destructive/10">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إغلاق</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

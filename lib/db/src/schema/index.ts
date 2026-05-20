@@ -12,3 +12,4 @@ export * from "./deposit-requests";
 export * from "./identity-verifications";
 export * from "./orders";
 export * from "./wallet-transactions";
+export * from "./user-item-prices";

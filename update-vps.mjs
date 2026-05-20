@@ -12,6 +12,8 @@
   const FILES = [
     // DB schema (CRITICAL — Drizzle ignores columns not defined here)
     'lib/db/src/schema/items.ts',
+    'lib/db/src/schema/user-item-prices.ts',
+    'lib/db/src/schema/index.ts',
     // Generated Zod schemas (must be first so API server build picks them up)
     'lib/api-zod/src/generated/api.ts',
     'lib/api-zod/src/generated/types/updateItemBody.ts',
@@ -37,6 +39,7 @@
     'artifacts/api-server/src/routes/mock-charging.ts',
     'artifacts/api-server/src/routes/sitemap.ts',
     'artifacts/api-server/src/routes/index.ts',
+    'artifacts/api-server/src/routes/user-item-prices.ts',
   ];
 
   function download(filePath) {
