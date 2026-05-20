@@ -83,12 +83,25 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       return;
     }
 
-    // Convert USD → user's currency using currencies table
+    // Convert USD → user's currency using settings table
     const userCurrency = (user.currency || "USD").toUpperCase();
-    const currenciesRes = await client.query("SELECT code, usd_rate FROM currencies");
-    const rates: Record<string, number> = { USD: 1 };
-    for (const row of currenciesRes.rows) rates[row.code] = parseFloat(row.usd_rate);
-    const rate = rates[userCurrency];
+    const settingsRes = await client.query("SELECT * FROM settings LIMIT 1");
+    const settings = settingsRes.rows[0] ?? {};
+    const rateMap: Record<string, number> = {
+      USD: 1,
+      TRY: parseFloat(settings.usd_to_try) || 0,
+      SYP: parseFloat(settings.usd_to_syp) || 0,
+      EUR: parseFloat(settings.usd_to_eur) || 0,
+      OMR: parseFloat(settings.usd_to_omr) || 0,
+      MAD: parseFloat(settings.usd_to_mad) || 0,
+      DZD: parseFloat(settings.usd_to_dzd) || 0,
+      ILS: parseFloat(settings.usd_to_ils) || 0,
+      IQD: parseFloat(settings.usd_to_iqd) || 0,
+      SAR: parseFloat(settings.usd_to_sar) || 0,
+      EGP: parseFloat(settings.usd_to_egp) || 0,
+      JOD: parseFloat(settings.usd_to_jod) || 0,
+    };
+    const rate = rateMap[userCurrency];
     if (!rate || isNaN(rate)) {
       await client.query("ROLLBACK");
       res.status(400).json({ error: `سعر الصرف غير محدد لعملة ${userCurrency}. يرجى التواصل مع الإدارة.` });
