@@ -10,12 +10,24 @@
   const BASE = '/var/www/alghareebcard';
 
   const FILES = [
+    // Generated Zod schemas (must be first so API server build picks them up)
+    'lib/api-zod/src/generated/api.ts',
+    'lib/api-zod/src/generated/types/updateItemBody.ts',
+    'lib/api-zod/src/generated/types/createItemBody.ts',
+    'lib/api-zod/src/generated/types/item.ts',
+    'lib/api-zod/src/generated/types/itemWithPackages.ts',
+    'lib/api-zod/src/generated/types/index.ts',
+    'lib/api-zod/src/index.ts',
+    'lib/api-client-react/src/generated/api.schemas.ts',
+    'lib/api-client-react/src/generated/api.ts',
+    // Frontend components
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
     'artifacts/alghareeb-card/src/components/layout/AppLayout.tsx',
     'artifacts/alghareeb-card/src/components/admin/OrdersManager.tsx',
     'artifacts/alghareeb-card/src/pages/item.tsx',
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
     'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
+    // API server routes
     'artifacts/api-server/src/routes/orders-user.ts',
     'artifacts/api-server/src/routes/admin.ts',
     'artifacts/api-server/src/routes/mock-charging.ts',
