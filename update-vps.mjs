@@ -18,6 +18,7 @@
     'artifacts/api-server/src/routes/orders-user.ts',
     'artifacts/api-server/src/routes/admin.ts',
     'artifacts/api-server/src/routes/mock-charging.ts',
+    'artifacts/api-server/src/routes/sitemap.ts',
     'artifacts/api-server/src/routes/index.ts',
   ];
 
