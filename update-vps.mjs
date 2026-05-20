@@ -31,6 +31,7 @@
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
     'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
     // API server routes
+    'artifacts/api-server/src/routes/settings.ts',
     'artifacts/api-server/src/routes/orders-user.ts',
     'artifacts/api-server/src/routes/admin.ts',
     'artifacts/api-server/src/routes/mock-charging.ts',

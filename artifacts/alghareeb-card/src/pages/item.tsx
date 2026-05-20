@@ -213,7 +213,7 @@ export default function ItemPage({ id }: { id: number }) {
           </p>
           {isPerQuantity && item.pricePerUnit && (
             <p className="text-sm text-primary/80">
-              {t('item.pricePerUnit')} {unitLabel}: {settings ? formatPrice(item.pricePerUnit) : "..."}
+              {t('item.pricePerUnit')} {unitLabel}: {formatPrice(item.pricePerUnit)}
             </p>
           )}
         </div>
@@ -262,10 +262,7 @@ export default function ItemPage({ id }: { id: number }) {
             {calculatedPrice !== null && (
               <div className="bg-primary/10 border border-primary/30 rounded-xl p-2 text-center">
                 <p className="text-sm text-muted-foreground">{t('item.totalPrice')} {quantity} {unitLabel}</p>
-                {settings
-                  ? <p className="text-2xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
-                  : <p className="text-2xl font-black text-primary/50 animate-pulse">...</p>
-                }
+                <p className="text-2xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
               </div>
             )}
           </div>

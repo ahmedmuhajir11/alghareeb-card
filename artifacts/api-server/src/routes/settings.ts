@@ -28,7 +28,16 @@ router.get("/settings", async (req, res): Promise<void> => {
     const [created] = await db.insert(settingsTable).values({}).returning();
     settings = created;
   }
-  res.json(GetSettingsResponse.parse(serializeRow(settings)));
+  const row = serializeRow(settings);
+  // Coalesce null/undefined currency fields to 0 so Zod validation always passes
+  const currencyFields = [
+    "usdToTry","usdToSyp","usdToEur","usdToOmr","usdToMad",
+    "usdToDzd","usdToIls","usdToIqd","usdToSar","usdToEgp","usdToJod",
+  ] as const;
+  for (const f of currencyFields) {
+    if (row[f] == null || isNaN(Number(row[f]))) row[f] = 0;
+  }
+  res.json(GetSettingsResponse.parse(row));
 });
 
 router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
