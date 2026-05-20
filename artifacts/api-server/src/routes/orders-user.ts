@@ -51,7 +51,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       // Check for user-specific custom price
       const customPriceRes = await client.query(
         `SELECT price_per_unit FROM user_item_prices WHERE account_number = $1 AND item_id = $2`,
-        [user.accountNumber, itemIdNum]
+        [user.account_number, itemIdNum]
       );
       const unitPrice = customPriceRes.rows.length > 0
         ? parseFloat(customPriceRes.rows[0].price_per_unit)

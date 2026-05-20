@@ -60,7 +60,7 @@ router.get("/user-item-prices/item/:itemId", requireUser, async (req: Request, r
   if (!itemId) { res.status(400).json({ error: "itemId مطلوب" }); return; }
   const result = await pool.query(
     `SELECT price_per_unit FROM user_item_prices WHERE account_number = $1 AND item_id = $2`,
-    [user.accountNumber, itemId]
+    [user.account_number, itemId]
   );
   res.json({ customPricePerUnit: result.rows.length > 0 ? parseFloat(result.rows[0].price_per_unit) : null });
 });
