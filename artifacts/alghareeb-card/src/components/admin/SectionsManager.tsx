@@ -1107,32 +1107,47 @@ function CustomPricesDialog({ item, onClose }: { item: Item | null; onClose: () 
   const [saving, setSaving] = useState(false);
   const [accountNumber, setAccountNumber] = useState("");
   const [pricePerUnit, setPricePerUnit] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fetchEntries = async (itemId: number) => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/admin/user-item-prices/${itemId}`, { credentials: "include" });
-      if (res.ok) setEntries(await res.json());
+      if (res.ok) {
+        setEntries(await res.json());
+        setErrorMsg(null);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setErrorMsg(d.error || `خطأ في تحميل البيانات (${res.status})`);
+      }
+    } catch (e: any) {
+      setErrorMsg("تعذّر الاتصال بالسيرفر");
     } finally { setLoading(false); }
   };
 
   useEffect(() => {
-    if (item) { setEntries([]); setAccountNumber(""); setPricePerUnit(""); fetchEntries(item.id); }
+    if (item) { setEntries([]); setAccountNumber(""); setPricePerUnit(""); setErrorMsg(null); setSuccessMsg(null); fetchEntries(item.id); }
   }, [item]);
 
   const handleSave = async () => {
-    if (!item || !accountNumber.trim() || !pricePerUnit) { toast({ variant: "destructive", title: "أدخل رقم الحساب والسعر" }); return; }
-    setSaving(true);
+    if (!item || !accountNumber.trim() || !pricePerUnit) { setErrorMsg("أدخل رقم الحساب والسعر"); return; }
+    const parsed = parseFloat(pricePerUnit);
+    if (isNaN(parsed) || parsed <= 0) { setErrorMsg("السعر يجب أن يكون رقماً موجباً"); return; }
+    setSaving(true); setErrorMsg(null); setSuccessMsg(null);
     try {
       const res = await fetch(`${API_BASE}/api/admin/user-item-prices`, {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountNumber: accountNumber.trim(), itemId: item.id, pricePerUnit: parseFloat(pricePerUnit) }),
+        body: JSON.stringify({ accountNumber: accountNumber.trim(), itemId: item.id, pricePerUnit: parsed }),
       });
-      if (!res.ok) { const d = await res.json(); toast({ variant: "destructive", title: d.error || "خطأ" }); return; }
-      toast({ title: "تم الحفظ بنجاح" });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setErrorMsg(d.error || `فشل الحفظ (${res.status}) — تأكد من تشغيل SQL على السيرفر`); return; }
+      setSuccessMsg("✅ تم حفظ السعر بنجاح");
       setAccountNumber(""); setPricePerUnit("");
       await fetchEntries(item.id);
+    } catch (e: any) {
+      setErrorMsg("تعذّر الاتصال بالسيرفر");
     } finally { setSaving(false); }
   };
 
@@ -1166,13 +1181,19 @@ function CustomPricesDialog({ item, onClose }: { item: Item | null; onClose: () 
             <Button size="sm" onClick={handleSave} disabled={saving} className="w-full">
               {saving ? "جاري الحفظ..." : "حفظ السعر"}
             </Button>
+            {errorMsg && (
+              <div className="bg-red-950/60 border border-red-500/50 rounded-lg px-3 py-2 text-xs text-red-300 text-center">{errorMsg}</div>
+            )}
+            {successMsg && (
+              <div className="bg-green-950/60 border border-green-500/50 rounded-lg px-3 py-2 text-xs text-green-300 text-center">{successMsg}</div>
+            )}
           </div>
 
           {loading ? (
             <p className="text-sm text-center text-muted-foreground py-4">جاري التحميل...</p>
-          ) : entries.length === 0 ? (
+          ) : entries.length === 0 && !errorMsg ? (
             <p className="text-sm text-center text-muted-foreground py-4">لا توجد أسعار مخصصة لهذا المنتج</p>
-          ) : (
+          ) : entries.length === 0 ? null : (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground font-semibold">الأسعار المخصصة الحالية</p>
               {entries.map(e => (
