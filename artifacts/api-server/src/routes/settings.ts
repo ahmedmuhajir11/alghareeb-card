@@ -29,15 +29,31 @@ router.get("/settings", async (req, res): Promise<void> => {
     settings = created;
   }
   const row = serializeRow(settings);
-  // Coalesce null/undefined currency fields to 0 so Zod validation always passes
-  const currencyFields = [
+  // Coalesce null/undefined number fields to 0
+  const numFields = [
     "usdToTry","usdToSyp","usdToEur","usdToOmr","usdToMad",
     "usdToDzd","usdToIls","usdToIqd","usdToSar","usdToEgp","usdToJod",
   ] as const;
-  for (const f of currencyFields) {
+  for (const f of numFields) {
     if (row[f] == null || isNaN(Number(row[f]))) row[f] = 0;
   }
-  res.json(GetSettingsResponse.parse(row));
+  // Coalesce null/undefined string fields to empty string
+  const strFields = [
+    "marqueeText","whatsappNumber","moneyTransferCurrencies",
+    "welcomeMessage","welcomeMessageEn",
+  ] as const;
+  for (const f of strFields) {
+    if (row[f] == null) row[f] = "";
+  }
+  // updatedAt must be a string
+  if (row["updatedAt"] == null) row["updatedAt"] = new Date().toISOString();
+  const result = GetSettingsResponse.safeParse(row);
+  if (!result.success) {
+    // Fallback: return raw row with safe types to avoid breaking the frontend
+    res.json({ ...row, id: Number(row["id"] ?? 1) });
+    return;
+  }
+  res.json(result.data);
 });
 
 router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
