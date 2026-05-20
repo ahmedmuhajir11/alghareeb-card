@@ -185,6 +185,11 @@ function OrderCard({ o, executor }: { o: OrderRow; executor: any }) {
                 </div>
               </div>
             )}
+            {o.notes && (
+              <div className={`rounded-lg px-3 py-2 mr-0 text-xs leading-relaxed ${o.status === "completed" && o.notes.includes("تم الشحن تلقائياً") ? "bg-green-500/10 border border-green-500/30 text-green-400" : "bg-yellow-500/10 border border-yellow-500/30 text-yellow-300"}`}>
+                <span className="font-bold">ملاحظة API: </span>{o.notes}
+              </div>
+            )}
             <div className="border-t border-border/30 pt-2 mt-2 space-y-1">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <UserIcon className="w-3 h-3" />

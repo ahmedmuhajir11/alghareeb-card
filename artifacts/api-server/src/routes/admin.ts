@@ -255,6 +255,7 @@ router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): P
       amount: parseFloat(r.amount),
       currency: r.currency,
       status: r.status,
+      notes: r.notes || null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     })));

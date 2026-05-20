@@ -531,10 +531,16 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                     </div>
                   )}
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold truncate">{item.nameAr}</h3>
                       {(item as any).isAvailable === false && (
                         <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 flex-shrink-0">غير متاح</span>
+                      )}
+                      {(item as any).apiEndpoint && (item as any).apiKey && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 flex-shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                          API تلقائي
+                        </span>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>

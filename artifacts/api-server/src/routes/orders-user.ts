@@ -160,19 +160,19 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           }),
           signal: AbortSignal.timeout(15000),
         });
-        const apiData = await apiRes.json().catch(() => ({}));
-        if (apiRes.ok && apiData?.success) {
+        const apiData = await apiRes.json().catch(() => ({})) as Record<string, unknown>;
+        if (apiRes.ok && apiData?.["success"]) {
           finalStatus = "completed";
           autoCharged = true;
           await pool.query(
             `UPDATE orders SET status='completed', notes=$1 WHERE id=$2`,
-            [`تم الشحن تلقائياً - معرف العملية: ${apiData?.transaction_id ?? "N/A"}`, order.id]
+            [`تم الشحن تلقائياً - معرف العملية: ${String(apiData?.["transaction_id"] ?? "N/A")}`, order.id]
           );
         } else {
           finalStatus = "pending";
           await pool.query(
             `UPDATE orders SET notes=$1 WHERE id=$2`,
-            [`فشل الشحن التلقائي: ${apiData?.error ?? "خطأ غير معروف"} - سيتم المعالجة يدوياً`, order.id]
+            [`فشل الشحن التلقائي: ${String(apiData?.["error"] ?? "خطأ غير معروف")} - سيتم المعالجة يدوياً`, order.id]
           );
         }
       } catch (apiErr: any) {

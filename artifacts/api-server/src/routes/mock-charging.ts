@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 
 const router: IRouter = Router();
 
-router.post("/api/mock-charging", (req: Request, res: Response): void => {
+router.post("/mock-charging", (req: Request, res: Response): void => {
   const { api_key, order_id, item_name, package_name, target_id, quantity } = req.body ?? {};
 
   if (!api_key) {
