@@ -236,6 +236,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     fetch(`${API_BASE}/api/health`, { method: "GET", cache: "no-store" }).catch(() => {});
   }, []);
 
+  // Re-register push subscription with current userId whenever user logs in
+  useEffect(() => {
+    if (!user?.id || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    navigator.serviceWorker.ready.then(async (reg) => {
+      const sub = await reg.pushManager.getSubscription().catch(() => null);
+      if (!sub) return;
+      fetch(`${API_BASE}/api/push/subscribe`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub.toJSON()),
+      }).catch(() => {});
+    }).catch(() => {});
+  }, [user?.id]);
+
   useEffect(() => {
     if (messages.length <= 1) return;
     const interval = setInterval(() => {

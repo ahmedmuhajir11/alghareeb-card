@@ -11,6 +11,7 @@
 
   const FILES = [
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
+    'artifacts/alghareeb-card/src/components/layout/AppLayout.tsx',
     'artifacts/alghareeb-card/src/components/admin/OrdersManager.tsx',
     'artifacts/alghareeb-card/src/pages/item.tsx',
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
