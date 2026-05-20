@@ -20,6 +20,9 @@ export interface ItemWithPackages {
   sortOrder: number;
   isActive: boolean;
   isAvailable: boolean;
+  apiEndpoint?: string;
+  apiKey?: string;
+  apiAgentId?: string;
   createdAt: string;
   /** pricing type inherited from the section */
   sectionPricingType: string;

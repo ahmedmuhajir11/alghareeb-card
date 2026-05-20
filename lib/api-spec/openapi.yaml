@@ -661,6 +661,15 @@ components:
         isAvailable:
           type: boolean
           description: "When false, item is shown but marked as unavailable"
+        apiEndpoint:
+          type: string
+          description: "Optional API endpoint URL for automatic charging"
+        apiKey:
+          type: string
+          description: "API key for authentication with the charging provider"
+        apiAgentId:
+          type: string
+          description: "Agent/reseller ID assigned by the charging provider"
         createdAt:
           type: string
       required:
@@ -700,6 +709,12 @@ components:
           type: boolean
         isAvailable:
           type: boolean
+        apiEndpoint:
+          type: string
+        apiKey:
+          type: string
+        apiAgentId:
+          type: string
         createdAt:
           type: string
         sectionPricingType:
@@ -744,6 +759,12 @@ components:
           type: boolean
         isAvailable:
           type: boolean
+        apiEndpoint:
+          type: string
+        apiKey:
+          type: string
+        apiAgentId:
+          type: string
       required:
         - nameAr
         - nameEn
@@ -771,6 +792,12 @@ components:
           type: boolean
         isAvailable:
           type: boolean
+        apiEndpoint:
+          type: string
+        apiKey:
+          type: string
+        apiAgentId:
+          type: string
 
     Package:
       type: object

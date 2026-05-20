@@ -17,4 +17,7 @@ export interface UpdateItemBody {
   sortOrder?: number;
   isActive?: boolean;
   isAvailable?: boolean;
+  apiEndpoint?: string;
+  apiKey?: string;
+  apiAgentId?: string;
 }

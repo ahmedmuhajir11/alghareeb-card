@@ -92,6 +92,12 @@ export interface Item {
   isActive: boolean;
   /** When false, item is shown but marked as unavailable */
   isAvailable: boolean;
+  /** Optional API endpoint URL for automatic charging */
+  apiEndpoint?: string;
+  /** API key for authentication with the charging provider */
+  apiKey?: string;
+  /** Agent/reseller ID assigned by the charging provider */
+  apiAgentId?: string;
   createdAt: string;
 }
 
@@ -120,6 +126,9 @@ export interface ItemWithPackages {
   sortOrder: number;
   isActive: boolean;
   isAvailable: boolean;
+  apiEndpoint?: string;
+  apiKey?: string;
+  apiAgentId?: string;
   createdAt: string;
   /** pricing type inherited from the section */
   sectionPricingType: string;
@@ -137,6 +146,9 @@ export interface CreateItemBody {
   sortOrder?: number;
   isActive?: boolean;
   isAvailable?: boolean;
+  apiEndpoint?: string;
+  apiKey?: string;
+  apiAgentId?: string;
 }
 
 export interface UpdateItemBody {
@@ -150,6 +162,9 @@ export interface UpdateItemBody {
   sortOrder?: number;
   isActive?: boolean;
   isAvailable?: boolean;
+  apiEndpoint?: string;
+  apiKey?: string;
+  apiAgentId?: string;
 }
 
 export interface CreatePackageBody {

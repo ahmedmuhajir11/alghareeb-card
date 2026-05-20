@@ -187,6 +187,18 @@ export const ListItemsResponseItem = zod.object({
   isAvailable: zod
     .boolean()
     .describe("When false, item is shown but marked as unavailable"),
+  apiEndpoint: zod
+    .string()
+    .optional()
+    .describe("Optional API endpoint URL for automatic charging"),
+  apiKey: zod
+    .string()
+    .optional()
+    .describe("API key for authentication with the charging provider"),
+  apiAgentId: zod
+    .string()
+    .optional()
+    .describe("Agent\/reseller ID assigned by the charging provider"),
   createdAt: zod.string(),
 });
 export const ListItemsResponse = zod.array(ListItemsResponseItem);
@@ -209,6 +221,9 @@ export const CreateItemBody = zod.object({
   sortOrder: zod.number().optional(),
   isActive: zod.boolean().optional(),
   isAvailable: zod.boolean().optional(),
+  apiEndpoint: zod.string().optional(),
+  apiKey: zod.string().optional(),
+  apiAgentId: zod.string().optional(),
 });
 
 /**
@@ -231,6 +246,9 @@ export const GetItemResponse = zod.object({
   sortOrder: zod.number(),
   isActive: zod.boolean(),
   isAvailable: zod.boolean(),
+  apiEndpoint: zod.string().optional(),
+  apiKey: zod.string().optional(),
+  apiAgentId: zod.string().optional(),
   createdAt: zod.string(),
   sectionPricingType: zod
     .string()
@@ -271,6 +289,9 @@ export const UpdateItemBody = zod.object({
   sortOrder: zod.number().optional(),
   isActive: zod.boolean().optional(),
   isAvailable: zod.boolean().optional(),
+  apiEndpoint: zod.string().optional(),
+  apiKey: zod.string().optional(),
+  apiAgentId: zod.string().optional(),
 });
 
 export const UpdateItemResponse = zod.object({
@@ -294,6 +315,18 @@ export const UpdateItemResponse = zod.object({
   isAvailable: zod
     .boolean()
     .describe("When false, item is shown but marked as unavailable"),
+  apiEndpoint: zod
+    .string()
+    .optional()
+    .describe("Optional API endpoint URL for automatic charging"),
+  apiKey: zod
+    .string()
+    .optional()
+    .describe("API key for authentication with the charging provider"),
+  apiAgentId: zod
+    .string()
+    .optional()
+    .describe("Agent\/reseller ID assigned by the charging provider"),
   createdAt: zod.string(),
 });
 

@@ -21,10 +21,12 @@ import searchRouter from "./search";
 import currenciesRouter from "./currencies";
 import identityRouter from "./identity";
 import sitemapRouter from "./sitemap";
+import mockChargingRouter from "./mock-charging";
 
 const router: IRouter = Router();
 
 router.use(sitemapRouter);
+router.use(mockChargingRouter);
 router.use(healthRouter);
 router.use(settingsRouter);
 router.use(sectionsRouter);

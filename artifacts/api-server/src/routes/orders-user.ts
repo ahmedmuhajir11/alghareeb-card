@@ -23,7 +23,9 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
     // Load canonical item + settings
     const itemRes = await client.query(
-      `SELECT i.id, i.name_ar, i.section_id, i.price_per_unit, i.currency_unit, s.pricing_type AS section_pricing_type
+      `SELECT i.id, i.name_ar, i.section_id, i.price_per_unit, i.currency_unit,
+              i.api_endpoint, i.api_key, i.api_agent_id,
+              s.pricing_type AS section_pricing_type
        FROM items i LEFT JOIN sections s ON s.id = i.section_id
        WHERE i.id = $1`,
       [itemIdNum]
@@ -134,15 +136,64 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
     await client.query("COMMIT");
 
+    // Auto-charge via API if configured
+    let finalStatus = order.status as string;
+    let autoCharged = false;
+    const apiEndpoint = item.api_endpoint as string | null;
+    const apiKey = item.api_key as string | null;
+    const apiAgentId = item.api_agent_id as string | null;
+
+    if (apiEndpoint && apiKey) {
+      try {
+        const apiRes = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            api_key: apiKey,
+            agent_id: apiAgentId || undefined,
+            order_id: order.id,
+            item_name: item.name_ar,
+            package_name: packageName,
+            target_id: targetId || null,
+            quantity: isPerQuantity ? parseFloat(quantity) : undefined,
+            amount_usd: priceUsd,
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+        const apiData = await apiRes.json().catch(() => ({}));
+        if (apiRes.ok && apiData?.success) {
+          finalStatus = "completed";
+          autoCharged = true;
+          await pool.query(
+            `UPDATE orders SET status='completed', notes=$1 WHERE id=$2`,
+            [`تم الشحن تلقائياً - معرف العملية: ${apiData?.transaction_id ?? "N/A"}`, order.id]
+          );
+        } else {
+          finalStatus = "pending";
+          await pool.query(
+            `UPDATE orders SET notes=$1 WHERE id=$2`,
+            [`فشل الشحن التلقائي: ${apiData?.error ?? "خطأ غير معروف"} - سيتم المعالجة يدوياً`, order.id]
+          );
+        }
+      } catch (apiErr: any) {
+        finalStatus = "pending";
+        await pool.query(
+          `UPDATE orders SET notes=$1 WHERE id=$2`,
+          [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"} - سيتم المعالجة يدوياً`, order.id]
+        ).catch(() => {});
+      }
+    }
+
     // Notify admins of the new order (fire-and-forget)
     const userLabel = user.name || user.email || `#${user.accountNumber ?? user.id}`;
     const orderLabel = `${item.name_ar}${packageName ? " - " + packageName : ""}`;
-    const adminTitle = "🛒 طلب شحن جديد";
-    const adminBody = `${userLabel} طلب: ${orderLabel} بقيمة ${cost} ${userCurrency}${targetId ? ` · ID: ${targetId}` : ""}`;
+    const adminTitle = autoCharged ? "✅ شحن تلقائي ناجح" : "🛒 طلب شحن جديد";
+    const adminBody = `${userLabel} - ${orderLabel} بقيمة ${cost} ${userCurrency}${targetId ? ` · ID: ${targetId}` : ""}${autoCharged ? " · تم تلقائياً" : ""}`;
     sendPushToAdmins(adminTitle, adminBody, "/admin").catch(() => {});
 
     res.json({
       success: true,
+      autoCharged,
       order: {
         id: order.id,
         itemName: order.item_name,
@@ -150,7 +201,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         targetId: order.target_id,
         amount: parseFloat(order.amount),
         currency: order.currency,
-        status: order.status,
+        status: finalStatus,
         createdAt: order.created_at,
       },
       newBalance: currentBalance - cost,

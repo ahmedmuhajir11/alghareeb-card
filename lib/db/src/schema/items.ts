@@ -16,6 +16,9 @@ export const itemsTable = pgTable("items", {
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
   isAvailable: boolean("is_available").notNull().default(true),
+  apiEndpoint: text("api_endpoint"),
+  apiKey: text("api_key"),
+  apiAgentId: text("api_agent_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

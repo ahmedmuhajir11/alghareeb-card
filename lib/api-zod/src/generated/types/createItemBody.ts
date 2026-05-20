@@ -17,4 +17,7 @@ export interface CreateItemBody {
   sortOrder?: number;
   isActive?: boolean;
   isAvailable?: boolean;
+  apiEndpoint?: string;
+  apiKey?: string;
+  apiAgentId?: string;
 }

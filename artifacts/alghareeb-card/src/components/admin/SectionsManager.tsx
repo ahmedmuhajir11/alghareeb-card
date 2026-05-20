@@ -290,7 +290,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const isAppCharging = section.id === 2;
   const isMoneyTransfer = section.id === 3 || section.nameEn === "Money Transfers" || section.nameAr === "الحوالات المالية";
 
-  const emptyForm = { nameAr: "", nameEn: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true, isAvailable: true };
+  const emptyForm = { nameAr: "", nameEn: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true, isAvailable: true, apiEndpoint: "", apiKey: "", apiAgentId: "" };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Item | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -358,6 +358,9 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       sortOrder: item.sortOrder,
       isActive: item.isActive,
       isAvailable: (item as any).isAvailable ?? true,
+      apiEndpoint: (item as any).apiEndpoint ?? "",
+      apiKey: (item as any).apiKey ?? "",
+      apiAgentId: (item as any).apiAgentId ?? "",
     });
     setIsDialogOpen(true);
   };
@@ -382,6 +385,9 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       sortOrder: formData.sortOrder,
       isActive: formData.isActive,
       isAvailable: formData.isAvailable,
+      apiEndpoint: formData.apiEndpoint || undefined,
+      apiKey: formData.apiKey || undefined,
+      apiAgentId: formData.apiAgentId || undefined,
     };
     if (isAppCharging) {
       payload.minQuantity = formData.minQuantity > 0 ? formData.minQuantity : 1;
@@ -774,6 +780,52 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                   <p className="text-xs text-muted-foreground leading-snug">إذا أُوقف، يظهر المنتج باللون الرمادي مع شارة "غير متاح"</p>
                 </div>
               </div>
+
+              {/* قسم ربط API */}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${formData.apiEndpoint && formData.apiKey ? "bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]" : "bg-muted-foreground/40"}`} />
+                  <p className="font-bold text-sm text-primary">ربط API للشحن التلقائي</p>
+                  {formData.apiEndpoint && formData.apiKey && (
+                    <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 rounded px-1.5 py-0.5 font-bold">مفعّل</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  إذا ملأت هذه الحقول، سيتم الشحن تلقائياً عند كل طلب. اتركها فارغة للشحن اليدوي.
+                </p>
+                <div className="space-y-2">
+                  <Label className="text-xs">رابط API (Endpoint)</Label>
+                  <Input
+                    value={formData.apiEndpoint}
+                    onChange={e => setFormData({ ...formData, apiEndpoint: e.target.value })}
+                    className="bg-background/50 text-left text-sm font-mono"
+                    dir="ltr"
+                    placeholder="https://api.example.com/charge"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">مفتاح API (API Key)</Label>
+                  <Input
+                    value={formData.apiKey}
+                    onChange={e => setFormData({ ...formData, apiKey: e.target.value })}
+                    className="bg-background/50 text-left text-sm font-mono"
+                    dir="ltr"
+                    placeholder="sk-xxxxxxxxxxxx"
+                    type="password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">معرف الوكيل (Agent ID) — اختياري</Label>
+                  <Input
+                    value={formData.apiAgentId}
+                    onChange={e => setFormData({ ...formData, apiAgentId: e.target.value })}
+                    className="bg-background/50 text-left text-sm font-mono"
+                    dir="ltr"
+                    placeholder="AGENT_001"
+                  />
+                </div>
+              </div>
+
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>إلغاء</Button>
                 <Button onClick={handleSave} disabled={isSaving}>

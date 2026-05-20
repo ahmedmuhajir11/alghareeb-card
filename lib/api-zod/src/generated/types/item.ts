@@ -22,5 +22,11 @@ export interface Item {
   isActive: boolean;
   /** When false, item is shown but marked as unavailable */
   isAvailable: boolean;
+  /** Optional API endpoint URL for automatic charging */
+  apiEndpoint?: string;
+  /** API key for authentication with the charging provider */
+  apiKey?: string;
+  /** Agent/reseller ID assigned by the charging provider */
+  apiAgentId?: string;
   createdAt: string;
 }
