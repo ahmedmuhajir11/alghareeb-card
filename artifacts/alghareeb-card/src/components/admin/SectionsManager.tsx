@@ -385,9 +385,9 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       sortOrder: formData.sortOrder,
       isActive: formData.isActive,
       isAvailable: formData.isAvailable,
-      apiEndpoint: formData.apiEndpoint || undefined,
-      apiKey: formData.apiKey || undefined,
-      apiAgentId: formData.apiAgentId || undefined,
+      apiEndpoint: formData.apiEndpoint,
+      apiKey: formData.apiKey,
+      apiAgentId: formData.apiAgentId,
     };
     if (isAppCharging) {
       payload.minQuantity = formData.minQuantity > 0 ? formData.minQuantity : 1;
