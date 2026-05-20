@@ -55,7 +55,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const formatPrice = (priceUsd: number) => {
-    if (!settings) return `${priceUsd.toFixed(2)} USD`;
+    if (!settings) return `${priceUsd.toFixed(2)} ${currency}`;
     
     let converted = priceUsd;
     let symbol = 'USD';
