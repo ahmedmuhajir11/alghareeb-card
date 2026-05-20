@@ -59,5 +59,18 @@
     cwd: BASE, stdio: 'inherit', env: { ...process.env, BASE_PATH: '/' }
   });
 
-  console.log('\n✅ Done! Refresh the admin panel to see API fields.');
+  console.log('\n🔁 Restarting API server...');
+  try {
+    execSync('pm2 restart alghareeb-api', { stdio: 'inherit' });
+    console.log('✅ PM2 restarted successfully');
+  } catch {
+    console.log('⚠️  PM2 restart failed — trying pm2 restart all...');
+    try {
+      execSync('pm2 restart all', { stdio: 'inherit' });
+    } catch {
+      console.log('⚠️  Could not restart via PM2. Please run: pm2 restart all');
+    }
+  }
+
+  console.log('\n✅ Done! All changes applied.');
   
