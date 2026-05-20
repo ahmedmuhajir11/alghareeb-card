@@ -54,6 +54,11 @@
     await download(f);
   }
 
+  console.log('\n🔨 Building API server...');
+  execSync('pnpm --filter @workspace/api-server run build', {
+    cwd: BASE, stdio: 'inherit'
+  });
+
   console.log('\n🔨 Building frontend...');
   execSync('BASE_PATH=/ pnpm --filter @workspace/alghareeb-card run build', {
     cwd: BASE, stdio: 'inherit', env: { ...process.env, BASE_PATH: '/' }
