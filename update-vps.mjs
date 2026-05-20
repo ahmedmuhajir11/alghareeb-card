@@ -13,6 +13,8 @@
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/OrdersManager.tsx',
     'artifacts/alghareeb-card/src/pages/item.tsx',
+    'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
+    'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
     'artifacts/api-server/src/routes/orders-user.ts',
     'artifacts/api-server/src/routes/admin.ts',
     'artifacts/api-server/src/routes/mock-charging.ts',

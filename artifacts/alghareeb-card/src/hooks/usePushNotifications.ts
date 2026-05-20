@@ -30,10 +30,12 @@ export type PushStatus = "unsupported" | "default" | "granted" | "denied";
 
 export interface UsePushOptions {
   isAdmin?: boolean;
+  userId?: number | null;
 }
 
 export function usePushNotifications(options: UsePushOptions = {}) {
   const isAdmin = !!options.isAdmin;
+  const userId = options.userId ?? null;
   const [status, setStatus] = useState<PushStatus>("default");
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
@@ -51,14 +53,14 @@ export function usePushNotifications(options: UsePushOptions = {}) {
       .then(async (reg) => {
         setRegistration(reg);
         const existing = await reg.pushManager.getSubscription();
-        // Always re-register on mount so the server can attach the current
-        // logged-in user_id (and admin flag when applicable).
+        // Re-register whenever userId or isAdmin changes so the server
+        // always has the correct user_id linked to this subscription.
         if (existing) {
           await registerSubscription(existing, isAdmin);
         }
       })
       .catch(() => {});
-  }, [isAdmin]);
+  }, [isAdmin, userId]);
 
   const subscribe = useCallback(async (): Promise<PushStatus> => {
     if (status === "unsupported") return "unsupported";

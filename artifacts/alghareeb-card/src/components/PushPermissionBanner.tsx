@@ -17,8 +17,8 @@ export default function PushPermissionBanner() {
 }
 
 function PushPermissionBannerInner() {
-  const { status, subscribe } = usePushNotifications();
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, user } = useAuth();
+  const { status, subscribe } = usePushNotifications({ userId: user?.id ?? null });
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
