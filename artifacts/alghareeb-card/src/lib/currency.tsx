@@ -15,22 +15,25 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [currency, setCurrencyState] = useState<Currency>(() => {
+  const [localCurrency, setLocalCurrency] = useState<Currency>(() => {
     const saved = localStorage.getItem('currency');
     return (saved as Currency) || 'USD';
   });
 
+  // Always prefer logged-in user's currency over localStorage
+  const currency: Currency = user?.currency ? (user.currency as Currency) : localCurrency;
+
   const { data: settings } = useGetSettings();
 
   useEffect(() => {
-    if (user?.currency && user.currency !== currency) {
-      setCurrencyState(user.currency as Currency);
+    if (user?.currency) {
+      setLocalCurrency(user.currency as Currency);
       localStorage.setItem('currency', user.currency);
     }
   }, [user?.currency]);
 
   const setCurrency = (c: Currency) => {
-    setCurrencyState(c);
+    setLocalCurrency(c);
     localStorage.setItem('currency', c);
   };
 

@@ -310,8 +310,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   href="/payment-methods"
                   className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-purple-600/15 border border-purple-500/40 hover:border-purple-400 hover:bg-purple-600/25 transition-colors"
                 >
-                  <Wallet className="w-4 h-4 text-purple-300" />
-                  <span className="text-sm font-bold text-purple-200">
+                  <Wallet className="w-4 h-4 text-purple-300 flex-shrink-0" />
+                  <span className="text-sm font-bold text-purple-200 whitespace-nowrap">
                     {user.balance.toFixed(2)} <span className="text-[11px] text-purple-300/80">{user.currency}</span>
                   </span>
                 </Link>

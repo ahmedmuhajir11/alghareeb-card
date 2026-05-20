@@ -23,6 +23,7 @@
     'lib/api-client-react/src/generated/api.schemas.ts',
     'lib/api-client-react/src/generated/api.ts',
     // Frontend components
+    'artifacts/alghareeb-card/src/lib/currency.tsx',
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
     'artifacts/alghareeb-card/src/components/layout/AppLayout.tsx',
     'artifacts/alghareeb-card/src/components/admin/OrdersManager.tsx',
