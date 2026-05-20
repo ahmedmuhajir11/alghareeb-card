@@ -142,20 +142,59 @@ export default function ItemPage({ id }: { id: number }) {
   return (
     <div className="max-w-2xl mx-auto space-y-3">
       <Helmet>
-        <title>{itemName ? `شحن ${itemName} | الغريب كارد` : 'الغريب كارد'}</title>
-        <meta name="description" content={itemName ? `اشحن ${itemName} بأفضل الأسعار وأسرع خدمة. اختر الباقة المناسبة وأرسل طلبك عبر واتساب مباشرة.` : ''} />
-        <meta property="og:title" content={itemName ? `شحن ${itemName} | الغريب كارد` : 'الغريب كارد'} />
-        <meta property="og:description" content={itemName ? `اشحن ${itemName} بأفضل الأسعار عبر الغريب كارد` : ''} />
+        <title>{item.nameEn
+          ? `شحن ${item.nameAr} - ${item.nameEn} Top Up | الغريب كارد`
+          : `شحن ${item.nameAr} | الغريب كارد`}
+        </title>
+        <meta name="description" content={
+          item.nameEn
+            ? `اشحن ${item.nameAr} بأفضل الأسعار وأسرع خدمة. Top up ${item.nameEn} at the best prices – choose your package and order via WhatsApp instantly. AlGhareeb Card.`
+            : `اشحن ${item.nameAr} بأفضل الأسعار وأسرع خدمة. اختر الباقة المناسبة وأرسل طلبك عبر واتساب مباشرة.`
+        } />
+        <meta name="keywords" content={
+          item.nameEn
+            ? `${item.nameAr}, ${item.nameEn}, شحن ${item.nameAr}, ${item.nameEn} top up, ${item.nameEn} recharge, الغريب كارد, alghareeb card`
+            : `${item.nameAr}, شحن ${item.nameAr}, الغريب كارد`
+        } />
+        <meta property="og:title" content={item.nameEn
+          ? `شحن ${item.nameAr} - ${item.nameEn} Top Up | الغريب كارد`
+          : `شحن ${item.nameAr} | الغريب كارد`}
+        />
+        <meta property="og:description" content={
+          item.nameEn
+            ? `Top up ${item.nameEn} at the best prices via AlGhareeb Card | اشحن ${item.nameAr} بأفضل الأسعار عبر الغريب كارد`
+            : `اشحن ${item.nameAr} بأفضل الأسعار عبر الغريب كارد`
+        } />
         <meta property="og:url" content={`https://alghareebcard.com/item/${id}`} />
         <link rel="canonical" href={`https://alghareebcard.com/item/${id}`} />
+        <link rel="alternate" hreflang="ar" href={`https://alghareebcard.com/item/${id}`} />
+        <link rel="alternate" hreflang="en" href={`https://alghareebcard.com/item/${id}`} />
+        <link rel="alternate" hreflang="x-default" href={`https://alghareebcard.com/item/${id}`} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            { "@type": "ListItem", "position": 1, "name": "الرئيسية", "item": "https://alghareebcard.com/" },
-            { "@type": "ListItem", "position": 2, "name": (item as any)?.sectionNameAr ?? "الأقسام", "item": `https://alghareebcard.com/section/${item?.sectionId ?? ''}` },
-            { "@type": "ListItem", "position": 3, "name": item?.nameAr ?? "", "item": `https://alghareebcard.com/item/${id}` }
-          ]
+          "@type": "Product",
+          "name": item.nameEn || item.nameAr,
+          "alternateName": item.nameEn ? item.nameAr : undefined,
+          "description": item.nameEn
+            ? `Top up ${item.nameEn} at the best prices via WhatsApp. شحن ${item.nameAr} بأفضل الأسعار.`
+            : `شحن ${item.nameAr} بأفضل الأسعار عبر واتساب.`,
+          "image": item.logoUrl || "https://alghareebcard.com/logo.png",
+          "url": `https://alghareebcard.com/item/${id}`,
+          "brand": { "@type": "Brand", "name": "AlGhareeb Card | الغريب كارد" },
+          "offers": {
+            "@type": "AggregateOffer",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "seller": { "@type": "Organization", "name": "AlGhareeb Card" }
+          },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home | الرئيسية", "item": "https://alghareebcard.com/" },
+              { "@type": "ListItem", "position": 2, "name": (item as any)?.sectionNameAr ?? "Sections", "item": `https://alghareebcard.com/section/${item?.sectionId ?? ''}` },
+              { "@type": "ListItem", "position": 3, "name": item.nameEn ? `${item.nameAr} - ${item.nameEn}` : item.nameAr, "item": `https://alghareebcard.com/item/${id}` }
+            ]
+          }
         })}</script>
       </Helmet>
       <div className={`flex flex-row items-center gap-3 p-3 rounded-2xl neon-border ${isUnavailable ? "bg-card/20 opacity-70" : "bg-card/30"}`}>
