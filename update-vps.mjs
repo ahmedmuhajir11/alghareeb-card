@@ -10,6 +10,8 @@
   const BASE = '/var/www/alghareebcard';
 
   const FILES = [
+    // DB schema (CRITICAL — Drizzle ignores columns not defined here)
+    'lib/db/src/schema/items.ts',
     // Generated Zod schemas (must be first so API server build picks them up)
     'lib/api-zod/src/generated/api.ts',
     'lib/api-zod/src/generated/types/updateItemBody.ts',
