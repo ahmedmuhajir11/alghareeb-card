@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useState } from "react";
-import { useGetItem } from "@workspace/api-client-react";
+import { useGetItem, useGetSettings } from "@workspace/api-client-react";
 import type { Package } from "@workspace/api-client-react";
 import { useCurrency } from "@/lib/currency";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +18,7 @@ import { Link } from "wouter";
 
 export default function ItemPage({ id }: { id: number }) {
   const { data: item, isLoading: itemLoading } = useGetItem(id);
+  const { data: settings } = useGetSettings();
   const { formatPrice } = useCurrency();
   const { toast } = useToast();
   const { t, lang } = useI18n();
@@ -212,7 +213,7 @@ export default function ItemPage({ id }: { id: number }) {
           </p>
           {isPerQuantity && item.pricePerUnit && (
             <p className="text-sm text-primary/80">
-              {t('item.pricePerUnit')} {unitLabel}: {formatPrice(item.pricePerUnit)}
+              {t('item.pricePerUnit')} {unitLabel}: {settings ? formatPrice(item.pricePerUnit) : "..."}
             </p>
           )}
         </div>
@@ -261,7 +262,10 @@ export default function ItemPage({ id }: { id: number }) {
             {calculatedPrice !== null && (
               <div className="bg-primary/10 border border-primary/30 rounded-xl p-2 text-center">
                 <p className="text-sm text-muted-foreground">{t('item.totalPrice')} {quantity} {unitLabel}</p>
-                <p className="text-2xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
+                {settings
+                  ? <p className="text-2xl font-black text-primary neon-text">{formatPrice(calculatedPrice)}</p>
+                  : <p className="text-2xl font-black text-primary/50 animate-pulse">...</p>
+                }
               </div>
             )}
           </div>
