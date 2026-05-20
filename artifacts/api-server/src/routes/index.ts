@@ -20,9 +20,11 @@ import levelRouter from "./level";
 import searchRouter from "./search";
 import currenciesRouter from "./currencies";
 import identityRouter from "./identity";
+import sitemapRouter from "./sitemap";
 
 const router: IRouter = Router();
 
+router.use(sitemapRouter);
 router.use(healthRouter);
 router.use(settingsRouter);
 router.use(sectionsRouter);
