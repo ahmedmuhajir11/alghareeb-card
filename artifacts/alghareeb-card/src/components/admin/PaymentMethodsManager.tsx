@@ -14,10 +14,13 @@ type PaymentMethod = {
   id: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string | null;
   flagEmoji: string;
   fields: PaymentField[];
   qrImageUrl: string | null;
   notes: string[];
+  notesEn?: string[];
+  notesTr?: string[];
   requireSenderName: boolean;
   requireKyc: boolean;
   isActive: boolean;
@@ -59,9 +62,10 @@ function isTurkeyMethod(nameAr: string, nameEn: string): boolean {
 }
 
 const emptyForm = () => ({
-  nameAr: "", nameEn: "", flagEmoji: "🌍",
+  nameAr: "", nameEn: "", nameTr: "", flagEmoji: "🌍",
   fields: [{ label: "", value: "", isCopyable: true }] as PaymentField[],
-  qrImageUrl: "", notes: [""], requireSenderName: false, requireKyc: false, isActive: true, sortOrder: 0,
+  qrImageUrl: "", notes: [""], notesEn: [""], notesTr: [""],
+  requireSenderName: false, requireKyc: false, isActive: true, sortOrder: 0,
   allowedCurrencies: "", taxPercent: 0,
 });
 
@@ -89,6 +93,8 @@ export default function PaymentMethodsManager() {
         ...data,
         fields: data.fields.filter(f => f.label && f.value),
         notes: data.notes.filter(n => n.trim()),
+        notesEn: data.notesEn.filter(n => n.trim()),
+        notesTr: data.notesTr.filter(n => n.trim()),
         qrImageUrl: data.qrImageUrl || null,
       };
       const url = editTarget ? api(`/payment-methods/${editTarget.id}`) : api("/payment-methods");
@@ -156,10 +162,12 @@ export default function PaymentMethodsManager() {
   const openEdit = (m: PaymentMethod) => {
     setEditTarget(m);
     setForm({
-      nameAr: m.nameAr, nameEn: m.nameEn, flagEmoji: m.flagEmoji,
+      nameAr: m.nameAr, nameEn: m.nameEn, nameTr: m.nameTr ?? "", flagEmoji: m.flagEmoji,
       fields: m.fields.length ? m.fields : [{ label: "", value: "", isCopyable: true }],
       qrImageUrl: m.qrImageUrl ?? "",
       notes: m.notes.length ? m.notes : [""],
+      notesEn: m.notesEn && m.notesEn.length ? m.notesEn : [""],
+      notesTr: m.notesTr && m.notesTr.length ? m.notesTr : [""],
       requireSenderName: m.requireSenderName ?? false,
       requireKyc: m.requireKyc ?? false,
       isActive: m.isActive, sortOrder: m.sortOrder,
@@ -178,6 +186,16 @@ export default function PaymentMethodsManager() {
     setForm(f => ({ ...f, notes: f.notes.map((n, idx) => idx === i ? val : n) }));
   const addNote = () => setForm(f => ({ ...f, notes: [...f.notes, ""] }));
   const removeNote = (i: number) => setForm(f => ({ ...f, notes: f.notes.filter((_, idx) => idx !== i) }));
+
+  const updateNoteEn = (i: number, val: string) =>
+    setForm(f => ({ ...f, notesEn: f.notesEn.map((n, idx) => idx === i ? val : n) }));
+  const addNoteEn = () => setForm(f => ({ ...f, notesEn: [...f.notesEn, ""] }));
+  const removeNoteEn = (i: number) => setForm(f => ({ ...f, notesEn: f.notesEn.filter((_, idx) => idx !== i) }));
+
+  const updateNoteTr = (i: number, val: string) =>
+    setForm(f => ({ ...f, notesTr: f.notesTr.map((n, idx) => idx === i ? val : n) }));
+  const addNoteTr = () => setForm(f => ({ ...f, notesTr: [...f.notesTr, ""] }));
+  const removeNoteTr = (i: number) => setForm(f => ({ ...f, notesTr: f.notesTr.filter((_, idx) => idx !== i) }));
 
   return (
     <Card className="neon-border bg-card/50">
@@ -297,6 +315,10 @@ export default function PaymentMethodsManager() {
               <Label>الاسم بالإنجليزية *</Label>
               <Input value={form.nameEn} onChange={e => setForm(f => ({ ...f, nameEn: e.target.value }))} className="bg-background/50" dir="ltr" placeholder="e.g. Deposit from Turkey" />
             </div>
+            <div className="space-y-1.5">
+              <Label>الاسم بالتركية (اختياري)</Label>
+              <Input value={form.nameTr} onChange={e => setForm(f => ({ ...f, nameTr: e.target.value }))} className="bg-background/50" dir="ltr" placeholder="örn. Türkiye'den Yatırım" />
+            </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -349,42 +371,79 @@ export default function PaymentMethodsManager() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>ملاحظات وتنويهات</Label>
+                <Label>ملاحظات — العربية</Label>
                 <Button type="button" size="sm" variant="outline" onClick={addNote} className="h-7 gap-1 text-xs">
                   <Plus className="w-3 h-3" /> إضافة ملاحظة
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground">يمكنك كتابة نسخة عربية ونسخة إنجليزية — تُعرض النسخة المناسبة حسب لغة المستخدم.</p>
-              <div className="space-y-3">
-                {form.notes.map((note, i) => {
-                  const parts = note.split("||");
-                  const arVal = parts[0]?.trim() ?? note;
-                  const enVal = parts[1]?.trim() ?? "";
-                  return (
-                    <div key={i} className="flex gap-2 items-start">
-                      <span className="text-xs text-muted-foreground w-6 text-left flex-shrink-0 mt-2">({i + 1})</span>
-                      <div className="flex-1 flex flex-col gap-1">
-                        <Input
-                          value={arVal}
-                          onChange={e => updateNote(i, e.target.value.trim() || enVal ? `${e.target.value}||${enVal}` : e.target.value)}
-                          className="bg-background/50 text-sm"
-                          placeholder="الملاحظة بالعربية..."
-                          dir="rtl"
-                        />
-                        <Input
-                          value={enVal}
-                          onChange={e => updateNote(i, e.target.value.trim() || arVal ? `${arVal}||${e.target.value}` : arVal)}
-                          className="bg-background/50 text-sm"
-                          placeholder="Note in English... (optional)"
-                          dir="ltr"
-                        />
-                      </div>
-                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0 mt-1" onClick={() => removeNote(i)}>
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  );
-                })}
+              <div className="space-y-2">
+                {form.notes.map((note, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <span className="text-xs text-muted-foreground w-6 flex-shrink-0">({i + 1})</span>
+                    <Input
+                      value={note}
+                      onChange={e => updateNote(i, e.target.value)}
+                      className="bg-background/50 text-sm flex-1"
+                      placeholder="الملاحظة بالعربية..."
+                      dir="rtl"
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => removeNote(i)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Notes — English</Label>
+                <Button type="button" size="sm" variant="outline" onClick={addNoteEn} className="h-7 gap-1 text-xs">
+                  <Plus className="w-3 h-3" /> Add Note
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {form.notesEn.map((note, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <span className="text-xs text-muted-foreground w-6 flex-shrink-0">({i + 1})</span>
+                    <Input
+                      value={note}
+                      onChange={e => updateNoteEn(i, e.target.value)}
+                      className="bg-background/50 text-sm flex-1"
+                      placeholder="Note in English..."
+                      dir="ltr"
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => removeNoteEn(i)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Notlar — Türkçe</Label>
+                <Button type="button" size="sm" variant="outline" onClick={addNoteTr} className="h-7 gap-1 text-xs">
+                  <Plus className="w-3 h-3" /> Not Ekle
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {form.notesTr.map((note, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <span className="text-xs text-muted-foreground w-6 flex-shrink-0">({i + 1})</span>
+                    <Input
+                      value={note}
+                      onChange={e => updateNoteTr(i, e.target.value)}
+                      className="bg-background/50 text-sm flex-1"
+                      placeholder="Türkçe not..."
+                      dir="ltr"
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => removeNoteTr(i)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
 

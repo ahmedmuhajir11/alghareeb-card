@@ -486,6 +486,10 @@ components:
           type: integer
         marqueeText:
           type: string
+        marqueeTextEn:
+          type: string
+        marqueeTextTr:
+          type: string
         usdToTry:
           type: number
         usdToSyp:
@@ -516,11 +520,15 @@ components:
           type: string
         welcomeMessageEn:
           type: string
+        welcomeMessageTr:
+          type: string
         updatedAt:
           type: string
       required:
         - id
         - marqueeText
+        - marqueeTextEn
+        - marqueeTextTr
         - usdToTry
         - usdToSyp
         - usdToEur
@@ -536,12 +544,17 @@ components:
         - moneyTransferCurrencies
         - welcomeMessage
         - welcomeMessageEn
+        - welcomeMessageTr
         - updatedAt
 
     UpdateSettingsBody:
       type: object
       properties:
         marqueeText:
+          type: string
+        marqueeTextEn:
+          type: string
+        marqueeTextTr:
           type: string
         usdToTry:
           type: number
@@ -573,6 +586,8 @@ components:
           type: string
         welcomeMessageEn:
           type: string
+        welcomeMessageTr:
+          type: string
 
     Section:
       type: object
@@ -582,6 +597,8 @@ components:
         nameAr:
           type: string
         nameEn:
+          type: string
+        nameTr:
           type: string
         logoUrl:
           type: string
@@ -607,6 +624,8 @@ components:
           type: string
         nameEn:
           type: string
+        nameTr:
+          type: string
         logoUrl:
           type: string
         pricingType:
@@ -623,6 +642,8 @@ components:
         nameAr:
           type: string
         nameEn:
+          type: string
+        nameTr:
           type: string
         logoUrl:
           type: string
@@ -641,6 +662,8 @@ components:
         nameAr:
           type: string
         nameEn:
+          type: string
+        nameTr:
           type: string
         logoUrl:
           type: string
@@ -693,6 +716,8 @@ components:
           type: string
         nameEn:
           type: string
+        nameTr:
+          type: string
         logoUrl:
           type: string
         currencyUnit:
@@ -743,6 +768,8 @@ components:
           type: string
         nameEn:
           type: string
+        nameTr:
+          type: string
         logoUrl:
           type: string
         currencyUnit:
@@ -775,6 +802,8 @@ components:
         nameAr:
           type: string
         nameEn:
+          type: string
+        nameTr:
           type: string
         logoUrl:
           type: string

@@ -271,9 +271,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const rawMsg = messages.length > 0 ? messages[msgIndex % messages.length]?.text : null;
   const currentMsg = rawMsg
     ? rawMsg.includes('||')
-      ? (isRtlLang
-          ? rawMsg.split('||')[0].trim()
-          : rawMsg.split('||')[1].trim() || rawMsg.split('||')[0].trim())
+      ? (() => {
+          const parts = rawMsg.split('||').map((p: string) => p.trim());
+          if (lang === 'ar') return parts[0] || rawMsg;
+          if (lang === 'tr') return parts[2] || parts[1] || parts[0] || rawMsg;
+          return parts[1] || parts[0] || rawMsg;
+        })()
       : rawMsg
     : null;
 

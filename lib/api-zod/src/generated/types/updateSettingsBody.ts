@@ -8,6 +8,8 @@
 
 export interface UpdateSettingsBody {
   marqueeText?: string;
+  marqueeTextEn?: string;
+  marqueeTextTr?: string;
   usdToTry?: number;
   usdToSyp?: number;
   usdToEur?: number;
@@ -23,4 +25,5 @@ export interface UpdateSettingsBody {
   moneyTransferCurrencies?: string;
   welcomeMessage?: string;
   welcomeMessageEn?: string;
+  welcomeMessageTr?: string;
 }

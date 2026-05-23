@@ -8,6 +8,7 @@ export const itemsTable = pgTable("items", {
   sectionId: integer("section_id").notNull().references(() => sectionsTable.id, { onDelete: "cascade" }),
   nameAr: text("name_ar").notNull(),
   nameEn: text("name_en").notNull(),
+  nameTr: text("name_tr"),
   logoUrl: text("logo_url"),
   currencyUnit: text("currency_unit"),
   pricePerUnit: doublePrecision("price_per_unit"),

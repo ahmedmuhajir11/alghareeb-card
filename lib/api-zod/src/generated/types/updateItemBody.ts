@@ -9,6 +9,7 @@
 export interface UpdateItemBody {
   nameAr?: string;
   nameEn?: string;
+  nameTr?: string;
   logoUrl?: string;
   currencyUnit?: string;
   pricePerUnit?: number;

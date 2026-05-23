@@ -9,6 +9,8 @@
 export interface Settings {
   id: number;
   marqueeText: string;
+  marqueeTextEn: string;
+  marqueeTextTr: string;
   usdToTry: number;
   usdToSyp: number;
   usdToEur: number;
@@ -24,5 +26,6 @@ export interface Settings {
   moneyTransferCurrencies: string;
   welcomeMessage: string;
   welcomeMessageEn: string;
+  welcomeMessageTr: string;
   updatedAt: string;
 }

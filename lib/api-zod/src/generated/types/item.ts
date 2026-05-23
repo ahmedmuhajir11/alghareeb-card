@@ -11,6 +11,7 @@ export interface Item {
   sectionId: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   /** Unit label e.g. ماسات, شدات, كوينز */
   currencyUnit?: string;

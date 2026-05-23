@@ -109,7 +109,7 @@ function SectionsView({ onSelect }: { onSelect: (s: Section) => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const emptyForm = { nameAr: "", nameEn: "", logoUrl: "", pricingType: "per_quantity", sortOrder: 0 };
+  const emptyForm = { nameAr: "", nameEn: "", nameTr: "", logoUrl: "", pricingType: "per_quantity", sortOrder: 0 };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Section | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -125,6 +125,7 @@ function SectionsView({ onSelect }: { onSelect: (s: Section) => void }) {
     setFormData({
       nameAr: section.nameAr,
       nameEn: section.nameEn,
+      nameTr: (section as any).nameTr || "",
       logoUrl: section.logoUrl ?? "",
       pricingType: section.pricingType,
       sortOrder: section.sortOrder,
@@ -227,6 +228,10 @@ function SectionsView({ onSelect }: { onSelect: (s: Section) => void }) {
               <Label>الاسم بالإنجليزية *</Label>
               <Input value={formData.nameEn} onChange={e => setFormData({ ...formData, nameEn: e.target.value })} className="bg-background/50 text-left" dir="ltr" placeholder="e.g. Game Top-Up" />
             </div>
+            <div className="space-y-2">
+              <Label>الاسم بالتركية (اختياري)</Label>
+              <Input value={formData.nameTr} onChange={e => setFormData({ ...formData, nameTr: e.target.value })} className="bg-background/50 text-left" dir="ltr" placeholder="örn. Oyun Yükleme" />
+            </div>
             <ImageUploadField
               label="صورة القسم (من الهاتف أو رابط)"
               value={formData.logoUrl}
@@ -275,8 +280,8 @@ const CURRENCY_UNITS = [
   "أخرى",
 ];
 
-type BulkItemRow = { nameAr: string; nameEn: string; pricePerUnit: number };
-const emptyItemRow = (): BulkItemRow => ({ nameAr: "", nameEn: "", pricePerUnit: 0 });
+type BulkItemRow = { nameAr: string; nameEn: string; nameTr: string; pricePerUnit: number };
+const emptyItemRow = (): BulkItemRow => ({ nameAr: "", nameEn: "", nameTr: "", pricePerUnit: 0 });
 
 function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: () => void; onSelect: (item: Item) => void }) {
   const { data: items, isLoading } = useListItems(section.id);
@@ -290,7 +295,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const isAppCharging = section.id === 2;
   const isMoneyTransfer = section.id === 3 || section.nameEn === "Money Transfers" || section.nameAr === "الحوالات المالية";
 
-  const emptyForm = { nameAr: "", nameEn: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true, isAvailable: true, apiEndpoint: "", apiKey: "", apiAgentId: "" };
+  const emptyForm = { nameAr: "", nameEn: "", nameTr: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true, isAvailable: true, apiEndpoint: "", apiKey: "", apiAgentId: "" };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Item | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -326,6 +331,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
           data: {
             nameAr: valid[i].nameAr,
             nameEn: valid[i].nameEn || valid[i].nameAr,
+            nameTr: valid[i].nameTr || undefined,
             pricePerUnit: valid[i].pricePerUnit,
             currencyUnit: "رصيد",
             sortOrder: i,
@@ -350,6 +356,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
     setFormData({
       nameAr: item.nameAr,
       nameEn: item.nameEn,
+      nameTr: (item as any).nameTr || "",
       logoUrl: item.logoUrl ?? "",
       currencyUnit: knownUnit,
       customCurrencyUnit: knownUnit === "أخرى" ? (item.currencyUnit ?? "") : "",
@@ -379,6 +386,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
     const payload: any = {
       nameAr: formData.nameAr,
       nameEn: formData.nameEn,
+      nameTr: formData.nameTr || undefined,
       logoUrl: formData.logoUrl || undefined,
       currencyUnit: isPerQuantity ? finalCurrencyUnit : undefined,
       pricePerUnit: isPerQuantity ? formData.pricePerUnit : undefined,
@@ -595,14 +603,15 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
           {/* وضع الإضافة المتعددة لقسم تعبئة الرصيد (يُستثنى منه قسم شحن التطبيقات) */}
           {isPerQuantity && !editTarget && !isAppCharging ? (
             <div className="py-4 space-y-3">
-              <div className="grid grid-cols-[1fr_1fr_90px_32px] gap-2 text-xs text-muted-foreground px-1">
+              <div className="grid grid-cols-[1fr_1fr_1fr_90px_32px] gap-2 text-xs text-muted-foreground px-1">
                 <span>الاسم (عربي)</span>
                 <span>الاسم (إنجليزي)</span>
+                <span>الاسم (تركي)</span>
                 <span className="text-center">السعر $</span>
                 <span></span>
               </div>
               {bulkItemRows.map((row, index) => (
-                <div key={index} className="grid grid-cols-[1fr_1fr_90px_32px] gap-2 items-center">
+                <div key={index} className="grid grid-cols-[1fr_1fr_1fr_90px_32px] gap-2 items-center">
                   <Input
                     value={row.nameAr}
                     onChange={e => updateItemRow(index, "nameAr", e.target.value)}
@@ -615,6 +624,13 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                     className="bg-background/50 h-9 text-sm"
                     dir="ltr"
                     placeholder="1000 Lira"
+                  />
+                  <Input
+                    value={row.nameTr}
+                    onChange={e => updateItemRow(index, "nameTr", e.target.value)}
+                    className="bg-background/50 h-9 text-sm"
+                    dir="ltr"
+                    placeholder="1000 Lira (TR)"
                   />
                   <Input
                     type="number"
@@ -657,6 +673,10 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                   <Label>الاسم بالإنجليزية *</Label>
                   <Input value={formData.nameEn} onChange={e => setFormData({ ...formData, nameEn: e.target.value })} className="bg-background/50 text-left" dir="ltr" placeholder="e.g. PUBG Mobile" />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>الاسم بالتركية (اختياري)</Label>
+                <Input value={formData.nameTr} onChange={e => setFormData({ ...formData, nameTr: e.target.value })} className="bg-background/50 text-left" dir="ltr" placeholder="örn. PUBG Mobile" />
               </div>
               <ImageUploadField
                 label="صورة اللوجو (من الهاتف أو رابط)"

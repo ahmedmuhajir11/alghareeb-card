@@ -22,16 +22,22 @@ function useTickerMessages() {
   });
 }
 
-function splitBilingual(text: string): { ar: string; en: string } {
+function splitTrilingual(text: string): { ar: string; en: string; tr: string } {
   const parts = text.split("||");
-  return { ar: parts[0]?.trim() ?? text, en: parts[1]?.trim() ?? "" };
+  return {
+    ar: parts[0]?.trim() ?? text,
+    en: parts[1]?.trim() ?? "",
+    tr: parts[2]?.trim() ?? "",
+  };
 }
 
-function joinBilingual(ar: string, en: string): string {
+function joinTrilingual(ar: string, en: string, tr: string): string {
   const a = ar.trim();
   const e = en.trim();
-  if (!e) return a;
-  return `${a}||${e}`;
+  const t = tr.trim();
+  if (!e && !t) return a;
+  if (!t) return `${a}||${e}`;
+  return `${a}||${e}||${t}`;
 }
 
 export default function TickerManager() {
@@ -40,9 +46,11 @@ export default function TickerManager() {
   const { toast } = useToast();
   const [newAr, setNewAr] = useState("");
   const [newEn, setNewEn] = useState("");
+  const [newTr, setNewTr] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [editAr, setEditAr] = useState("");
   const [editEn, setEditEn] = useState("");
+  const [editTr, setEditTr] = useState("");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["ticker-messages"] });
 
@@ -55,7 +63,7 @@ export default function TickerManager() {
       });
       if (!res.ok) throw new Error((await res.json()).error);
     },
-    onSuccess: () => { invalidate(); setNewAr(""); setNewEn(""); toast({ title: "✅ تمت الإضافة" }); },
+    onSuccess: () => { invalidate(); setNewAr(""); setNewEn(""); setNewTr(""); toast({ title: "✅ تمت الإضافة" }); },
     onError: (e: any) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
@@ -108,10 +116,17 @@ export default function TickerManager() {
           placeholder="🔥 English text — e.g. Special discount today only (optional)"
           className="bg-background/50 border-primary/20 focus-visible:border-primary"
           dir="ltr"
-          onKeyDown={e => e.key === "Enter" && newAr.trim() && addMutation.mutate(joinBilingual(newAr, newEn))}
+        />
+        <Input
+          value={newTr}
+          onChange={e => setNewTr(e.target.value)}
+          placeholder="🔥 Türkçe metin — örn. Bugün özel indirim (isteğe bağlı)"
+          className="bg-background/50 border-primary/20 focus-visible:border-primary"
+          dir="ltr"
+          onKeyDown={e => e.key === "Enter" && newAr.trim() && addMutation.mutate(joinTrilingual(newAr, newEn, newTr))}
         />
         <Button
-          onClick={() => newAr.trim() && addMutation.mutate(joinBilingual(newAr, newEn))}
+          onClick={() => newAr.trim() && addMutation.mutate(joinTrilingual(newAr, newEn, newTr))}
           disabled={!newAr.trim() || addMutation.isPending}
           className="gap-2 w-full"
         >
@@ -160,18 +175,26 @@ export default function TickerManager() {
                     className="h-7 text-sm bg-background border-primary/40"
                     placeholder="English text (optional)"
                     dir="ltr"
+                  />
+                  <Input
+                    value={editTr}
+                    onChange={e => setEditTr(e.target.value)}
+                    className="h-7 text-sm bg-background border-primary/40"
+                    placeholder="Türkçe metin (isteğe bağlı)"
+                    dir="ltr"
                     onKeyDown={e => {
-                      if (e.key === "Enter") updateMutation.mutate({ id: msg.id, text: joinBilingual(editAr, editEn) });
+                      if (e.key === "Enter") updateMutation.mutate({ id: msg.id, text: joinTrilingual(editAr, editEn, editTr) });
                       if (e.key === "Escape") setEditId(null);
                     }}
                   />
                 </div>
               ) : (
                 <div className="flex-1 min-w-0">
-                  {(() => { const s = splitBilingual(msg.text); return (
+                  {(() => { const s = splitTrilingual(msg.text); return (
                     <>
                       <p className="text-sm">{s.ar}</p>
                       {s.en && <p className="text-xs text-muted-foreground" dir="ltr">{s.en}</p>}
+                      {s.tr && <p className="text-xs text-muted-foreground" dir="ltr">🇹🇷 {s.tr}</p>}
                     </>
                   ); })()}
                 </div>
@@ -181,7 +204,7 @@ export default function TickerManager() {
                 {editId === msg.id ? (
                   <>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-green-400 hover:bg-green-400/10"
-                      onClick={() => updateMutation.mutate({ id: msg.id, text: joinBilingual(editAr, editEn) })}>
+                      onClick={() => updateMutation.mutate({ id: msg.id, text: joinTrilingual(editAr, editEn, editTr) })}>
                       <Check className="w-3.5 h-3.5" />
                     </Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground"
@@ -192,7 +215,7 @@ export default function TickerManager() {
                 ) : (
                   <>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-primary hover:bg-primary/10"
-                      onClick={() => { const s = splitBilingual(msg.text); setEditId(msg.id); setEditAr(s.ar); setEditEn(s.en); }}>
+                      onClick={() => { const s = splitTrilingual(msg.text); setEditId(msg.id); setEditAr(s.ar); setEditEn(s.en); setEditTr(s.tr); }}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
                     <Button size="icon" variant="ghost"

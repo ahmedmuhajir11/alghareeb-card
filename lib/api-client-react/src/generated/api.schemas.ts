@@ -12,6 +12,8 @@ export interface HealthStatus {
 export interface Settings {
   id: number;
   marqueeText: string;
+  marqueeTextEn: string;
+  marqueeTextTr: string;
   usdToTry: number;
   usdToSyp: number;
   usdToEur: number;
@@ -27,11 +29,14 @@ export interface Settings {
   moneyTransferCurrencies: string;
   welcomeMessage: string;
   welcomeMessageEn: string;
+  welcomeMessageTr: string;
   updatedAt: string;
 }
 
 export interface UpdateSettingsBody {
   marqueeText?: string;
+  marqueeTextEn?: string;
+  marqueeTextTr?: string;
   usdToTry?: number;
   usdToSyp?: number;
   usdToEur?: number;
@@ -47,12 +52,14 @@ export interface UpdateSettingsBody {
   moneyTransferCurrencies?: string;
   welcomeMessage?: string;
   welcomeMessageEn?: string;
+  welcomeMessageTr?: string;
 }
 
 export interface Section {
   id: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   /** packages or per_quantity */
   pricingType: string;
@@ -63,6 +70,7 @@ export interface Section {
 export interface CreateSectionBody {
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   pricingType?: string;
   sortOrder?: number;
@@ -71,6 +79,7 @@ export interface CreateSectionBody {
 export interface UpdateSectionBody {
   nameAr?: string;
   nameEn?: string;
+  nameTr?: string;
   logoUrl?: string;
   pricingType?: string;
   sortOrder?: number;
@@ -81,6 +90,7 @@ export interface Item {
   sectionId: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   /** Unit label e.g. ماسات, شدات, كوينز */
   currencyUnit?: string;
@@ -118,6 +128,7 @@ export interface ItemWithPackages {
   sectionId: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   currencyUnit?: string;
   pricePerUnit?: number;
@@ -138,6 +149,7 @@ export interface ItemWithPackages {
 export interface CreateItemBody {
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   currencyUnit?: string;
   pricePerUnit?: number;
@@ -154,6 +166,7 @@ export interface CreateItemBody {
 export interface UpdateItemBody {
   nameAr?: string;
   nameEn?: string;
+  nameTr?: string;
   logoUrl?: string;
   currencyUnit?: string;
   pricePerUnit?: number;

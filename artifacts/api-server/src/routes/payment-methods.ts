@@ -31,14 +31,17 @@ router.get("/payment-methods/:id", async (req, res): Promise<void> => {
 });
 
 router.post("/payment-methods", async (req, res): Promise<void> => {
-  const { nameAr, nameEn, flagEmoji, fields, qrImageUrl, notes, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies, taxPercent } = req.body;
+  const { nameAr, nameEn, nameTr, flagEmoji, fields, qrImageUrl, notes, notesEn, notesTr, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies, taxPercent } = req.body;
   if (!nameAr || !nameEn) { res.status(400).json({ error: "nameAr and nameEn required" }); return; }
   const [method] = await db.insert(paymentMethodsTable).values({
     nameAr, nameEn,
+    nameTr: nameTr ?? null,
     flagEmoji: flagEmoji ?? "🌍",
     fields: fields ?? [],
     qrImageUrl: qrImageUrl ?? null,
     notes: notes ?? [],
+    notesEn: notesEn ?? [],
+    notesTr: notesTr ?? [],
     isActive: isActive ?? true,
     sortOrder: sortOrder ?? 0,
     requireSenderName: requireSenderName ?? false,
@@ -52,14 +55,17 @@ router.post("/payment-methods", async (req, res): Promise<void> => {
 router.put("/payment-methods/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid ID" }); return; }
-  const { nameAr, nameEn, flagEmoji, fields, qrImageUrl, notes, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies, taxPercent } = req.body;
+  const { nameAr, nameEn, nameTr, flagEmoji, fields, qrImageUrl, notes, notesEn, notesTr, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies, taxPercent } = req.body;
   const [method] = await db.update(paymentMethodsTable).set({
     ...(nameAr !== undefined && { nameAr }),
     ...(nameEn !== undefined && { nameEn }),
+    ...(nameTr !== undefined && { nameTr }),
     ...(flagEmoji !== undefined && { flagEmoji }),
     ...(fields !== undefined && { fields }),
     ...(qrImageUrl !== undefined && { qrImageUrl }),
     ...(notes !== undefined && { notes }),
+    ...(notesEn !== undefined && { notesEn }),
+    ...(notesTr !== undefined && { notesTr }),
     ...(isActive !== undefined && { isActive }),
     ...(sortOrder !== undefined && { sortOrder }),
     ...(requireSenderName !== undefined && { requireSenderName }),

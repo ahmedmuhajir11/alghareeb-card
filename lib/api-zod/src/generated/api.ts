@@ -20,6 +20,8 @@ export const HealthCheckResponse = zod.object({
 export const GetSettingsResponse = zod.object({
   id: zod.number(),
   marqueeText: zod.string(),
+  marqueeTextEn: zod.string(),
+  marqueeTextTr: zod.string(),
   usdToTry: zod.number(),
   usdToSyp: zod.number(),
   usdToEur: zod.number(),
@@ -35,6 +37,7 @@ export const GetSettingsResponse = zod.object({
   moneyTransferCurrencies: zod.string(),
   welcomeMessage: zod.string(),
   welcomeMessageEn: zod.string(),
+  welcomeMessageTr: zod.string(),
   updatedAt: zod.string(),
 });
 
@@ -43,6 +46,8 @@ export const GetSettingsResponse = zod.object({
  */
 export const UpdateSettingsBody = zod.object({
   marqueeText: zod.string().optional(),
+  marqueeTextEn: zod.string().optional(),
+  marqueeTextTr: zod.string().optional(),
   usdToTry: zod.number().optional(),
   usdToSyp: zod.number().optional(),
   usdToEur: zod.number().optional(),
@@ -58,11 +63,14 @@ export const UpdateSettingsBody = zod.object({
   moneyTransferCurrencies: zod.string().optional(),
   welcomeMessage: zod.string().optional(),
   welcomeMessageEn: zod.string().optional(),
+  welcomeMessageTr: zod.string().optional(),
 });
 
 export const UpdateSettingsResponse = zod.object({
   id: zod.number(),
   marqueeText: zod.string(),
+  marqueeTextEn: zod.string(),
+  marqueeTextTr: zod.string(),
   usdToTry: zod.number(),
   usdToSyp: zod.number(),
   usdToEur: zod.number(),
@@ -78,6 +86,7 @@ export const UpdateSettingsResponse = zod.object({
   moneyTransferCurrencies: zod.string(),
   welcomeMessage: zod.string(),
   welcomeMessageEn: zod.string(),
+  welcomeMessageTr: zod.string(),
   updatedAt: zod.string(),
 });
 
@@ -88,6 +97,7 @@ export const ListSectionsResponseItem = zod.object({
   id: zod.number(),
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   pricingType: zod.string().describe("packages or per_quantity"),
   sortOrder: zod.number(),
@@ -101,6 +111,7 @@ export const ListSectionsResponse = zod.array(ListSectionsResponseItem);
 export const CreateSectionBody = zod.object({
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   pricingType: zod.string().optional(),
   sortOrder: zod.number().optional(),
@@ -117,6 +128,7 @@ export const GetSectionResponse = zod.object({
   id: zod.number(),
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   pricingType: zod.string().describe("packages or per_quantity"),
   sortOrder: zod.number(),
@@ -133,6 +145,7 @@ export const UpdateSectionParams = zod.object({
 export const UpdateSectionBody = zod.object({
   nameAr: zod.string().optional(),
   nameEn: zod.string().optional(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   pricingType: zod.string().optional(),
   sortOrder: zod.number().optional(),
@@ -142,6 +155,7 @@ export const UpdateSectionResponse = zod.object({
   id: zod.number(),
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   pricingType: zod.string().describe("packages or per_quantity"),
   sortOrder: zod.number(),
@@ -171,6 +185,7 @@ export const ListItemsResponseItem = zod.object({
   sectionId: zod.number(),
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   currencyUnit: zod
     .string()
@@ -213,6 +228,7 @@ export const CreateItemParams = zod.object({
 export const CreateItemBody = zod.object({
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   currencyUnit: zod.string().optional(),
   pricePerUnit: zod.number().optional(),
@@ -238,6 +254,7 @@ export const GetItemResponse = zod.object({
   sectionId: zod.number(),
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   currencyUnit: zod.string().optional(),
   pricePerUnit: zod.number().optional(),
@@ -281,6 +298,7 @@ export const UpdateItemParams = zod.object({
 export const UpdateItemBody = zod.object({
   nameAr: zod.string().optional(),
   nameEn: zod.string().optional(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   currencyUnit: zod.string().optional(),
   pricePerUnit: zod.number().optional(),
@@ -299,6 +317,7 @@ export const UpdateItemResponse = zod.object({
   sectionId: zod.number(),
   nameAr: zod.string(),
   nameEn: zod.string(),
+  nameTr: zod.string().optional(),
   logoUrl: zod.string().optional(),
   currencyUnit: zod
     .string()

@@ -12,6 +12,7 @@ export interface ItemWithPackages {
   sectionId: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   currencyUnit?: string;
   pricePerUnit?: number;

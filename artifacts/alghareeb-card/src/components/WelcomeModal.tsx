@@ -30,8 +30,11 @@ export default function WelcomeModal() {
   const raw = settings?.welcomeMessage || "";
   const parts = raw.split("||").map(s => s.trim());
   const messageAr = parts[0] || "";
-  const messageEn = parts[1] || "";
-  const message = isRtlLang ? messageAr : (messageEn || messageAr);
+  const messageEn = (settings?.welcomeMessageEn) || parts[1] || "";
+  const messageTr = settings?.welcomeMessageTr || "";
+  const message = lang === 'ar' ? messageAr
+    : lang === 'tr' ? (messageTr || messageEn || messageAr)
+    : (messageEn || messageAr);
 
   if (!open || !message) return null;
 

@@ -179,10 +179,13 @@ type PaymentMethod = {
   id: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string | null;
   flagEmoji: string;
   fields: PaymentField[];
   qrImageUrl: string | null;
   notes: string[];
+  notesEn?: string[];
+  notesTr?: string[];
   requireSenderName: boolean;
   requireKyc: boolean;
   sortOrder: number;
@@ -278,7 +281,7 @@ function QRSection({ url, name }: { url: string; name: string }) {
 function DepositForm({ method, compact = false }: { method: PaymentMethod; compact?: boolean }) {
   const { lang, t } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
-  const methodName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
+  const methodName = isRtlLang ? method.nameAr : (lang === 'tr' ? (method.nameTr || method.nameEn || method.nameAr) : (method.nameEn || method.nameAr));
   const { isSignedIn, user, refetch } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -519,7 +522,7 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
 function PaymentCard({ method, onSelect }: { method: PaymentMethod; onSelect: () => void }) {
   const { lang } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
-  const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
+  const displayName = isRtlLang ? method.nameAr : (lang === 'tr' ? (method.nameTr || method.nameEn || method.nameAr) : (method.nameEn || method.nameAr));
   const subName = isRtlLang ? method.nameEn : method.nameAr;
   return (
     <button
@@ -548,7 +551,7 @@ function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: (
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
-  const displayName = isRtlLang ? method.nameAr : (method.nameEn || method.nameAr);
+  const displayName = isRtlLang ? method.nameAr : (lang === 'tr' ? (method.nameTr || method.nameEn || method.nameAr) : (method.nameEn || method.nameAr));
   const subName = isRtlLang ? method.nameEn : method.nameAr;
 
   const kycBlocked = method.requireKyc && isSignedIn && !user?.isVerified;
@@ -622,19 +625,22 @@ function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: (
         {method.qrImageUrl && <QRSection url={method.qrImageUrl} name={method.nameEn} />}
 
         {/* Notes */}
-        {method.notes.length > 0 && (
-          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-2.5">
-            <div className="flex items-center gap-2 mb-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
-              <span className="text-xs font-bold text-yellow-400">{t('payment.notice')}</span>
+        {(() => {
+          const notesForLang: string[] = lang === 'tr'
+            ? ((method.notesTr && method.notesTr.filter(n => n.trim()).length > 0) ? method.notesTr.filter(n => n.trim()) : (method.notesEn && method.notesEn.filter(n => n.trim()).length > 0) ? method.notesEn.filter(n => n.trim()) : method.notes)
+            : (isRtlLang ? method.notes : ((method.notesEn && method.notesEn.filter(n => n.trim()).length > 0) ? method.notesEn.filter(n => n.trim()) : method.notes));
+          return notesForLang.length > 0 ? (
+            <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                <span className="text-xs font-bold text-yellow-400">{t('payment.notice')}</span>
+              </div>
+              {notesForLang.map((note, i) => (
+                <p key={i} className="text-xs text-muted-foreground">({i + 1})- {note}</p>
+              ))}
             </div>
-            {method.notes.map((note, i) => {
-              const parts = note.split('||');
-              const displayNote = parts.length >= 2 ? (isRtlLang ? parts[0].trim() : parts[1].trim()) : note;
-              return <p key={i} className="text-xs text-muted-foreground">({i + 1})- {displayNote}</p>;
-            })}
-          </div>
-        )}
+          ) : null;
+        })()}
 
         {/* Deposit form — compact */}
         <DepositForm method={method} compact />

@@ -190,8 +190,8 @@ export default function Home() {
   const { data: sections, isLoading } = useListSections();
   const { t, lang } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
-  const sectionName = (s: { nameAr: string; nameEn: string }) =>
-    isRtlLang ? s.nameAr : (s.nameEn || s.nameAr);
+  const sectionName = (s: { nameAr: string; nameEn: string; nameTr?: string | null }) =>
+    isRtlLang ? s.nameAr : (lang === 'tr' ? (s.nameTr || s.nameEn || s.nameAr) : (s.nameEn || s.nameAr));
 
   return (
     <div>

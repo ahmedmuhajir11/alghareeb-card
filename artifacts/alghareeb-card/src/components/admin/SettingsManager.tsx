@@ -25,11 +25,14 @@ export default function SettingsManager() {
     usdToEgp: 0,
     usdToJod: 0,
     marqueeText: "",
+    marqueeTextEn: "",
+    marqueeTextTr: "",
     whatsappNumber: "",
     moneyTransferCurrencies: "",
     welcomeMessage: "",
     welcomeMessageAr: "",
     welcomeMessageEn: "",
+    welcomeMessageTr: "",
   });
   const [newCurrency, setNewCurrency] = useState("");
 
@@ -48,11 +51,14 @@ export default function SettingsManager() {
         usdToEgp: settings.usdToEgp || 0,
         usdToJod: settings.usdToJod || 0,
         marqueeText: settings.marqueeText || "",
+        marqueeTextEn: (settings as any).marqueeTextEn || "",
+        marqueeTextTr: (settings as any).marqueeTextTr || "",
         whatsappNumber: settings.whatsappNumber || "",
         moneyTransferCurrencies: settings.moneyTransferCurrencies || "دولار,ليرة تركية,يورو,سوري",
         welcomeMessage: settings.welcomeMessage || "",
         welcomeMessageAr: (settings.welcomeMessage || "").split("||")[0]?.trim() || "",
-        welcomeMessageEn: (settings.welcomeMessage || "").split("||")[1]?.trim() || "",
+        welcomeMessageEn: (settings as any).welcomeMessageEn || (settings.welcomeMessage || "").split("||")[1]?.trim() || "",
+        welcomeMessageTr: (settings as any).welcomeMessageTr || "",
       });
     }
   }, [settings]);
@@ -148,11 +154,27 @@ export default function SettingsManager() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">الشريط الإخباري (Marquee)</label>
+          <label className="text-sm font-medium">الشريط الإخباري (Marquee) — العربية</label>
           <Input 
             value={formData.marqueeText} 
             onChange={e => setFormData({...formData, marqueeText: e.target.value})}
             className="bg-background/50"
+          />
+          <label className="text-sm font-medium block mt-2">Ticker — English</label>
+          <Input 
+            value={formData.marqueeTextEn} 
+            onChange={e => setFormData({...formData, marqueeTextEn: e.target.value})}
+            className="bg-background/50"
+            dir="ltr"
+            placeholder="English ticker text (optional)"
+          />
+          <label className="text-sm font-medium block mt-2">Ticker — Türkçe</label>
+          <Input 
+            value={formData.marqueeTextTr} 
+            onChange={e => setFormData({...formData, marqueeTextTr: e.target.value})}
+            className="bg-background/50"
+            dir="ltr"
+            placeholder="Türkçe haber şeridi metni (isteğe bağlı)"
           />
         </div>
 
@@ -173,6 +195,14 @@ export default function SettingsManager() {
             onChange={e => setFormData({...formData, welcomeMessageEn: e.target.value})}
             className="bg-background/50 min-h-[90px] resize-y"
             placeholder="Important: Always verify payment method details before sending any amount..."
+            dir="ltr"
+          />
+          <label className="text-sm font-medium block mt-3">Hoş Geldiniz Mesajı — Türkçe</label>
+          <Textarea
+            value={formData.welcomeMessageTr}
+            onChange={e => setFormData({...formData, welcomeMessageTr: e.target.value})}
+            className="bg-background/50 min-h-[90px] resize-y"
+            placeholder="Önemli: Herhangi bir miktar göndermeden önce ödeme yöntemi bilgilerini doğrulayın..."
             dir="ltr"
           />
         </div>

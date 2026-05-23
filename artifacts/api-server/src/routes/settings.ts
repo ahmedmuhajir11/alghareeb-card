@@ -39,8 +39,9 @@ router.get("/settings", async (req, res): Promise<void> => {
   }
   // Coalesce null/undefined string fields to empty string
   const strFields = [
-    "marqueeText","whatsappNumber","moneyTransferCurrencies",
-    "welcomeMessage","welcomeMessageEn",
+    "marqueeText","marqueeTextEn","marqueeTextTr",
+    "whatsappNumber","moneyTransferCurrencies",
+    "welcomeMessage","welcomeMessageEn","welcomeMessageTr",
   ] as const;
   for (const f of strFields) {
     if (row[f] == null) row[f] = "";
@@ -49,7 +50,6 @@ router.get("/settings", async (req, res): Promise<void> => {
   if (row["updatedAt"] == null) row["updatedAt"] = new Date().toISOString();
   const result = GetSettingsResponse.safeParse(row);
   if (!result.success) {
-    // Fallback: return raw row with safe types to avoid breaking the frontend
     res.json({ ...row, id: Number(row["id"] ?? 1) });
     return;
   }
@@ -85,8 +85,9 @@ router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
     if (updRow[f] == null || isNaN(Number(updRow[f]))) updRow[f] = 0;
   }
   const strFields2 = [
-    "marqueeText","whatsappNumber","moneyTransferCurrencies",
-    "welcomeMessage","welcomeMessageEn",
+    "marqueeText","marqueeTextEn","marqueeTextTr",
+    "whatsappNumber","moneyTransferCurrencies",
+    "welcomeMessage","welcomeMessageEn","welcomeMessageTr",
   ] as const;
   for (const f of strFields2) { if (updRow[f] == null) updRow[f] = ""; }
   if (updRow["updatedAt"] == null) updRow["updatedAt"] = new Date().toISOString();

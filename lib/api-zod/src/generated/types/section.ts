@@ -10,6 +10,7 @@ export interface Section {
   id: number;
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   /** packages or per_quantity */
   pricingType: string;

@@ -6,6 +6,7 @@ export const sectionsTable = pgTable("sections", {
   id: serial("id").primaryKey(),
   nameAr: text("name_ar").notNull(),
   nameEn: text("name_en").notNull(),
+  nameTr: text("name_tr"),
   logoUrl: text("logo_url"),
   pricingType: text("pricing_type").notNull().default("per_quantity"),
   sortOrder: integer("sort_order").notNull().default(0),

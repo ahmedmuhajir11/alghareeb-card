@@ -9,6 +9,7 @@
 export interface CreateSectionBody {
   nameAr: string;
   nameEn: string;
+  nameTr?: string;
   logoUrl?: string;
   pricingType?: string;
   sortOrder?: number;
