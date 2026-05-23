@@ -131,7 +131,11 @@ async function run() {
 }
 run().catch(e => { console.error('❌ DB migration error:', e.message); process.exit(1); });
 `, 'utf8');
-  execSync(`node ${migratePath}`, { cwd: BASE, stdio: 'inherit' });
+  execSync(`node ${migratePath}`, {
+    cwd: BASE,
+    stdio: 'inherit',
+    env: { ...process.env, NODE_PATH: `${BASE}/node_modules` }
+  });
 
   console.log('\n🔨 Building API server...');
   execSync('pnpm --filter @workspace/api-server run build', {
