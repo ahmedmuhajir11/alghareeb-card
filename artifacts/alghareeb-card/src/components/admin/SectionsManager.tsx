@@ -808,7 +808,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                   إذا ملأت هذه الحقول، سيتم الشحن تلقائياً عند كل طلب. اتركها فارغة للشحن اليدوي.
                 </p>
                 <div className="space-y-2">
-                  <Label className="text-xs">رابط API (Endpoint)</Label>
+                  <Label className="text-xs font-bold">Webhook URL</Label>
                   <Input
                     value={formData.apiEndpoint}
                     onChange={e => setFormData({ ...formData, apiEndpoint: e.target.value })}
@@ -818,25 +818,49 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">مفتاح API (API Key)</Label>
+                  <Label className="text-xs font-bold">API TOKEN</Label>
                   <Input
                     value={formData.apiKey}
                     onChange={e => setFormData({ ...formData, apiKey: e.target.value })}
                     className="bg-background/50 text-left text-sm font-mono"
                     dir="ltr"
-                    placeholder="sk-xxxxxxxxxxxx"
+                    placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                     type="password"
                   />
+                  {formData.apiKey && (
+                    <p className="text-[10px] text-green-400/80 font-mono truncate">● {formData.apiKey.slice(0,8)}{"*".repeat(Math.max(0, formData.apiKey.length - 8))}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">معرف الوكيل (Agent ID) — اختياري</Label>
-                  <Input
-                    value={formData.apiAgentId}
-                    onChange={e => setFormData({ ...formData, apiAgentId: e.target.value })}
-                    className="bg-background/50 text-left text-sm font-mono"
-                    dir="ltr"
-                    placeholder="AGENT_001"
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold">IPS — الايبيات المسموح لها بالوصول</Label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={formData.apiAgentId === "*"}
+                        onChange={e => setFormData({ ...formData, apiAgentId: e.target.checked ? "*" : "" })}
+                        className="accent-primary w-3.5 h-3.5"
+                      />
+                      <span className="text-[10px] text-muted-foreground">السماح لكل الايبيات</span>
+                    </label>
+                  </div>
+                  {formData.apiAgentId === "*" ? (
+                    <div className="flex items-start gap-2 bg-red-950/50 border border-red-500/40 rounded-lg p-2.5">
+                      <span className="text-red-400 text-sm flex-shrink-0">⚠</span>
+                      <p className="text-[11px] text-red-300 leading-relaxed">
+                        السماح بكل الايبيات: خاصية يمكن استخدامها للاختبار وعند الانتهاء من البرمجة من طرف مبرمجك يفضل ايقافها لامان حسابك
+                      </p>
+                    </div>
+                  ) : (
+                    <textarea
+                      value={formData.apiAgentId}
+                      onChange={e => setFormData({ ...formData, apiAgentId: e.target.value })}
+                      className="w-full bg-background/50 text-left text-sm font-mono rounded-md border border-input px-3 py-2 min-h-[80px] resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      dir="ltr"
+                      placeholder={"192.168.1.1\n10.0.0.1\n..."}
+                    />
+                  )}
+                  <p className="text-[10px] text-muted-foreground">كل IP بسطر مستقل — اتركها فارغة للسماح لكل الايبيات</p>
                 </div>
               </div>
 
