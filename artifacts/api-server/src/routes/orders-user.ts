@@ -161,38 +161,66 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     let autoCharged = false;
     const apiEndpoint = item.api_endpoint as string | null;
     const apiKey = item.api_key as string | null;
-    const apiAgentId = item.api_agent_id as string | null;
 
     if (apiEndpoint && apiKey) {
       try {
-        const apiRes = await fetch(apiEndpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            api_key: apiKey,
-            agent_id: apiAgentId || undefined,
-            order_id: order.id,
-            item_name: item.name_ar,
-            package_name: packageName,
-            target_id: targetId || null,
-            quantity: isPerQuantity ? parseFloat(quantity) : undefined,
-            amount_usd: priceUsd,
-          }),
-          signal: AbortSignal.timeout(15000),
-        });
+        const isYazanCard = apiEndpoint.includes("yazancard.com") || apiEndpoint.includes("/client/api/");
+
+        let apiRes: Response;
+        if (isYazanCard) {
+          // yazancard.com format: GET with api-token header + query params
+          const orderUuid = crypto.randomUUID();
+          const qty = isPerQuantity ? parseFloat(quantity) : 1;
+          const url = new URL(apiEndpoint);
+          url.searchParams.set("qty", String(qty));
+          if (targetId) url.searchParams.set("playerId", String(targetId));
+          url.searchParams.set("order_uuid", orderUuid);
+          apiRes = await fetch(url.toString(), {
+            method: "GET",
+            headers: { "api-token": apiKey },
+            signal: AbortSignal.timeout(20000),
+          });
+        } else {
+          // Generic format: POST with JSON body
+          apiRes = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              api_key: apiKey,
+              order_id: order.id,
+              item_name: item.name_ar,
+              package_name: packageName,
+              target_id: targetId || null,
+              quantity: isPerQuantity ? parseFloat(quantity) : undefined,
+              amount_usd: priceUsd,
+            }),
+            signal: AbortSignal.timeout(15000),
+          });
+        }
+
         const apiData = await apiRes.json().catch(() => ({})) as Record<string, unknown>;
-        if (apiRes.ok && apiData?.["success"]) {
+
+        // yazancard returns { status: "SUCCESS", order_id: "..." } on success
+        const succeeded = apiRes.ok && (
+          apiData?.["success"] === true ||
+          apiData?.["status"] === "SUCCESS" ||
+          apiData?.["status"] === "success"
+        );
+
+        if (succeeded) {
           finalStatus = "completed";
           autoCharged = true;
+          const txId = String(apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? "N/A");
           await pool.query(
             `UPDATE orders SET status='completed', notes=$1 WHERE id=$2`,
-            [`تم الشحن تلقائياً - معرف العملية: ${String(apiData?.["transaction_id"] ?? "N/A")}`, order.id]
+            [`تم الشحن تلقائياً - معرف العملية: ${txId}`, order.id]
           );
         } else {
           finalStatus = "pending";
+          const errMsg = String(apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ?? "خطأ غير معروف");
           await pool.query(
             `UPDATE orders SET notes=$1 WHERE id=$2`,
-            [`فشل الشحن التلقائي: ${String(apiData?.["error"] ?? "خطأ غير معروف")} - سيتم المعالجة يدوياً`, order.id]
+            [`فشل الشحن التلقائي: ${errMsg} - سيتم المعالجة يدوياً`, order.id]
           );
         }
       } catch (apiErr: any) {
