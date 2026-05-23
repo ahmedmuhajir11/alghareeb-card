@@ -5,7 +5,7 @@
   import { execSync } from 'child_process';
   import { pipeline } from 'stream/promises';
 
-  const TOKEN = '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';
+  const TOKEN = process.env.GH_TOKEN;
   const REPO = 'ahmedmuhajir11/alghareeb-card';
   const BASE = '/var/www/alghareebcard';
 
@@ -75,6 +75,70 @@
     await download(f);
   }
 
+  // ── DB migrations ──────────────────────────────────────────────
+  console.log('\n🗄️  Running DB migrations...');
+  // ⚠️ Set this before running: export YAZANCARD_TOKEN=your_token_here
+  const YAZANCARD_TOKEN = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
+  const dbScript = `
+    const { Pool } = require('pg');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    async function run() {
+      const client = await pool.connect();
+      try {
+        // Add ويويو if not exists
+        await client.query(\`
+          INSERT INTO items (name_ar, name_en, section_id, is_active, is_available, sort_order, price_per_unit, currency_unit, min_quantity, api_endpoint, api_key)
+          VALUES ('ويويو', 'Wowo', 2, true, true, 11, 0.035, 'ذهب', 1000,
+                  'https://api.yazancard.com/client/api/newOrder/274/params',
+                  '${YAZANCARD_TOKEN}')
+          ON CONFLICT DO NOTHING
+        \`);
+        // Add تاكا if not exists
+        await client.query(\`
+          INSERT INTO items (name_ar, name_en, section_id, is_active, is_available, sort_order, price_per_unit, currency_unit, min_quantity, api_endpoint, api_key)
+          VALUES ('تاكا', 'Taka', 2, true, true, 12, 0.005, 'كوينز', 10000,
+                  'https://api.yazancard.com/client/api/newOrder/287/params',
+                  '${YAZANCARD_TOKEN}')
+          ON CONFLICT DO NOTHING
+        \`);
+        // Set Party Star API fields
+        await client.query(\`
+          UPDATE items SET
+            api_endpoint = 'https://api.yazancard.com/client/api/newOrder/145/params',
+            api_key = '${YAZANCARD_TOKEN}'
+          WHERE name_en ILIKE '%party star%' OR (section_id = 2 AND name_ar ILIKE '%بارتي%')
+        \`);
+        // Ensure ويويو and تاكا have correct API fields (if they existed before without them)
+        await client.query(\`
+          UPDATE items SET
+            api_endpoint = 'https://api.yazancard.com/client/api/newOrder/274/params',
+            api_key = '${YAZANCARD_TOKEN}',
+            price_per_unit = COALESCE(NULLIF(price_per_unit, 0), 0.035),
+            currency_unit = COALESCE(NULLIF(currency_unit, ''), 'ذهب'),
+            min_quantity = COALESCE(NULLIF(min_quantity, 0), 1000)
+          WHERE name_en ILIKE '%wowo%' OR name_ar = 'ويويو'
+        \`);
+        await client.query(\`
+          UPDATE items SET
+            api_endpoint = 'https://api.yazancard.com/client/api/newOrder/287/params',
+            api_key = '${YAZANCARD_TOKEN}',
+            price_per_unit = COALESCE(NULLIF(price_per_unit, 0), 0.005),
+            currency_unit = COALESCE(NULLIF(currency_unit, ''), 'كوينز'),
+            min_quantity = COALESCE(NULLIF(min_quantity, 0), 10000)
+          WHERE name_en ILIKE '%taka%' OR name_ar = 'تاكا'
+        \`);
+        console.log('✅ DB migrations done');
+      } finally {
+        client.release();
+        await pool.end();
+      }
+    }
+    run().catch(e => { console.error('❌ DB migration error:', e.message); process.exit(1); });
+  `;
+  execSync(`node -e "${dbScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
+    cwd: BASE, stdio: 'inherit'
+  });
+
   console.log('\n🔨 Building API server...');
   execSync('pnpm --filter @workspace/api-server run build', {
     cwd: BASE, stdio: 'inherit'
@@ -99,4 +163,3 @@
   }
 
   console.log('\n✅ Done! All changes applied.');
-  
