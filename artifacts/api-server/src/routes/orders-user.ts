@@ -200,12 +200,14 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
         const apiData = await apiRes.json().catch(() => ({})) as Record<string, unknown>;
 
-        // yazancard returns { status: "SUCCESS", order_id: "..." } on success
-        const succeeded = apiRes.ok && (
-          apiData?.["success"] === true ||
-          apiData?.["status"] === "SUCCESS" ||
-          apiData?.["status"] === "success"
-        );
+        // If HTTP 200 OK and no explicit failure in body → success
+        const explicitFailure =
+          apiData?.["success"] === false ||
+          apiData?.["status"] === "FAILED" ||
+          apiData?.["status"] === "failed" ||
+          apiData?.["status"] === "error" ||
+          apiData?.["code"] === 0;
+        const succeeded = apiRes.ok && !explicitFailure;
 
         if (succeeded) {
           finalStatus = "completed";
