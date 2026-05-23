@@ -106,14 +106,14 @@ export default function LevelPage() {
           <h1 className="text-3xl md:text-4xl font-black flex items-center gap-3">
             <span>{data.currentLevel.emoji}</span>
             <span style={{ color: data.currentLevel.color }} className="neon-text">
-              {t('level.prefix')} {isRtlLang ? (data.currentLevel.nameAr || t(`level.${data.currentLevel.key}`)) : (data.currentLevel.nameEn || t(`level.${data.currentLevel.key}`) || data.currentLevel.nameAr)}
+              {t('level.prefix')} {isRtlLang ? (data.currentLevel.nameAr || t(`level.${data.currentLevel.key}`)) : (t(`level.${data.currentLevel.key}`) || data.currentLevel.nameEn || data.currentLevel.nameAr)}
             </span>
           </h1>
           <p className="text-sm text-purple-100/80 mt-3 leading-relaxed">
             {data.nextLevel ? (
               <>
                 {t('level.upgradeMsg')}{" "}
-                <span className="font-bold text-white">{isRtlLang ? (data.nextLevel.nameAr || t(`level.${data.nextLevel.key}`)) : (data.nextLevel.nameEn || t(`level.${data.nextLevel.key}`) || data.nextLevel.nameAr)}</span>{" "}
+                <span className="font-bold text-white">{isRtlLang ? (data.nextLevel.nameAr || t(`level.${data.nextLevel.key}`)) : (t(`level.${data.nextLevel.key}`) || data.nextLevel.nameEn || data.nextLevel.nameAr)}</span>{" "}
                 {t('level.upgradeMsg2')}
               </>
             ) : (
@@ -140,7 +140,7 @@ export default function LevelPage() {
           <div className="mt-4">
             <div className="flex justify-between text-xs mb-1.5">
               <span className="text-muted-foreground">
-                {t('level.remaining')} {isRtlLang ? (data.nextLevel.nameAr || t(`level.${data.nextLevel.key}`)) : (data.nextLevel.nameEn || t(`level.${data.nextLevel.key}`) || data.nextLevel.nameAr)} {data.nextLevel.emoji}
+                {t('level.remaining')} {isRtlLang ? (data.nextLevel.nameAr || t(`level.${data.nextLevel.key}`)) : (t(`level.${data.nextLevel.key}`) || data.nextLevel.nameEn || data.nextLevel.nameAr)} {data.nextLevel.emoji}
               </span>
               <span className="font-bold text-primary">
                 {data.progressToNext.toFixed(1)}%
@@ -194,7 +194,7 @@ export default function LevelPage() {
                         className={`font-bold text-base ${isCurrent ? "neon-text" : ""}`}
                         style={isCurrent ? { color: lv.color } : {}}
                       >
-                        {t('level.prefix')} {isRtlLang ? (lv.nameAr || t(`level.${lv.key}`)) : (lv.nameEn || t(`level.${lv.key}`) || lv.nameAr)}
+                        {t('level.prefix')} {isRtlLang ? (lv.nameAr || t(`level.${lv.key}`)) : (t(`level.${lv.key}`) || lv.nameEn || lv.nameAr)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {lv.maxUserCcy === null
