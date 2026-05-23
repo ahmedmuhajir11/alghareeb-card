@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-  import { createWriteStream, mkdirSync, writeFileSync } from 'fs';
+  import { createWriteStream, mkdirSync, writeFileSync, unlinkSync } from 'fs';
   import { get } from 'https';
   import { dirname } from 'path';
   import { execSync } from 'child_process';
@@ -80,12 +80,11 @@
   // ⚠️ Set before running: export YAZANCARD_TOKEN=your_token_here
   const YAZANCARD_TOKEN = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
 
-  const migratePath = '/tmp/alghareeb-migrate.cjs';
+  // Write migration script inside lib/db where pg is a direct dependency
+  const migratePath = `${BASE}/lib/db/tmp-migrate.cjs`;
   writeFileSync(migratePath, `
 'use strict';
-const { createRequire } = require('module');
-const req = createRequire('/var/www/alghareebcard/package.json');
-const { Pool } = req('pg');
+const { Pool } = require('pg');
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const YZT = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
 async function run() {
@@ -133,11 +132,11 @@ async function run() {
 }
 run().catch(e => { console.error('❌ DB migration error:', e.message); process.exit(1); });
 `, 'utf8');
-  execSync(`node ${migratePath}`, {
-    cwd: BASE,
+  execSync(`node tmp-migrate.cjs`, {
+    cwd: `${BASE}/lib/db`,
     stdio: 'inherit',
-    env: { ...process.env, NODE_PATH: `${BASE}/node_modules` }
   });
+  try { unlinkSync(migratePath); } catch {}
 
   console.log('\n🔨 Building API server...');
   execSync('pnpm --filter @workspace/api-server run build', {
