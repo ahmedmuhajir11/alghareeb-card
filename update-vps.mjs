@@ -83,7 +83,9 @@
   const migratePath = '/tmp/alghareeb-migrate.cjs';
   writeFileSync(migratePath, `
 'use strict';
-const { Pool } = require('pg');
+const { createRequire } = require('module');
+const req = createRequire('/var/www/alghareebcard/package.json');
+const { Pool } = req('pg');
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const YZT = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
 async function run() {
