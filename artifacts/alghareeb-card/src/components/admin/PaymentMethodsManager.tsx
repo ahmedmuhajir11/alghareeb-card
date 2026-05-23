@@ -23,6 +23,7 @@ type PaymentMethod = {
   isActive: boolean;
   sortOrder: number;
   allowedCurrencies: string;
+  taxPercent?: number | null;
 };
 
 const ALL_CURRENCIES: { code: string; label: string }[] = [
@@ -61,7 +62,7 @@ const emptyForm = () => ({
   nameAr: "", nameEn: "", flagEmoji: "🌍",
   fields: [{ label: "", value: "", isCopyable: true }] as PaymentField[],
   qrImageUrl: "", notes: [""], requireSenderName: false, requireKyc: false, isActive: true, sortOrder: 0,
-  allowedCurrencies: "",
+  allowedCurrencies: "", taxPercent: 0,
 });
 
 export default function PaymentMethodsManager() {
@@ -163,6 +164,7 @@ export default function PaymentMethodsManager() {
       requireKyc: m.requireKyc ?? false,
       isActive: m.isActive, sortOrder: m.sortOrder,
       allowedCurrencies: m.allowedCurrencies ?? "",
+      taxPercent: m.taxPercent ?? 0,
     });
     setIsDialogOpen(true);
   };
@@ -450,6 +452,24 @@ export default function PaymentMethodsManager() {
                 </div>
               </div>
             )}
+
+            <div className="flex items-center gap-3 p-3 bg-background/30 rounded-lg border border-yellow-500/20">
+              <div className="flex-1">
+                <Label className="text-sm font-medium">نسبة العمولة / الرسوم %</Label>
+                <p className="text-xs text-muted-foreground">تُخصم من مبلغ الإيداع قبل إضافته للرصيد. 0 = بدون عمولة.</p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <Input
+                  type="number"
+                  min="0" max="100" step="0.1"
+                  value={form.taxPercent}
+                  onChange={e => setForm(f => ({ ...f, taxPercent: parseFloat(e.target.value) || 0 }))}
+                  className="w-20 h-9 bg-background/50 text-sm text-center"
+                  dir="ltr"
+                />
+                <span className="text-sm font-bold text-yellow-400">%</span>
+              </div>
+            </div>
 
             <div className="flex items-center gap-3 p-3 bg-background/30 rounded-lg border border-border/30">
               <Switch checked={form.isActive} onCheckedChange={v => setForm(f => ({ ...f, isActive: v }))} id="isActive" />

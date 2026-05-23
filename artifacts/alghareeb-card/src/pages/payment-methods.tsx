@@ -187,6 +187,7 @@ type PaymentMethod = {
   requireKyc: boolean;
   sortOrder: number;
   allowedCurrencies?: string;
+  taxPercent?: number | null;
 };
 
 function useFetchPaymentMethods() {
@@ -304,12 +305,15 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
   const [submitting, setSubmitting] = useState(false);
   const { data: settings } = useFetchSettings();
 
+  const taxPct = typeof method.taxPercent === "number" && method.taxPercent > 0 ? method.taxPercent : 0;
+
   const convertedToAccount = useMemo(() => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return null;
-    if (sentCurrency.toUpperCase() === userCurrency) return amt;
-    return convertAmount(amt, sentCurrency, userCurrency, settings);
-  }, [sentCurrency, userCurrency, amount, settings]);
+    const netAmt = taxPct > 0 ? amt * (1 - taxPct / 100) : amt;
+    if (sentCurrency.toUpperCase() === userCurrency) return netAmt;
+    return convertAmount(netAmt, sentCurrency, userCurrency, settings);
+  }, [sentCurrency, userCurrency, amount, settings, taxPct]);
 
   if (!isSignedIn) {
     return (
@@ -342,8 +346,9 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
     setSubmitting(true);
     try {
       const fd = new FormData();
+      const netAmt = taxPct > 0 ? amt * (1 - taxPct / 100) : amt;
       fd.append("paymentMethodName", methodName);
-      fd.append("amount", String(amt));
+      fd.append("amount", String(netAmt));
       fd.append("currency", sentCurrency);
       if (method.requireSenderName && senderName.trim()) fd.append("senderName", senderName.trim());
       fd.append("receipt", file);
@@ -444,13 +449,25 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
           dir="ltr"
         />
         {convertedToAccount !== null && (
-          <div className="rounded-lg bg-primary/10 border border-primary/30 px-3 py-1.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <ArrowDown className="w-3 h-3 text-primary" />
-              <span>{t('payment.addedToBalance')}</span>
-            </div>
-            <div className="text-sm font-bold text-primary" dir="ltr">
-              {formatNumber(convertedToAccount)} {userCurrency}
+          <div className="rounded-lg bg-primary/10 border border-primary/30 px-3 py-1.5 space-y-1">
+            {taxPct > 0 && (
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[11px] text-yellow-400/90">
+                  <span>🏷 {t('payment.feeLabel')} {taxPct}%</span>
+                </div>
+                <div className="text-[11px] text-yellow-400/90 line-through" dir="ltr">
+                  {formatNumber(parseFloat(amount))} {sentCurrency}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <ArrowDown className="w-3 h-3 text-primary" />
+                <span>{t('payment.addedToBalance')}</span>
+              </div>
+              <div className="text-sm font-bold text-primary" dir="ltr">
+                {formatNumber(convertedToAccount)} {userCurrency}
+              </div>
             </div>
           </div>
         )}

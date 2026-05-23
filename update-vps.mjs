@@ -13,6 +13,7 @@
     // DB schema (CRITICAL — Drizzle ignores columns not defined here)
     'lib/db/src/schema/items.ts',
     'lib/db/src/schema/user-item-prices.ts',
+    'lib/db/src/schema/payment-methods.ts',
     'lib/db/src/schema/index.ts',
     // Generated Zod schemas (must be first so API server build picks them up)
     'lib/api-zod/src/generated/api.ts',
@@ -29,7 +30,10 @@
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
     'artifacts/alghareeb-card/src/components/layout/AppLayout.tsx',
     'artifacts/alghareeb-card/src/components/admin/OrdersManager.tsx',
+    'artifacts/alghareeb-card/src/components/admin/PaymentMethodsManager.tsx',
     'artifacts/alghareeb-card/src/pages/item.tsx',
+    'artifacts/alghareeb-card/src/pages/payment-methods.tsx',
+    'artifacts/alghareeb-card/src/lib/translations.ts',
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
     'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
     // API server routes
@@ -40,6 +44,7 @@
     'artifacts/api-server/src/routes/sitemap.ts',
     'artifacts/api-server/src/routes/index.ts',
     'artifacts/api-server/src/routes/user-item-prices.ts',
+    'artifacts/api-server/src/routes/payment-methods.ts',
   ];
 
   function download(filePath) {
@@ -124,6 +129,8 @@ async function run() {
       ['https://api.yazancard.com/client/api/newOrder/287/params', YZT,
        '\u0643\u0648\u064a\u0646\u0632', '\u062a\u0627\u0643\u0627']
     );
+    // Add tax_percent column if not exists
+    await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS tax_percent REAL DEFAULT 0");
     console.log('✅ DB migrations done');
   } finally {
     c.release();

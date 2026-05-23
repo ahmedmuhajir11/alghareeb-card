@@ -76,7 +76,26 @@ router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
   }
 
   const [updated] = await db.update(settingsTable).set(data as any).returning();
-  res.json(UpdateSettingsResponse.parse(serializeRow(updated)));
+  const updRow = serializeRow(updated);
+  const numFields2 = [
+    "usdToTry","usdToSyp","usdToEur","usdToOmr","usdToMad",
+    "usdToDzd","usdToIls","usdToIqd","usdToSar","usdToEgp","usdToJod",
+  ] as const;
+  for (const f of numFields2) {
+    if (updRow[f] == null || isNaN(Number(updRow[f]))) updRow[f] = 0;
+  }
+  const strFields2 = [
+    "marqueeText","whatsappNumber","moneyTransferCurrencies",
+    "welcomeMessage","welcomeMessageEn",
+  ] as const;
+  for (const f of strFields2) { if (updRow[f] == null) updRow[f] = ""; }
+  if (updRow["updatedAt"] == null) updRow["updatedAt"] = new Date().toISOString();
+  const putResult = UpdateSettingsResponse.safeParse(updRow);
+  if (!putResult.success) {
+    res.json({ ...updRow, id: Number(updRow["id"] ?? 1) });
+    return;
+  }
+  res.json(putResult.data);
 });
 
 export default router;

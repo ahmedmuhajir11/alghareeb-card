@@ -31,7 +31,7 @@ router.get("/payment-methods/:id", async (req, res): Promise<void> => {
 });
 
 router.post("/payment-methods", async (req, res): Promise<void> => {
-  const { nameAr, nameEn, flagEmoji, fields, qrImageUrl, notes, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies } = req.body;
+  const { nameAr, nameEn, flagEmoji, fields, qrImageUrl, notes, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies, taxPercent } = req.body;
   if (!nameAr || !nameEn) { res.status(400).json({ error: "nameAr and nameEn required" }); return; }
   const [method] = await db.insert(paymentMethodsTable).values({
     nameAr, nameEn,
@@ -44,6 +44,7 @@ router.post("/payment-methods", async (req, res): Promise<void> => {
     requireSenderName: requireSenderName ?? false,
     requireKyc: requireKyc ?? false,
     allowedCurrencies: allowedCurrencies ?? "",
+    taxPercent: taxPercent != null ? parseFloat(taxPercent) : 0,
   }).returning();
   res.status(201).json(serializeRow(method));
 });
@@ -51,7 +52,7 @@ router.post("/payment-methods", async (req, res): Promise<void> => {
 router.put("/payment-methods/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid ID" }); return; }
-  const { nameAr, nameEn, flagEmoji, fields, qrImageUrl, notes, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies } = req.body;
+  const { nameAr, nameEn, flagEmoji, fields, qrImageUrl, notes, isActive, sortOrder, requireSenderName, requireKyc, allowedCurrencies, taxPercent } = req.body;
   const [method] = await db.update(paymentMethodsTable).set({
     ...(nameAr !== undefined && { nameAr }),
     ...(nameEn !== undefined && { nameEn }),
@@ -64,6 +65,7 @@ router.put("/payment-methods/:id", async (req, res): Promise<void> => {
     ...(requireSenderName !== undefined && { requireSenderName }),
     ...(requireKyc !== undefined && { requireKyc }),
     ...(allowedCurrencies !== undefined && { allowedCurrencies }),
+    ...(taxPercent !== undefined && { taxPercent: taxPercent != null ? parseFloat(taxPercent) : 0 }),
   }).where(eq(paymentMethodsTable.id, id)).returning();
   if (!method) { res.status(404).json({ error: "Not found" }); return; }
   res.json(serializeRow(method));
