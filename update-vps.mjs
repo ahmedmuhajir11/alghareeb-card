@@ -132,10 +132,14 @@ async function run() {
 }
 run().catch(e => { console.error('❌ DB migration error:', e.message); process.exit(1); });
 `, 'utf8');
-  execSync(`node tmp-migrate.cjs`, {
-    cwd: `${BASE}/lib/db`,
-    stdio: 'inherit',
-  });
+  try {
+    execSync(`node tmp-migrate.cjs`, {
+      cwd: `${BASE}/lib/db`,
+      stdio: 'inherit',
+    });
+  } catch (dbErr) {
+    console.warn('⚠️  DB migration skipped (can be done manually via admin panel):', dbErr.message);
+  }
   try { unlinkSync(migratePath); } catch {}
 
   console.log('\n🔨 Building API server...');
