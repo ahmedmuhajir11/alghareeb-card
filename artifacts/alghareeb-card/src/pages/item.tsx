@@ -369,6 +369,13 @@ export default function ItemPage({ id }: { id: number }) {
           </p>
         )}
       </div>
+      {(item as any).fulfillmentType && (item as any).fulfillmentType !== "none" && (
+        <div className="border-r-4 border-primary/60 pr-3 py-1 text-sm text-muted-foreground bg-card/30 rounded-xl px-4">
+          {(item as any).fulfillmentType === "auto"
+            ? "😊 هذا المنتج يعمل بشكل آلي، 24 ساعة على مدار السنة"
+            : "⏳ يتم تنفيذ هذا المنتج يدويًا حسب ترتيب الطلبات"}
+        </div>
+      )}
     </div>
   );
 }

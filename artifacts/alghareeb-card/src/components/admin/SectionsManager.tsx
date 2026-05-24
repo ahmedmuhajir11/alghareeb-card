@@ -295,7 +295,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const isAppCharging = section.id === 2;
   const isMoneyTransfer = section.id === 3 || section.nameEn === "Money Transfers" || section.nameAr === "الحوالات المالية";
 
-  const emptyForm = { nameAr: "", nameEn: "", nameTr: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, maxQuantity: null as number | null, description: "", sortOrder: 0, isActive: true, isAvailable: true, apiEndpoint: "", apiKey: "", apiAgentId: "" };
+  const emptyForm = { nameAr: "", nameEn: "", nameTr: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, maxQuantity: null as number | null, fulfillmentType: "auto", description: "", sortOrder: 0, isActive: true, isAvailable: true, apiEndpoint: "", apiKey: "", apiAgentId: "" };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Item | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -363,6 +363,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       pricePerUnit: item.pricePerUnit ?? 0,
       minQuantity: (item as any).minQuantity ?? 1,
       maxQuantity: (item as any).maxQuantity ?? null,
+      fulfillmentType: (item as any).fulfillmentType ?? "auto",
       description: item.description ?? "",
       sortOrder: item.sortOrder,
       isActive: item.isActive,
@@ -398,6 +399,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       apiEndpoint: formData.apiEndpoint,
       apiKey: formData.apiKey,
       apiAgentId: formData.apiAgentId,
+      fulfillmentType: formData.fulfillmentType,
     };
     if (isAppCharging) {
       payload.minQuantity = formData.minQuantity > 0 ? formData.minQuantity : 1;
@@ -815,6 +817,26 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                   <Input value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="bg-background/50" placeholder="وصف مختصر..." />
                 </div>
               )}
+              <div className="space-y-2">
+                <Label>طريقة التنفيذ</Label>
+                <div className="flex gap-2">
+                  {[
+                    { value: "auto", label: "⚡ تلقائي 24/7" },
+                    { value: "manual", label: "🕐 يدوي" },
+                    { value: "none", label: "لا يوجد" },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, fulfillmentType: opt.value })}
+                      className={`flex-1 text-xs py-2 px-2 rounded-md border transition-colors ${formData.fulfillmentType === opt.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">يظهر للمستخدم أسفل نموذج الطلب.</p>
+              </div>
               <div className="space-y-2">
                 <Label>ترتيب العرض</Label>
                 <Input type="number" value={formData.sortOrder} onChange={e => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })} className="bg-background/50" dir="ltr" />

@@ -21,6 +21,7 @@ export const itemsTable = pgTable("items", {
   apiEndpoint: text("api_endpoint"),
   apiKey: text("api_key"),
   apiAgentId: text("api_agent_id"),
+  fulfillmentType: text("fulfillment_type").default("auto"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
