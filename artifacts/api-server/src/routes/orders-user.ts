@@ -71,7 +71,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         return;
       }
       const pkgRes = await client.query(
-        `SELECT id, label, price_usd FROM packages WHERE id=$1 AND item_id=$2`,
+        `SELECT id, label, price_usd, api_endpoint, api_key FROM packages WHERE id=$1 AND item_id=$2`,
         [pkgIdNum, itemIdNum]
       );
       if (pkgRes.rows.length === 0) {
@@ -82,6 +82,11 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       const pkg = pkgRes.rows[0];
       priceUsd = parseFloat(pkg.price_usd);
       packageName = pkg.label;
+      // If item has no API credentials, fall back to package-level credentials (grouped import mode)
+      if ((!item.api_endpoint || !item.api_key) && pkg.api_endpoint && pkg.api_key) {
+        item.api_endpoint = pkg.api_endpoint;
+        item.api_key = pkg.api_key;
+      }
     }
 
     if (!priceUsd || priceUsd <= 0 || isNaN(priceUsd)) {
@@ -168,16 +173,17 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
         let apiRes: Response;
         if (isYazanCard) {
-          // yazancard.com format: GET with api-token header + query params
-          const orderUuid = crypto.randomUUID();
+          // yazancard.com format: POST to /newOrder/{id} with JSON body
+          // Strip /params suffix if present (stored by importer for param discovery)
+          const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "");
           const qty = isPerQuantity ? parseFloat(quantity) : 1;
-          const url = new URL(apiEndpoint);
-          url.searchParams.set("qty", String(qty));
-          if (targetId) url.searchParams.set("playerId", String(targetId));
-          url.searchParams.set("order_uuid", orderUuid);
-          apiRes = await fetch(url.toString(), {
-            method: "GET",
-            headers: { "api-token": apiKey },
+          const orderUuid = crypto.randomUUID();
+          const body: Record<string, unknown> = { qty, order_uuid: orderUuid };
+          if (targetId) body["playerId"] = String(targetId);
+          apiRes = await fetch(chargeEndpoint, {
+            method: "POST",
+            headers: { "Api-Token": apiKey, "Content-Type": "application/json" },
+            body: JSON.stringify(body),
             signal: AbortSignal.timeout(20000),
           });
         } else {

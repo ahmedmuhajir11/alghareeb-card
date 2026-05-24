@@ -188,7 +188,7 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
         // Create a package per product in this category
         let pkgOrder = 0;
         for (const p of catProducts) {
-          const endpoint = `${resolvedBase}/newOrder/${p.id}/params`;
+          const endpoint = `${resolvedBase}/newOrder/${p.id}`;
           const priceUsd = (Number(p.price) / currencyRate) * markup;
           const label = stripCategoryPrefix(p.name as string, categoryName);
 
@@ -219,7 +219,7 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
     // ── FLAT MODE: one item per product (original behaviour) ──
     for (const p of products) {
       try {
-        const endpoint = `${resolvedBase}/newOrder/${p.id}/params`;
+        const endpoint = `${resolvedBase}/newOrder/${p.id}`;
 
         if (skipDuplicates) {
           const existing = await db.select({ id: itemsTable.id })
@@ -273,7 +273,7 @@ router.post("/admin/yazancard/import", requireAdmin, async (req: Request, res: R
         sectionId: Number(sectionId), pricePerUnit: Number(p.price) * markup,
         currencyUnit: guessCurrencyUnit(p.name as string),
         minQuantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
-        apiEndpoint: `${baseUrl}/newOrder/${p.id}/params`, apiKey: token,
+        apiEndpoint: `${baseUrl}/newOrder/${p.id}`, apiKey: token,
         isActive: true, isAvailable: p.available ?? true, sortOrder: 0,
       });
       imported.push(p.name as string);
