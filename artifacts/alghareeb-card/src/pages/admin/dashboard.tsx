@@ -9,10 +9,11 @@ import TickerManager from "@/components/admin/TickerManager";
 import DepositsManager from "@/components/admin/DepositsManager";
 import OrdersManager from "@/components/admin/OrdersManager";
 import UsersManager from "@/components/admin/UsersManager";
-import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users, BadgeCheck, BarChart2 } from "lucide-react";
+import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users, BadgeCheck, BarChart2, Package } from "lucide-react";
 import IdentitiesManager from "@/components/admin/IdentitiesManager";
 import CurrenciesManager from "@/components/admin/CurrenciesManager";
 import StatsManager from "@/components/admin/StatsManager";
+import YazanCardImporter from "@/components/admin/YazanCardImporter";
 
 const TAB_CLASS = "flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-colors";
 
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
 
       <Tabs defaultValue="stats" className="w-full">
         <div className="overflow-x-auto pb-1">
-          <TabsList className="flex w-max min-w-full md:grid md:grid-cols-11 bg-card border border-primary/20 h-auto p-1 gap-1">
+          <TabsList className="flex w-max min-w-full md:grid md:grid-cols-12 bg-card border border-primary/20 h-auto p-1 gap-1">
             <TabsTrigger value="stats" className={TAB_CLASS}>
               <BarChart2 className="w-4 h-4 flex-shrink-0" />
               الإحصاءات
@@ -72,6 +73,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="settings" className={TAB_CLASS}>
               <Settings className="w-4 h-4 flex-shrink-0" />
               الإعدادات
+            </TabsTrigger>
+            <TabsTrigger value="yazancard" className={TAB_CLASS}>
+              <Package className="w-4 h-4 flex-shrink-0" />
+              يزن كارد
             </TabsTrigger>
           </TabsList>
         </div>
@@ -143,6 +148,12 @@ export default function AdminDashboard() {
               <h3 className="text-base font-bold mb-4">إدارة العملات وأسعار الصرف</h3>
               <CurrenciesManager />
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="yazancard" className="mt-6">
+          <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm">
+            <YazanCardImporter />
           </div>
         </TabsContent>
       </Tabs>

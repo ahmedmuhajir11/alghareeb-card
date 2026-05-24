@@ -23,6 +23,7 @@ import identityRouter from "./identity";
 import sitemapRouter from "./sitemap";
 import mockChargingRouter from "./mock-charging";
 import userItemPricesRouter from "./user-item-prices";
+import yazancardRouter from "./yazancard";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(searchRouter);
 router.use(currenciesRouter);
 router.use(identityRouter);
 router.use(userItemPricesRouter);
+router.use(yazancardRouter);
 
 export default router;
