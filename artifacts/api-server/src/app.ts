@@ -103,6 +103,8 @@ if (process.env.NODE_ENV === "production") {
   logger.info({ frontendDist, indexHtml }, "Serving frontend static files");
   app.use(express.static(frontendDist));
   app.get("/{*splat}", (_req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
     res.sendFile(indexHtml, (err) => {
       if (err) {
         logger.warn({ err, indexHtml }, "Frontend index.html not found, returning 404");
