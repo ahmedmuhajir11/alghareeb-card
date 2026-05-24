@@ -150,6 +150,7 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
         pricePerUnit: priceWithMarkup,
         currencyUnit: guessCurrencyUnit(p.name as string),
         minQuantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
+        maxQuantity: p.qty_values?.max ? Number(p.qty_values.max) : null,
         apiEndpoint: endpoint,
         apiKey: resolvedToken,
         isActive: true,

@@ -30,6 +30,7 @@ export default function ItemPage({ id }: { id: number }) {
 
   const isPerQuantity = item?.sectionPricingType === "per_quantity";
   const minQuantity = (item as any)?.minQuantity ?? 1;
+  const maxQuantity = (item as any)?.maxQuantity ?? null;
 
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
   const [userId, setUserId] = useState("");
@@ -263,9 +264,12 @@ export default function ItemPage({ id }: { id: number }) {
                 onChange={e => setQuantity(e.target.value)}
                 dir="ltr"
               />
-              {minQuantity > 1 && !isBelowMin && (
+              {(minQuantity > 1 || maxQuantity) && !isBelowMin && (
                 <p className="text-xs text-muted-foreground text-center">
-                  {t('item.minQty')} {minQuantity} {unitLabel}
+                  {minQuantity > 1 && <span>{t('item.minQty')} {minQuantity} </span>}
+                  {minQuantity > 1 && maxQuantity && <span>— </span>}
+                  {maxQuantity && <span>الحد الأقصى: {maxQuantity} </span>}
+                  {unitLabel}
                 </p>
               )}
               {isBelowMin && (

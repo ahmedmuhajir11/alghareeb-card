@@ -13,6 +13,7 @@ export const itemsTable = pgTable("items", {
   currencyUnit: text("currency_unit"),
   pricePerUnit: doublePrecision("price_per_unit"),
   minQuantity: doublePrecision("min_quantity").default(1),
+  maxQuantity: doublePrecision("max_quantity"),
   description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
