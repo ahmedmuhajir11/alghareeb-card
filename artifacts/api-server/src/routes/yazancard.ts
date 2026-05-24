@@ -4,12 +4,6 @@ import { requireAdmin } from "../middleware/requireAdmin";
 
 const router: IRouter = Router();
 
-const YZ_API = "https://api.yazancard.com/client/api";
-
-function getToken(): string | undefined {
-  return process.env.YAZANCARD_TOKEN;
-}
-
 function guessCurrencyUnit(name: string): string {
   const n = name.toLowerCase();
   if (n.includes(" uc")) return "UC";
@@ -26,25 +20,45 @@ function guessCurrencyUnit(name: string): string {
   return "رصيد";
 }
 
-router.get("/admin/yazancard/products", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
-  const token = getToken();
+function normalizeBase(base: string): string {
+  const b = base.trim().replace(/\/+$/, "");
+  if (!b.startsWith("http")) return `https://${b}`;
+  return b;
+}
+
+// GET /api/admin/provider/products?baseUrl=...&token=...
+// Also keeps backward compat: /api/admin/yazancard/products (uses env token + yazancard base)
+router.get("/admin/provider/products", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const token = (req.query.token as string) || process.env.YAZANCARD_TOKEN || "";
+  const rawBase = (req.query.baseUrl as string) || "https://api.yazancard.com/client/api";
+  const baseUrl = normalizeBase(rawBase);
+
   if (!token) {
-    res.status(503).json({ error: "YAZANCARD_TOKEN not configured on server" });
+    res.status(400).json({ error: "token مطلوب" });
     return;
   }
 
   try {
-    const response = await fetch(`${YZ_API}/products`, {
+    const response = await fetch(`${baseUrl}/products`, {
       headers: { "Api-Token": token },
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {
-      res.status(502).json({ error: "YazanCard API error: " + response.status });
+      res.status(502).json({ error: `API error: ${response.status} — تحقق من الـ base URL والتوكن` });
       return;
     }
 
-    const data = await response.json();
-    const products = Object.values(data as Record<string, unknown>);
+    const raw = await response.text();
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      res.status(502).json({ error: "الـ API أعاد استجابة غير صالحة (ليست JSON)" });
+      return;
+    }
+
+    const products = Array.isArray(data) ? data : Object.values(data);
 
     const categories: Record<string, unknown[]> = {};
     for (const p of products as any[]) {
@@ -53,23 +67,56 @@ router.get("/admin/yazancard/products", requireAdmin, async (_req: Request, res:
       categories[cat].push(p);
     }
 
+    res.json({ products, categories, total: products.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Legacy route — backward compat
+router.get("/admin/yazancard/products", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const token = process.env.YAZANCARD_TOKEN;
+  if (!token) {
+    res.status(503).json({ error: "YAZANCARD_TOKEN not configured on server" });
+    return;
+  }
+  const baseUrl = "https://api.yazancard.com/client/api";
+  try {
+    const response = await fetch(`${baseUrl}/products`, {
+      headers: { "Api-Token": token },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) {
+      res.status(502).json({ error: "YazanCard API error: " + response.status });
+      return;
+    }
+    const data = await response.json();
+    const products = Object.values(data as Record<string, unknown>);
+    const categories: Record<string, unknown[]> = {};
+    for (const p of products as any[]) {
+      const cat = (p.category_name as string) || "Other";
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(p);
+    }
     res.json({ products, categories });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.post("/admin/yazancard/import", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const token = getToken();
-  if (!token) {
-    res.status(503).json({ error: "YAZANCARD_TOKEN not configured on server" });
+// POST /api/admin/provider/import
+router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const { products, sectionId, markupPercent = 15, baseUrl, token } = req.body;
+
+  const resolvedToken = (token as string) || process.env.YAZANCARD_TOKEN || "";
+  const resolvedBase = normalizeBase((baseUrl as string) || "https://api.yazancard.com/client/api");
+
+  if (!resolvedToken) {
+    res.status(400).json({ error: "token مطلوب" });
     return;
   }
-
-  const { products, sectionId, markupPercent = 15 } = req.body;
-
   if (!Array.isArray(products) || !products.length || !sectionId) {
-    res.status(400).json({ error: "products[] and sectionId are required" });
+    res.status(400).json({ error: "products[] و sectionId مطلوبان" });
     return;
   }
 
@@ -87,8 +134,8 @@ router.post("/admin/yazancard/import", requireAdmin, async (req: Request, res: R
         pricePerUnit: priceWithMarkup,
         currencyUnit: guessCurrencyUnit(p.name as string),
         minQuantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
-        apiEndpoint: `${YZ_API}/newOrder/${p.id}/params`,
-        apiKey: token,
+        apiEndpoint: `${resolvedBase}/newOrder/${p.id}/params`,
+        apiKey: resolvedToken,
         isActive: true,
         isAvailable: p.available ?? true,
         sortOrder: 0,
@@ -99,6 +146,34 @@ router.post("/admin/yazancard/import", requireAdmin, async (req: Request, res: R
     }
   }
 
+  res.json({ imported: imported.length, errors, names: imported });
+});
+
+// Legacy import route
+router.post("/admin/yazancard/import", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const token = process.env.YAZANCARD_TOKEN || "";
+  const baseUrl = "https://api.yazancard.com/client/api";
+  const { products, sectionId, markupPercent = 15 } = req.body;
+  if (!token) { res.status(503).json({ error: "YAZANCARD_TOKEN not configured" }); return; }
+  if (!Array.isArray(products) || !products.length || !sectionId) {
+    res.status(400).json({ error: "products[] و sectionId مطلوبان" }); return;
+  }
+  const markup = 1 + Number(markupPercent) / 100;
+  const imported: string[] = [];
+  const errors: string[] = [];
+  for (const p of products) {
+    try {
+      await db.insert(itemsTable).values({
+        nameAr: p.name as string, nameEn: p.name as string,
+        sectionId: Number(sectionId), pricePerUnit: Number(p.price) * markup,
+        currencyUnit: guessCurrencyUnit(p.name as string),
+        minQuantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
+        apiEndpoint: `${baseUrl}/newOrder/${p.id}/params`, apiKey: token,
+        isActive: true, isAvailable: p.available ?? true, sortOrder: 0,
+      });
+      imported.push(p.name as string);
+    } catch (err: any) { errors.push(`${p.name}: ${err.detail || err.message}`); }
+  }
   res.json({ imported: imported.length, errors, names: imported });
 });
 
