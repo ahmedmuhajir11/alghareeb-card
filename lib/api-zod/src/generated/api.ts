@@ -218,6 +218,10 @@ export const ListItemsResponseItem = zod.object({
     .string()
     .optional()
     .describe("Agent\/reseller ID assigned by the charging provider"),
+  fulfillmentType: zod
+    .string()
+    .optional()
+    .describe("Fulfillment mode: auto, manual, or none"),
   createdAt: zod.string(),
 });
 export const ListItemsResponse = zod.array(ListItemsResponseItem);
@@ -245,6 +249,7 @@ export const CreateItemBody = zod.object({
   apiEndpoint: zod.string().optional(),
   apiKey: zod.string().optional(),
   apiAgentId: zod.string().optional(),
+  fulfillmentType: zod.string().optional(),
 });
 
 /**
@@ -272,6 +277,10 @@ export const GetItemResponse = zod.object({
   apiEndpoint: zod.string().optional(),
   apiKey: zod.string().optional(),
   apiAgentId: zod.string().optional(),
+  fulfillmentType: zod
+    .string()
+    .optional()
+    .describe("Fulfillment mode: auto, manual, or none"),
   createdAt: zod.string(),
   sectionPricingType: zod
     .string()
@@ -317,6 +326,7 @@ export const UpdateItemBody = zod.object({
   apiEndpoint: zod.string().optional(),
   apiKey: zod.string().optional(),
   apiAgentId: zod.string().optional(),
+  fulfillmentType: zod.string().optional(),
 });
 
 export const UpdateItemResponse = zod.object({
@@ -357,6 +367,10 @@ export const UpdateItemResponse = zod.object({
     .string()
     .optional()
     .describe("Agent\/reseller ID assigned by the charging provider"),
+  fulfillmentType: zod
+    .string()
+    .optional()
+    .describe("Fulfillment mode: auto, manual, or none"),
   createdAt: zod.string(),
 });
 

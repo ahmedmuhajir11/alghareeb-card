@@ -697,6 +697,9 @@ components:
         apiAgentId:
           type: string
           description: "Agent/reseller ID assigned by the charging provider"
+        fulfillmentType:
+          type: string
+          description: "Fulfillment mode: auto, manual, or none"
         createdAt:
           type: string
       required:
@@ -747,6 +750,9 @@ components:
           type: string
         apiAgentId:
           type: string
+        fulfillmentType:
+          type: string
+          description: "Fulfillment mode: auto, manual, or none"
         createdAt:
           type: string
         sectionPricingType:
@@ -802,6 +808,8 @@ components:
           type: string
         apiAgentId:
           type: string
+        fulfillmentType:
+          type: string
       required:
         - nameAr
         - nameEn
@@ -839,6 +847,8 @@ components:
         apiKey:
           type: string
         apiAgentId:
+          type: string
+        fulfillmentType:
           type: string
 
     Package:

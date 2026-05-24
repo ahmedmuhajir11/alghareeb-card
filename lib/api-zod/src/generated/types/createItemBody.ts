@@ -22,4 +22,5 @@ export interface CreateItemBody {
   apiEndpoint?: string;
   apiKey?: string;
   apiAgentId?: string;
+  fulfillmentType?: string;
 }

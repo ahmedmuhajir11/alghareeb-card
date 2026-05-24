@@ -31,5 +31,7 @@ export interface Item {
   apiKey?: string;
   /** Agent/reseller ID assigned by the charging provider */
   apiAgentId?: string;
+  /** Fulfillment mode: auto, manual, or none */
+  fulfillmentType?: string;
   createdAt: string;
 }

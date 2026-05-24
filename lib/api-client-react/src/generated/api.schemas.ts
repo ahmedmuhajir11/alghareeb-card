@@ -110,6 +110,8 @@ export interface Item {
   apiKey?: string;
   /** Agent/reseller ID assigned by the charging provider */
   apiAgentId?: string;
+  /** Fulfillment mode: auto, manual, or none */
+  fulfillmentType?: string;
   createdAt: string;
 }
 
@@ -143,6 +145,8 @@ export interface ItemWithPackages {
   apiEndpoint?: string;
   apiKey?: string;
   apiAgentId?: string;
+  /** Fulfillment mode: auto, manual, or none */
+  fulfillmentType?: string;
   createdAt: string;
   /** pricing type inherited from the section */
   sectionPricingType: string;
@@ -165,6 +169,7 @@ export interface CreateItemBody {
   apiEndpoint?: string;
   apiKey?: string;
   apiAgentId?: string;
+  fulfillmentType?: string;
 }
 
 export interface UpdateItemBody {
@@ -183,6 +188,7 @@ export interface UpdateItemBody {
   apiEndpoint?: string;
   apiKey?: string;
   apiAgentId?: string;
+  fulfillmentType?: string;
 }
 
 export interface CreatePackageBody {

@@ -25,6 +25,8 @@ export interface ItemWithPackages {
   apiEndpoint?: string;
   apiKey?: string;
   apiAgentId?: string;
+  /** Fulfillment mode: auto, manual, or none */
+  fulfillmentType?: string;
   createdAt: string;
   /** pricing type inherited from the section */
   sectionPricingType: string;
