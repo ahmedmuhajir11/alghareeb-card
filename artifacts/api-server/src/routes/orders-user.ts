@@ -173,17 +173,17 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
         let apiRes: Response;
         if (isYazanCard) {
-          // yazancard.com format: POST to /newOrder/{id} with JSON body
-          // Strip /params suffix if present (stored by importer for param discovery)
-          const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "");
+          // yazancard.com: GET /newOrder/{id}/params?qty=...&playerId=...&api_token=...
+          const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "") + "/params";
           const qty = isPerQuantity ? parseFloat(quantity) : 1;
           const orderUuid = crypto.randomUUID();
-          const body: Record<string, unknown> = { qty, order_uuid: orderUuid };
-          if (targetId) body["playerId"] = String(targetId);
-          apiRes = await fetch(chargeEndpoint, {
-            method: "POST",
-            headers: { "Api-Token": apiKey, "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+          const url = new URL(chargeEndpoint);
+          url.searchParams.set("qty", String(qty));
+          url.searchParams.set("order_uuid", orderUuid);
+          if (targetId) url.searchParams.set("player_id", String(targetId));
+          apiRes = await fetch(url.toString(), {
+            method: "GET",
+            headers: { "Api-Token": apiKey, "api-token": apiKey },
             signal: AbortSignal.timeout(20000),
           });
         } else {
@@ -218,7 +218,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         if (succeeded) {
           finalStatus = "completed";
           autoCharged = true;
-          const txId = String(apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? "N/A");
+          const txId = String(apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? apiData?.["id"] ?? "N/A");
           await pool.query(
             `UPDATE orders SET status='completed', notes=$1 WHERE id=$2`,
             [`تم الشحن تلقائياً - معرف العملية: ${txId}`, order.id]
@@ -226,9 +226,10 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         } else {
           finalStatus = "pending";
           const errMsg = String(apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ?? "خطأ غير معروف");
+          const rawResp = JSON.stringify(apiData).slice(0, 300);
           await pool.query(
             `UPDATE orders SET notes=$1 WHERE id=$2`,
-            [`فشل الشحن التلقائي: ${errMsg} - سيتم المعالجة يدوياً`, order.id]
+            [`فشل الشحن التلقائي: ${errMsg} | رد API: ${rawResp}`, order.id]
           );
         }
       } catch (apiErr: any) {

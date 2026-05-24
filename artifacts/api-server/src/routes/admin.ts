@@ -383,13 +383,14 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
       let apiRes: globalThis.Response;
 
       if (isYazanCard) {
-        const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "");
-        const body: Record<string, unknown> = { qty: 1, order_uuid: crypto.randomUUID() };
-        if (order.target_id) body["playerId"] = String(order.target_id);
-        apiRes = await fetch(chargeEndpoint, {
-          method: "POST",
-          headers: { "Api-Token": apiKey, "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+        const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "") + "/params";
+        const chargeUrl = new URL(chargeEndpoint);
+        chargeUrl.searchParams.set("qty", "1");
+        chargeUrl.searchParams.set("order_uuid", crypto.randomUUID());
+        if (order.target_id) chargeUrl.searchParams.set("player_id", String(order.target_id));
+        apiRes = await fetch(chargeUrl.toString(), {
+          method: "GET",
+          headers: { "Api-Token": apiKey, "api-token": apiKey },
           signal: AbortSignal.timeout(20000),
         });
       } else {
