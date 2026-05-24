@@ -340,6 +340,108 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 });
 
+// ── Retry auto-charge for a pending order ────────────────────────────────────
+router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const id = parseInt(req.params.id);
+  if (!id || isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
+
+  const client = await pool.connect();
+  try {
+    // Load order + item API credentials
+    const ordRes = await client.query(
+      `SELECT o.*, i.api_endpoint AS item_api_endpoint, i.api_key AS item_api_key,
+              p.api_endpoint AS pkg_api_endpoint, p.api_key AS pkg_api_key
+       FROM orders o
+       LEFT JOIN items i ON i.name_ar = o.item_name
+       LEFT JOIN packages p ON p.label = o.package_name AND p.item_id = i.id
+       WHERE o.id = $1`,
+      [id]
+    );
+    if (ordRes.rows.length === 0) { res.status(404).json({ error: "الطلب غير موجود" }); client.release(); return; }
+    const order = ordRes.rows[0];
+    if (order.status !== "pending") { res.status(400).json({ error: "الطلب ليس في حالة انتظار" }); client.release(); return; }
+
+    // Resolve API credentials: prefer package-level, fallback to item-level
+    const apiEndpoint: string | null = order.pkg_api_endpoint || order.item_api_endpoint || null;
+    const apiKey: string | null = order.pkg_api_key || order.item_api_key || null;
+
+    if (!apiEndpoint || !apiKey) {
+      res.status(400).json({ error: "لا توجد بيانات API مرتبطة بهذا الطلب" });
+      client.release();
+      return;
+    }
+
+    client.release();
+
+    // Make the charge API call
+    let apiData: Record<string, unknown> = {};
+    let httpOk = false;
+    let errMsg = "خطأ غير معروف";
+
+    try {
+      const isYazanCard = apiEndpoint.includes("yazancard.com") || apiEndpoint.includes("/client/api/");
+      let apiRes: globalThis.Response;
+
+      if (isYazanCard) {
+        const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "");
+        const body: Record<string, unknown> = { qty: 1, order_uuid: crypto.randomUUID() };
+        if (order.target_id) body["playerId"] = String(order.target_id);
+        apiRes = await fetch(chargeEndpoint, {
+          method: "POST",
+          headers: { "Api-Token": apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(20000),
+        });
+      } else {
+        apiRes = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            api_key: apiKey, order_id: order.id,
+            item_name: order.item_name, package_name: order.package_name,
+            target_id: order.target_id,
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+      }
+
+      apiData = await apiRes.json().catch(() => ({})) as Record<string, unknown>;
+      httpOk = apiRes.ok;
+
+      const explicitFailure =
+        apiData?.["success"] === false || apiData?.["status"] === "FAILED" ||
+        apiData?.["status"] === "failed" || apiData?.["status"] === "error" ||
+        apiData?.["code"] === 0;
+
+      if (httpOk && !explicitFailure) {
+        const txId = String(apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? "N/A");
+        await pool.query(
+          `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
+          [`تم الشحن تلقائياً - معرف العملية: ${txId}`, id]
+        );
+        sendPushToUser(order.user_id, "✅ تم الشحن التلقائي", `تم تنفيذ طلبك: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, "/orders").catch(() => {});
+        res.json({ success: true, status: "completed", apiResponse: apiData });
+      } else {
+        errMsg = String(apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ?? "خطأ غير معروف");
+        await pool.query(
+          `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
+          [`فشل الشحن التلقائي: ${errMsg} - سيتم المعالجة يدوياً`, id]
+        );
+        res.status(502).json({ success: false, error: errMsg, apiResponse: apiData });
+      }
+    } catch (apiErr: any) {
+      await pool.query(
+        `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
+        [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"}`, id]
+      ).catch(() => {});
+      res.status(502).json({ success: false, error: apiErr?.message ?? "timeout" });
+    }
+  } catch (err: any) {
+    client.release();
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Admin Stats ──────────────────────────────────────────────────────────────
 router.get("/admin/stats", requireAdmin, async (_req, res) => {
   const client = await pool.connect();

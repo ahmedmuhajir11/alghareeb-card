@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Package, User as UserIcon, Copy } from "lucide-react";
+import { Check, X, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Package, User as UserIcon, Copy, Zap } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -19,13 +19,15 @@ type OrderRow = {
   targetId: string | null;
   amount: number;
   currency: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "completed";
+  notes: string | null;
   createdAt: string;
 };
 
 const STATUS_TABS = [
   { value: "pending", label: "بانتظار التنفيذ", icon: Clock, color: "text-amber-400" },
-  { value: "approved", label: "منفّذة", icon: CheckCircle2, color: "text-green-400" },
+  { value: "completed", label: "مشحونة تلقائياً", icon: Zap, color: "text-emerald-400" },
+  { value: "approved", label: "منفّذة يدوياً", icon: CheckCircle2, color: "text-green-400" },
   { value: "rejected", label: "مرفوضة (مُسترجعة)", icon: XCircle, color: "text-red-400" },
   { value: "all", label: "الكل", icon: Filter, color: "text-purple-400" },
 ];
@@ -65,6 +67,30 @@ export default function OrdersManager() {
     },
     onError: (err: any) => {
       toast({ variant: "destructive", title: "خطأ", description: err?.message ?? "فشلت العملية" });
+    },
+  });
+
+  const retryCharge = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`${API_BASE}/api/admin/orders/${id}/retry-charge`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "فشل الشحن التلقائي");
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.status === "completed") {
+        toast({ title: "✅ تم الشحن التلقائي بنجاح", description: "تم تحديث حالة الطلب إلى مكتمل" });
+      } else {
+        toast({ variant: "destructive", title: "فشل الشحن التلقائي", description: data?.error ?? "تحقق من ملاحظة API" });
+      }
+      qc.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+    },
+    onError: (err: any) => {
+      toast({ variant: "destructive", title: "فشل الاتصال بـ API", description: err?.message });
+      qc.invalidateQueries({ queryKey: ["/api/admin/orders"] });
     },
   });
 
@@ -108,24 +134,27 @@ export default function OrdersManager() {
         </div>
       ) : (
         <div className="space-y-3">
-          {data.map(o => <OrderCard key={o.id} o={o} executor={action} />)}
+          {data.map(o => <OrderCard key={o.id} o={o} executor={action} retryCharge={retryCharge} />)}
         </div>
       )}
     </div>
   );
 }
 
-function OrderCard({ o, executor }: { o: OrderRow; executor: any }) {
+function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; retryCharge: any }) {
   const { toast } = useToast();
   const [showMsg, setShowMsg] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const statusBadge = {
-    pending: { label: "بانتظار التنفيذ", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-    approved: { label: "منفّذة ✓", cls: "bg-green-500/15 text-green-300 border-green-500/30" },
-    rejected: { label: "مرفوضة (تم إرجاع الرصيد)", cls: "bg-red-500/15 text-red-300 border-red-500/30" },
-  }[o.status];
+  const statusBadgeMap: Record<string, { label: string; cls: string }> = {
+    pending:   { label: "بانتظار التنفيذ",         cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+    approved:  { label: "منفّذة يدوياً ✓",          cls: "bg-green-500/15 text-green-300 border-green-500/30" },
+    completed: { label: "مشحونة تلقائياً ⚡",       cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
+    rejected:  { label: "مرفوضة (تم إرجاع الرصيد)", cls: "bg-red-500/15 text-red-300 border-red-500/30" },
+  };
+  const statusBadge = statusBadgeMap[o.status] ?? statusBadgeMap.pending;
+  const hasApiNote = o.notes && o.notes.includes("فشل");
 
   async function copyTargetId() {
     if (!o.targetId) return;
@@ -214,11 +243,22 @@ function OrderCard({ o, executor }: { o: OrderRow; executor: any }) {
 
         {o.status === "pending" && (
           <div className="space-y-2 pt-2 border-t border-border/30">
+            {hasApiNote && (
+              <Button
+                disabled={retryCharge.isPending}
+                onClick={() => retryCharge.mutate(o.id)}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white h-9 gap-1.5"
+                size="sm"
+              >
+                <Zap className="w-4 h-4" />
+                {retryCharge.isPending ? "جاري الشحن..." : "إعادة الشحن التلقائي"}
+              </Button>
+            )}
             {showMsg && (
               <Input
                 value={customMessage}
                 onChange={e => setCustomMessage(e.target.value)}
-                placeholder="رسالة مخصصة للعميل (اختياري) — اتركها فارغة لاستخدام الرسالة الافتراضية"
+                placeholder="رسالة مخصصة للعميل (اختياري)"
                 className="bg-background/50 h-9 text-sm"
                 maxLength={200}
               />
@@ -230,7 +270,7 @@ function OrderCard({ o, executor }: { o: OrderRow; executor: any }) {
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white h-9 gap-1.5"
                 size="sm"
               >
-                <Check className="w-4 h-4" /> تنفيذ الطلب
+                <Check className="w-4 h-4" /> تنفيذ يدوي
               </Button>
               <Button
                 disabled={executor.isPending}
