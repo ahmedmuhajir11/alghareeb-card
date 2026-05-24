@@ -27,21 +27,29 @@ const KNOWN_PROVIDERS = [
   { label: "مخصص...", baseUrl: "", tokenEnv: false },
 ];
 
+const CURRENCY_OPTIONS = [
+  { value: "TRY", label: "ليرة تركية (TRY)" },
+  { value: "USD", label: "دولار أمريكي (USD)" },
+  { value: "SYP", label: "ليرة سورية (SYP)" },
+  { value: "EUR", label: "يورو (EUR)" },
+];
+
 export default function YazanCardImporter() {
   const [products, setProducts] = useState<ProviderProduct[]>([]);
   const [categories, setCategories] = useState<Record<string, ProviderProduct[]>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [markupPercent, setMarkupPercent] = useState(15);
+  const [markupPercent, setMarkupPercent] = useState(0);
   const [sectionId, setSectionId] = useState<number | "">("");
   const [sections, setSections] = useState<Section[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped?: number; errors: string[]; names: string[] } | null>(null);
   const [filterAvail, setFilterAvail] = useState(true);
-  const [priceDivisor, setPriceDivisor] = useState(1);
   const [skipDuplicates, setSkipDuplicates] = useState(true);
+  const [sourceCurrency, setSourceCurrency] = useState("TRY");
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({ TRY: 40, SYP: 14000, EUR: 0.93 });
 
   // Provider config
   const [selectedProvider, setSelectedProvider] = useState(0);
@@ -53,7 +61,10 @@ export default function YazanCardImporter() {
     : KNOWN_PROVIDERS[selectedProvider].baseUrl;
   const useEnvToken = KNOWN_PROVIDERS[selectedProvider].tokenEnv;
 
-  useEffect(() => { fetchSections(); }, []);
+  useEffect(() => {
+    fetchSections();
+    fetchExchangeRates();
+  }, []);
 
   async function fetchSections() {
     try {
@@ -61,6 +72,23 @@ export default function YazanCardImporter() {
       const data = await res.json();
       setSections(data.sections || data || []);
     } catch { setSections([]); }
+  }
+
+  async function fetchExchangeRates() {
+    try {
+      const res = await fetch("/api/settings");
+      const data = await res.json();
+      const rates: Record<string, number> = {};
+      if (data.usdToTry) rates.TRY = data.usdToTry;
+      if (data.usdToSyp) rates.SYP = data.usdToSyp;
+      if (data.usdToEur) rates.EUR = data.usdToEur;
+      if (Object.keys(rates).length > 0) setExchangeRates(prev => ({ ...prev, ...rates }));
+    } catch { /* use defaults */ }
+  }
+
+  function getExchangeRate(): number {
+    if (sourceCurrency === "USD") return 1;
+    return exchangeRates[sourceCurrency] ?? 1;
   }
 
   async function fetchProducts() {
@@ -126,7 +154,8 @@ export default function YazanCardImporter() {
   function clearAll() { setSelected(new Set()); }
 
   function previewPrice(rawPrice: number) {
-    return ((rawPrice / Math.max(1, priceDivisor)) * (1 + markupPercent / 100)).toFixed(6);
+    const rate = getExchangeRate();
+    return ((rawPrice / rate) * (1 + markupPercent / 100)).toFixed(6);
   }
 
   async function doImport() {
@@ -139,7 +168,7 @@ export default function YazanCardImporter() {
         products: selectedProducts,
         sectionId: Number(sectionId),
         markupPercent: Number(markupPercent),
-        priceDivisor: Number(priceDivisor),
+        sourceCurrency,
         skipDuplicates,
         baseUrl: providerBase,
       };
@@ -281,20 +310,30 @@ export default function YazanCardImporter() {
               </select>
             </div>
             <div>
+              <Label className="text-sm mb-1.5 block">عملة المورد</Label>
+              <select
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                value={sourceCurrency}
+                onChange={e => setSourceCurrency(e.target.value)}
+              >
+                {CURRENCY_OPTIONS.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {sourceCurrency !== "USD"
+                  ? `سعر الصرف المستخدم: 1 USD = ${exchangeRates[sourceCurrency] ?? "?"} ${sourceCurrency}`
+                  : "لا تحويل — الأسعار بالدولار مباشرة"}
+              </p>
+            </div>
+            <div>
               <Label className="text-sm mb-1.5 block">نسبة الربح %</Label>
               <div className="flex items-center gap-2">
                 <Input type="number" min={0} max={200} value={markupPercent} onChange={e => setMarkupPercent(Number(e.target.value))} />
                 <span className="text-muted-foreground text-sm whitespace-nowrap">%</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                شراء 10 → بيع {(10 * (1 + markupPercent / 100)).toFixed(2)}
-              </p>
-            </div>
-            <div>
-              <Label className="text-sm mb-1.5 block">مقسوم السعر</Label>
-              <Input type="number" min={1} value={priceDivisor} onChange={e => setPriceDivisor(Number(e.target.value))} />
-              <p className="text-xs text-muted-foreground mt-1">
-                اقسم سعر API على هذا الرقم (مثال: 1000 إذا كان السعر لكل 1000 وحدة)
+                {markupPercent === 0 ? "بدون ربح — سعر التكلفة مباشرة" : `شراء 10 → بيع ${(10 * (1 + markupPercent / 100)).toFixed(2)}`}
               </p>
             </div>
             <div className="flex flex-col justify-between">
@@ -364,8 +403,8 @@ export default function YazanCardImporter() {
                             )}
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <p className="text-xs text-muted-foreground line-through">{p.price.toFixed(4)}</p>
-                            <p className="text-sm font-bold text-primary">{previewPrice(p.price)}</p>
+                            <p className="text-xs text-muted-foreground">{p.price.toFixed(4)} {sourceCurrency}</p>
+                            <p className="text-sm font-bold text-primary">{previewPrice(p.price)} USD</p>
                           </div>
                           {!p.available && <Badge variant="destructive" className="text-xs">غير متاح</Badge>}
                         </div>

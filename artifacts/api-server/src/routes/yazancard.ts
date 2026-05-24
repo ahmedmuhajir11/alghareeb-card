@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, itemsTable } from "@workspace/db";
+import { db, itemsTable, settingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAdmin } from "../middleware/requireAdmin";
 
@@ -107,7 +107,7 @@ router.get("/admin/yazancard/products", requireAdmin, async (req: Request, res: 
 
 // POST /api/admin/provider/import
 router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const { products, sectionId, markupPercent = 15, priceDivisor = 1, skipDuplicates = true, baseUrl, token } = req.body;
+  const { products, sectionId, markupPercent = 0, sourceCurrency = "USD", skipDuplicates = true, baseUrl, token } = req.body;
 
   const resolvedToken = (token as string) || process.env.YAZANCARD_TOKEN || "";
   const resolvedBase = normalizeBase((baseUrl as string) || "https://api.yazancard.com/client/api");
@@ -121,8 +121,18 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
     return;
   }
 
+  // Resolve exchange rate — convert source currency to USD
+  let currencyRate = 1;
+  if (sourceCurrency && sourceCurrency !== "USD") {
+    const [settings] = await db.select().from(settingsTable).limit(1);
+    if (settings) {
+      if (sourceCurrency === "TRY") currencyRate = settings.usdToTry ?? 32;
+      else if (sourceCurrency === "SYP") currencyRate = (settings as any).usdToSyp ?? 14000;
+      else if (sourceCurrency === "EUR") currencyRate = (settings as any).usdToEur ?? 0.93;
+    }
+  }
+
   const markup = 1 + Number(markupPercent) / 100;
-  const divisor = Math.max(1, Number(priceDivisor) || 1);
   const imported: string[] = [];
   const skipped: string[] = [];
   const errors: string[] = [];
@@ -142,7 +152,8 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
         }
       }
 
-      const priceWithMarkup = (Number(p.price) / divisor) * markup;
+      // Convert from source currency to USD, then apply markup
+      const priceWithMarkup = (Number(p.price) / currencyRate) * markup;
       await db.insert(itemsTable).values({
         nameAr: p.name as string,
         nameEn: p.name as string,
