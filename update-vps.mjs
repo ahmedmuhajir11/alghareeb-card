@@ -60,6 +60,10 @@
     'artifacts/api-server/src/routes/index.ts',
     'artifacts/api-server/src/routes/user-item-prices.ts',
     'artifacts/api-server/src/routes/payment-methods.ts',
+    'artifacts/api-server/src/routes/yazancard.ts',
+    // Admin dashboard + YazanCard importer
+    'artifacts/alghareeb-card/src/components/admin/YazanCardImporter.tsx',
+    'artifacts/alghareeb-card/src/pages/admin/dashboard.tsx',
   ];
 
   function download(filePath) {
