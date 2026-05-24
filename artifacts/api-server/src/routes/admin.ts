@@ -340,6 +340,70 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 });
 
+// ── Diagnostic: test YazanCard API for a specific order (no side effects) ─────
+router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const id = parseInt(req.params.id);
+  if (!id || isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
+
+  const ordRes = await pool.query(
+    `SELECT o.target_id, o.item_name, o.package_name,
+            i.api_endpoint AS item_ep, i.api_key AS item_key,
+            p.api_endpoint AS pkg_ep, p.api_key AS pkg_key
+     FROM orders o
+     LEFT JOIN items i ON i.name_ar = o.item_name
+     LEFT JOIN packages p ON p.label = o.package_name AND p.item_id = i.id
+     WHERE o.id = $1`,
+    [id]
+  );
+  if (ordRes.rows.length === 0) { res.status(404).json({ error: "الطلب غير موجود" }); return; }
+  const r = ordRes.rows[0];
+
+  const apiEndpoint: string = r.pkg_ep || r.item_ep || "";
+  const apiKey: string = r.pkg_key || r.item_key || "";
+
+  // Show masked token info
+  const tokenInfo = apiKey
+    ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)} (${apiKey.length} chars)`
+    : "غير موجود";
+
+  if (!apiEndpoint || !apiKey) {
+    res.json({ error: "لا توجد بيانات API", tokenInfo, apiEndpoint });
+    return;
+  }
+
+  // Make test call
+  const chargeUrl = new URL(apiEndpoint.replace(/\/params\/?$/, "") + "/params");
+  chargeUrl.searchParams.set("qty", "1");
+  chargeUrl.searchParams.set("order_uuid", crypto.randomUUID());
+  if (r.target_id) chargeUrl.searchParams.set("player_id", String(r.target_id));
+
+  let rawText = "";
+  let httpStatus = 0;
+  try {
+    const apiRes = await fetch(chargeUrl.toString(), {
+      method: "GET",
+      headers: { "Api-Token": apiKey.trim(), "api-token": apiKey.trim() },
+      signal: AbortSignal.timeout(15000),
+    });
+    httpStatus = apiRes.status;
+    rawText = await apiRes.text();
+  } catch (err: any) {
+    rawText = `Connection error: ${err.message}`;
+  }
+
+  let parsed: unknown = null;
+  try { parsed = JSON.parse(rawText); } catch { parsed = null; }
+
+  res.json({
+    orderId: id,
+    tokenInfo,
+    chargeUrl: chargeUrl.toString(),
+    httpStatus,
+    rawResponse: rawText.slice(0, 1000),
+    parsedResponse: parsed,
+  });
+});
+
 // ── Retry auto-charge for a pending order ────────────────────────────────────
 router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const id = parseInt(req.params.id);
