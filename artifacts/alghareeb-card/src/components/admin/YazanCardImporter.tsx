@@ -38,8 +38,10 @@ export default function YazanCardImporter() {
   const [sections, setSections] = useState<Section[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ imported: number; errors: string[]; names: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; skipped?: number; errors: string[]; names: string[] } | null>(null);
   const [filterAvail, setFilterAvail] = useState(true);
+  const [priceDivisor, setPriceDivisor] = useState(1);
+  const [skipDuplicates, setSkipDuplicates] = useState(true);
 
   // Provider config
   const [selectedProvider, setSelectedProvider] = useState(0);
@@ -137,6 +139,8 @@ export default function YazanCardImporter() {
         products: selectedProducts,
         sectionId: Number(sectionId),
         markupPercent: Number(markupPercent),
+        priceDivisor: Number(priceDivisor),
+        skipDuplicates,
         baseUrl: providerBase,
       };
       if (!useEnvToken && customToken) body.token = customToken;
@@ -247,6 +251,9 @@ export default function YazanCardImporter() {
           <div className="flex items-center gap-2 font-semibold">
             <CheckCircle2 className="w-4 h-4" />
             تم استيراد {importResult.imported} منتج بنجاح
+            {(importResult.skipped ?? 0) > 0 && (
+              <span className="text-yellow-400 font-normal text-xs">— تجاهل {importResult.skipped} مكرر</span>
+            )}
           </div>
           {importResult.errors.length > 0 && (
             <div className="text-yellow-400 text-xs mt-1">
@@ -283,7 +290,18 @@ export default function YazanCardImporter() {
                 شراء 10 → بيع {(10 * (1 + markupPercent / 100)).toFixed(2)}
               </p>
             </div>
+            <div>
+              <Label className="text-sm mb-1.5 block">مقسوم السعر</Label>
+              <Input type="number" min={1} value={priceDivisor} onChange={e => setPriceDivisor(Number(e.target.value))} />
+              <p className="text-xs text-muted-foreground mt-1">
+                اقسم سعر API على هذا الرقم (مثال: 1000 إذا كان السعر لكل 1000 وحدة)
+              </p>
+            </div>
             <div className="flex flex-col justify-between">
+              <div className="flex items-center gap-2 mb-2">
+                <input type="checkbox" id="skipDup" checked={skipDuplicates} onChange={e => setSkipDuplicates(e.target.checked)} className="accent-primary" />
+                <Label htmlFor="skipDup" className="text-sm cursor-pointer">تجاهل المكرر (موصى به)</Label>
+              </div>
               <div className="flex items-center gap-2 mb-2">
                 <input type="checkbox" id="filterAvail" checked={filterAvail} onChange={e => setFilterAvail(e.target.checked)} className="accent-primary" />
                 <Label htmlFor="filterAvail" className="text-sm cursor-pointer">المتاح فقط</Label>

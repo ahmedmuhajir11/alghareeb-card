@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, itemsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { requireAdmin } from "../middleware/requireAdmin";
 
 const router: IRouter = Router();
@@ -106,7 +107,7 @@ router.get("/admin/yazancard/products", requireAdmin, async (req: Request, res: 
 
 // POST /api/admin/provider/import
 router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const { products, sectionId, markupPercent = 15, baseUrl, token } = req.body;
+  const { products, sectionId, markupPercent = 15, priceDivisor = 1, skipDuplicates = true, baseUrl, token } = req.body;
 
   const resolvedToken = (token as string) || process.env.YAZANCARD_TOKEN || "";
   const resolvedBase = normalizeBase((baseUrl as string) || "https://api.yazancard.com/client/api");
@@ -121,12 +122,27 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
   }
 
   const markup = 1 + Number(markupPercent) / 100;
+  const divisor = Math.max(1, Number(priceDivisor) || 1);
   const imported: string[] = [];
+  const skipped: string[] = [];
   const errors: string[] = [];
 
   for (const p of products) {
     try {
-      const priceWithMarkup = Number(p.price) * markup;
+      const endpoint = `${resolvedBase}/newOrder/${p.id}/params`;
+
+      if (skipDuplicates) {
+        const existing = await db.select({ id: itemsTable.id })
+          .from(itemsTable)
+          .where(eq(itemsTable.apiEndpoint, endpoint))
+          .limit(1);
+        if (existing.length > 0) {
+          skipped.push(p.name as string);
+          continue;
+        }
+      }
+
+      const priceWithMarkup = (Number(p.price) / divisor) * markup;
       await db.insert(itemsTable).values({
         nameAr: p.name as string,
         nameEn: p.name as string,
@@ -134,7 +150,7 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
         pricePerUnit: priceWithMarkup,
         currencyUnit: guessCurrencyUnit(p.name as string),
         minQuantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
-        apiEndpoint: `${resolvedBase}/newOrder/${p.id}/params`,
+        apiEndpoint: endpoint,
         apiKey: resolvedToken,
         isActive: true,
         isAvailable: p.available ?? true,
@@ -146,7 +162,7 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
     }
   }
 
-  res.json({ imported: imported.length, errors, names: imported });
+  res.json({ imported: imported.length, skipped: skipped.length, errors, names: imported });
 });
 
 // Legacy import route
