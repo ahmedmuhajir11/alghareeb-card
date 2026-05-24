@@ -370,7 +370,7 @@ export default function ItemPage({ id }: { id: number }) {
         )}
       </div>
       {(item as any).fulfillmentType && (item as any).fulfillmentType !== "none" && (
-        <div className="border-r-4 border-primary pr-3 py-2 text-sm text-white bg-card/40 rounded-xl px-4">
+        <div className="border-r-4 border-green-500 pr-3 py-2 text-sm text-green-400 bg-green-500/10 rounded-xl px-4">
           {(item as any).fulfillmentType === "auto"
             ? "يتم تنفيذ هذا المنتج تلقائيًا بسرعة وعلى مدار الساعة"
             : "يتم تنفيذ هذا المنتج يدويًا حسب ترتيب الطلبات"}
