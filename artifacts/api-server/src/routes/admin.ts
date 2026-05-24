@@ -340,6 +340,24 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 });
 
+// ── One-time fix: replace placeholder token in packages/items ────────────────
+router.post("/admin/fix-yazancard-token", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const realToken = process.env.YAZANCARD_TOKEN?.trim();
+  if (!realToken) { res.status(400).json({ error: "YAZANCARD_TOKEN غير موجود في .env" }); return; }
+
+  const placeholder = "YAZANCARD_TOKEN_PLACEHOLDER";
+  const [r1, r2] = await Promise.all([
+    pool.query("UPDATE packages SET api_key=$1 WHERE api_key=$2", [realToken, placeholder]),
+    pool.query("UPDATE items    SET api_key=$1 WHERE api_key=$2", [realToken, placeholder]),
+  ]);
+  res.json({
+    message: "تم التحديث",
+    packagesUpdated: r1.rowCount,
+    itemsUpdated: r2.rowCount,
+    tokenPrefix: realToken.slice(0, 6) + "...",
+  });
+});
+
 // ── Diagnostic: test YazanCard API for a specific order (no side effects) ─────
 router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const id = parseInt(req.params.id);
