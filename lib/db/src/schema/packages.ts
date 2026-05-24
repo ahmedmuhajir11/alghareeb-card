@@ -11,6 +11,8 @@ export const packagesTable = pgTable("packages", {
   priceUsd: doublePrecision("price_usd").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
   isAvailable: boolean("is_available").notNull().default(true),
+  apiEndpoint: text("api_endpoint"),
+  apiKey: text("api_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

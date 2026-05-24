@@ -1,9 +1,23 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, itemsTable, settingsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, itemsTable, packagesTable, settingsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { requireAdmin } from "../middleware/requireAdmin";
 
 const router: IRouter = Router();
+
+function stripCategoryPrefix(productName: string, categoryName: string): string {
+  const noSpace = (s: string) => s.toLowerCase().replace(/\s/g, "");
+  if (noSpace(productName).startsWith(noSpace(categoryName))) {
+    const catCharsNeeded = noSpace(categoryName).length;
+    let catChars = 0;
+    let prodIdx = 0;
+    for (; prodIdx < productName.length && catChars < catCharsNeeded; prodIdx++) {
+      if (productName[prodIdx] !== " ") catChars++;
+    }
+    return productName.slice(prodIdx).trim() || productName;
+  }
+  return productName;
+}
 
 function guessCurrencyUnit(name: string): string {
   const n = name.toLowerCase();
@@ -133,44 +147,107 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
   }
 
   const markup = 1 + Number(markupPercent) / 100;
+  const importMode = (req.body.importMode as string) || "flat";
   const imported: string[] = [];
   const skipped: string[] = [];
   const errors: string[] = [];
 
-  for (const p of products) {
-    try {
-      const endpoint = `${resolvedBase}/newOrder/${p.id}/params`;
+  if (importMode === "grouped") {
+    // ── GROUPED MODE: one item per category, packages per product ──
+    const groups: Record<string, any[]> = {};
+    for (const p of products) {
+      const cat = (p.category_name as string) || "Other";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    }
 
-      if (skipDuplicates) {
-        const existing = await db.select({ id: itemsTable.id })
+    for (const [categoryName, catProducts] of Object.entries(groups)) {
+      try {
+        // Find or create the item for this category
+        let itemId: number;
+        const existingItem = await db.select({ id: itemsTable.id })
           .from(itemsTable)
-          .where(eq(itemsTable.apiEndpoint, endpoint))
+          .where(and(eq(itemsTable.sectionId, Number(sectionId)), eq(itemsTable.nameEn, categoryName)))
           .limit(1);
-        if (existing.length > 0) {
-          skipped.push(p.name as string);
-          continue;
-        }
-      }
 
-      // Convert from source currency to USD, then apply markup
-      const priceWithMarkup = (Number(p.price) / currencyRate) * markup;
-      await db.insert(itemsTable).values({
-        nameAr: p.name as string,
-        nameEn: p.name as string,
-        sectionId: Number(sectionId),
-        pricePerUnit: priceWithMarkup,
-        currencyUnit: guessCurrencyUnit(p.name as string),
-        minQuantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
-        maxQuantity: p.qty_values?.max ? Number(p.qty_values.max) : null,
-        apiEndpoint: endpoint,
-        apiKey: resolvedToken,
-        isActive: true,
-        isAvailable: p.available ?? true,
-        sortOrder: 0,
-      });
-      imported.push(p.name as string);
-    } catch (err: any) {
-      errors.push(`${p.name}: ${err.detail || err.message}`);
+        if (existingItem.length > 0) {
+          itemId = existingItem[0].id;
+        } else {
+          const [newItem] = await db.insert(itemsTable).values({
+            nameAr: categoryName,
+            nameEn: categoryName,
+            sectionId: Number(sectionId),
+            isActive: true,
+            isAvailable: true,
+            sortOrder: 0,
+          }).returning({ id: itemsTable.id });
+          itemId = newItem.id;
+          imported.push(categoryName);
+        }
+
+        // Create a package per product in this category
+        let pkgOrder = 0;
+        for (const p of catProducts) {
+          const endpoint = `${resolvedBase}/newOrder/${p.id}/params`;
+          const priceUsd = (Number(p.price) / currencyRate) * markup;
+          const label = stripCategoryPrefix(p.name as string, categoryName);
+
+          if (skipDuplicates) {
+            const existingPkg = await db.select({ id: packagesTable.id })
+              .from(packagesTable)
+              .where(and(eq(packagesTable.itemId, itemId), eq(packagesTable.apiEndpoint as any, endpoint)))
+              .limit(1);
+            if (existingPkg.length > 0) { skipped.push(p.name as string); continue; }
+          }
+
+          await db.insert(packagesTable).values({
+            itemId,
+            label,
+            quantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
+            priceUsd,
+            sortOrder: pkgOrder++,
+            isAvailable: p.available ?? true,
+            apiEndpoint: endpoint,
+            apiKey: resolvedToken,
+          } as any);
+        }
+      } catch (err: any) {
+        errors.push(`${categoryName}: ${err.detail || err.message}`);
+      }
+    }
+  } else {
+    // ── FLAT MODE: one item per product (original behaviour) ──
+    for (const p of products) {
+      try {
+        const endpoint = `${resolvedBase}/newOrder/${p.id}/params`;
+
+        if (skipDuplicates) {
+          const existing = await db.select({ id: itemsTable.id })
+            .from(itemsTable)
+            .where(eq(itemsTable.apiEndpoint, endpoint))
+            .limit(1);
+          if (existing.length > 0) { skipped.push(p.name as string); continue; }
+        }
+
+        const priceWithMarkup = (Number(p.price) / currencyRate) * markup;
+        await db.insert(itemsTable).values({
+          nameAr: p.name as string,
+          nameEn: p.name as string,
+          sectionId: Number(sectionId),
+          pricePerUnit: priceWithMarkup,
+          currencyUnit: guessCurrencyUnit(p.name as string),
+          minQuantity: p.qty_values?.min ? Number(p.qty_values.min) : 1,
+          maxQuantity: p.qty_values?.max ? Number(p.qty_values.max) : null,
+          apiEndpoint: endpoint,
+          apiKey: resolvedToken,
+          isActive: true,
+          isAvailable: p.available ?? true,
+          sortOrder: 0,
+        });
+        imported.push(p.name as string);
+      } catch (err: any) {
+        errors.push(`${p.name}: ${err.detail || err.message}`);
+      }
     }
   }
 

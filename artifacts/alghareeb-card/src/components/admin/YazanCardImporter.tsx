@@ -50,6 +50,7 @@ export default function YazanCardImporter() {
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [sourceCurrency, setSourceCurrency] = useState("TRY");
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({ TRY: 40, SYP: 14000, EUR: 0.93 });
+  const [importMode, setImportMode] = useState<"flat" | "grouped">("flat");
 
   // Provider config
   const [selectedProvider, setSelectedProvider] = useState(0);
@@ -170,6 +171,7 @@ export default function YazanCardImporter() {
         markupPercent: Number(markupPercent),
         sourceCurrency,
         skipDuplicates,
+        importMode,
         baseUrl: providerBase,
       };
       if (!useEnvToken && customToken) body.token = customToken;
@@ -337,6 +339,26 @@ export default function YazanCardImporter() {
               </p>
             </div>
             <div className="flex flex-col justify-between">
+              <Label className="text-sm mb-1.5 block">طريقة الاستيراد</Label>
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => setImportMode("flat")}
+                  className={`flex-1 text-xs py-1.5 px-2 rounded-md border transition-colors ${importMode === "flat" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                >
+                  منتج واحد لكل عنصر
+                </button>
+                <button
+                  onClick={() => setImportMode("grouped")}
+                  className={`flex-1 text-xs py-1.5 px-2 rounded-md border transition-colors ${importMode === "grouped" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                >
+                  فئة = عنصر + باقات
+                </button>
+              </div>
+              {importMode === "grouped" && (
+                <p className="text-xs text-yellow-400 mb-2">
+                  كل فئة (مثل 8 Ball Pool) ستصبح عنصراً واحداً وباقاتها بداخله
+                </p>
+              )}
               <div className="flex items-center gap-2 mb-2">
                 <input type="checkbox" id="skipDup" checked={skipDuplicates} onChange={e => setSkipDuplicates(e.target.checked)} className="accent-primary" />
                 <Label htmlFor="skipDup" className="text-sm cursor-pointer">تجاهل المكرر (موصى به)</Label>
