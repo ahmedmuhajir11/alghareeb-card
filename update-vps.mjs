@@ -3,11 +3,10 @@
   import { get } from 'https';
   import { dirname } from 'path';
   import { execSync } from 'child_process';
-  import { pipeline } from 'stream/promises';
 
-  const TOKEN = process.env.GH_TOKEN;
   const REPO = 'ahmedmuhajir11/alghareeb-card';
   const BASE = '/var/www/alghareebcard';
+  // Public repo — raw.githubusercontent.com requires NO token
 
   const FILES = [
     // DB schema (CRITICAL — Drizzle ignores columns not defined here)
@@ -70,25 +69,26 @@
     return new Promise((resolve, reject) => {
       const dest = `${BASE}/${filePath}`;
       mkdirSync(dirname(dest), { recursive: true });
-      const opts = {
-        hostname: 'api.github.com',
-        path: `/repos/${REPO}/contents/${filePath}?ref=main`,
-        headers: {
-          'Authorization': `token ${TOKEN}`,
-          'Accept': 'application/vnd.github.v3.raw',
-          'User-Agent': 'AlGhareeb-Updater/2.0'
-        }
-      };
+      // Use raw.githubusercontent.com — no token needed for public repos
+      const url = `https://raw.githubusercontent.com/${REPO}/main/${filePath}`;
       const file = createWriteStream(dest);
-      get(opts, res => {
-        if (res.statusCode === 302 || res.statusCode === 301) {
+      get(url, res => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
           get(res.headers.location, res2 => {
+            if (res2.statusCode !== 200) {
+              file.close();
+              reject(new Error(`HTTP ${res2.statusCode} for ${filePath}`));
+              return;
+            }
             res2.pipe(file);
             file.on('finish', () => { file.close(); console.log('✅', filePath); resolve(); });
           }).on('error', reject);
-        } else {
+        } else if (res.statusCode === 200) {
           res.pipe(file);
           file.on('finish', () => { file.close(); console.log('✅', filePath); resolve(); });
+        } else {
+          file.close();
+          reject(new Error(`HTTP ${res.statusCode} for ${filePath}`));
         }
       }).on('error', reject);
     });
