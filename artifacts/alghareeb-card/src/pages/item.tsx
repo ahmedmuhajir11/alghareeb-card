@@ -29,8 +29,8 @@ export default function ItemPage({ id }: { id: number }) {
   const [submitting, setSubmitting] = useState(false);
 
   const isPerQuantity = item?.sectionPricingType === "per_quantity";
-  const minQuantity = (item as any)?.minQuantity ?? 1;
-  const maxQuantity = (item as any)?.maxQuantity ?? null;
+  const minQuantity = item?.minQuantity ?? 1;
+  const maxQuantity = item?.maxQuantity ?? null;
 
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
   const [userId, setUserId] = useState("");

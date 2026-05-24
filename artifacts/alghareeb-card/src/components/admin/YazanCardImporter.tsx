@@ -126,7 +126,7 @@ export default function YazanCardImporter() {
   function clearAll() { setSelected(new Set()); }
 
   function previewPrice(rawPrice: number) {
-    return (rawPrice * (1 + markupPercent / 100)).toFixed(4);
+    return ((rawPrice / Math.max(1, priceDivisor)) * (1 + markupPercent / 100)).toFixed(6);
   }
 
   async function doImport() {

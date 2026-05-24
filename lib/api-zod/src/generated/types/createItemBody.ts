@@ -14,6 +14,7 @@ export interface CreateItemBody {
   currencyUnit?: string;
   pricePerUnit?: number;
   minQuantity?: number;
+  maxQuantity?: number | null;
   description?: string;
   sortOrder?: number;
   isActive?: boolean;

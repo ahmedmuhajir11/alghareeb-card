@@ -196,6 +196,10 @@ export const ListItemsResponseItem = zod.object({
     .optional()
     .describe("Price in USD per single unit (for per_quantity pricing)"),
   minQuantity: zod.number().optional(),
+  maxQuantity: zod
+    .number()
+    .nullish()
+    .describe("Maximum quantity per order (from provider API)"),
   description: zod.string().optional(),
   sortOrder: zod.number(),
   isActive: zod.boolean(),
@@ -233,6 +237,7 @@ export const CreateItemBody = zod.object({
   currencyUnit: zod.string().optional(),
   pricePerUnit: zod.number().optional(),
   minQuantity: zod.number().optional(),
+  maxQuantity: zod.number().nullish(),
   description: zod.string().optional(),
   sortOrder: zod.number().optional(),
   isActive: zod.boolean().optional(),
@@ -259,6 +264,7 @@ export const GetItemResponse = zod.object({
   currencyUnit: zod.string().optional(),
   pricePerUnit: zod.number().optional(),
   minQuantity: zod.number().optional(),
+  maxQuantity: zod.number().nullish(),
   description: zod.string().optional(),
   sortOrder: zod.number(),
   isActive: zod.boolean(),
@@ -303,6 +309,7 @@ export const UpdateItemBody = zod.object({
   currencyUnit: zod.string().optional(),
   pricePerUnit: zod.number().optional(),
   minQuantity: zod.number().optional(),
+  maxQuantity: zod.number().nullish(),
   description: zod.string().optional(),
   sortOrder: zod.number().optional(),
   isActive: zod.boolean().optional(),
@@ -328,6 +335,10 @@ export const UpdateItemResponse = zod.object({
     .optional()
     .describe("Price in USD per single unit (for per_quantity pricing)"),
   minQuantity: zod.number().optional(),
+  maxQuantity: zod
+    .number()
+    .nullish()
+    .describe("Maximum quantity per order (from provider API)"),
   description: zod.string().optional(),
   sortOrder: zod.number(),
   isActive: zod.boolean(),

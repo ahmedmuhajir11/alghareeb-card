@@ -18,6 +18,8 @@ export interface Item {
   /** Price in USD per single unit (for per_quantity pricing) */
   pricePerUnit?: number;
   minQuantity?: number;
+  /** Maximum quantity per order (from provider API) */
+  maxQuantity?: number | null;
   description?: string;
   sortOrder: number;
   isActive: boolean;

@@ -97,6 +97,8 @@ export interface Item {
   /** Price in USD per single unit (for per_quantity pricing) */
   pricePerUnit?: number;
   minQuantity?: number;
+  /** Maximum quantity per order (from provider API) */
+  maxQuantity?: number | null;
   description?: string;
   sortOrder: number;
   isActive: boolean;
@@ -133,6 +135,7 @@ export interface ItemWithPackages {
   currencyUnit?: string;
   pricePerUnit?: number;
   minQuantity?: number;
+  maxQuantity?: number | null;
   description?: string;
   sortOrder: number;
   isActive: boolean;
@@ -154,6 +157,7 @@ export interface CreateItemBody {
   currencyUnit?: string;
   pricePerUnit?: number;
   minQuantity?: number;
+  maxQuantity?: number | null;
   description?: string;
   sortOrder?: number;
   isActive?: boolean;
@@ -171,6 +175,7 @@ export interface UpdateItemBody {
   currencyUnit?: string;
   pricePerUnit?: number;
   minQuantity?: number;
+  maxQuantity?: number | null;
   description?: string;
   sortOrder?: number;
   isActive?: boolean;

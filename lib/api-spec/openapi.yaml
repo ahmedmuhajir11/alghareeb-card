@@ -675,6 +675,10 @@ components:
           description: "Price in USD per single unit (for per_quantity pricing)"
         minQuantity:
           type: number
+        maxQuantity:
+          type: number
+          nullable: true
+          description: "Maximum quantity per order (from provider API)"
         description:
           type: string
         sortOrder:
@@ -726,6 +730,9 @@ components:
           type: number
         minQuantity:
           type: number
+        maxQuantity:
+          type: number
+          nullable: true
         description:
           type: string
         sortOrder:
@@ -778,6 +785,9 @@ components:
           type: number
         minQuantity:
           type: number
+        maxQuantity:
+          type: number
+          nullable: true
         description:
           type: string
         sortOrder:
@@ -813,6 +823,9 @@ components:
           type: number
         minQuantity:
           type: number
+        maxQuantity:
+          type: number
+          nullable: true
         description:
           type: string
         sortOrder:

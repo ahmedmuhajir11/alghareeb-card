@@ -17,6 +17,7 @@ export interface ItemWithPackages {
   currencyUnit?: string;
   pricePerUnit?: number;
   minQuantity?: number;
+  maxQuantity?: number | null;
   description?: string;
   sortOrder: number;
   isActive: boolean;
