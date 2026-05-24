@@ -51,6 +51,26 @@ export default function YazanCardImporter() {
   const [sourceCurrency, setSourceCurrency] = useState("TRY");
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({ TRY: 40, SYP: 14000, EUR: 0.93 });
   const [importMode, setImportMode] = useState<"flat" | "grouped">("flat");
+  const [fixingToken, setFixingToken] = useState(false);
+  const [fixResult, setFixResult] = useState<string | null>(null);
+
+  async function fixYazanToken() {
+    setFixingToken(true);
+    setFixResult(null);
+    try {
+      const res = await fetch("/api/admin/fix-yazancard-token", { method: "POST", credentials: "include" });
+      const d = await res.json();
+      if (res.ok) {
+        setFixResult(`✅ تم التحديث — باقات: ${d.packagesUpdated}، عناصر: ${d.itemsUpdated} (توكن: ${d.tokenPrefix})`);
+      } else {
+        setFixResult(`❌ ${d.error}`);
+      }
+    } catch (e: any) {
+      setFixResult(`❌ ${e.message}`);
+    } finally {
+      setFixingToken(false);
+    }
+  }
 
   // Provider config
   const [selectedProvider, setSelectedProvider] = useState(0);
@@ -206,6 +226,18 @@ export default function YazanCardImporter() {
             يدعم يزن كارد، سلام كاش، وأي مزود يستخدم نفس الصيغة
           </p>
         </div>
+      </div>
+
+      {/* Fix token banner */}
+      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex-1 text-sm">
+          <p className="font-semibold text-amber-400">إصلاح توكن YazanCard</p>
+          <p className="text-muted-foreground text-xs mt-0.5">اضغط إذا كان الشحن التلقائي يعطي "error Token" — سيحدّث التوكن في كل الباقات</p>
+          {fixResult && <p className="mt-1 text-xs font-mono">{fixResult}</p>}
+        </div>
+        <Button size="sm" variant="outline" className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10 shrink-0" onClick={fixYazanToken} disabled={fixingToken}>
+          {fixingToken ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />جاري...</> : "إصلاح التوكن"}
+        </Button>
       </div>
 
       {/* Provider selector */}
