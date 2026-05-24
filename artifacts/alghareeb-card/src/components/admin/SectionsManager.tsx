@@ -295,7 +295,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const isAppCharging = section.id === 2;
   const isMoneyTransfer = section.id === 3 || section.nameEn === "Money Transfers" || section.nameAr === "الحوالات المالية";
 
-  const emptyForm = { nameAr: "", nameEn: "", nameTr: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, description: "", sortOrder: 0, isActive: true, isAvailable: true, apiEndpoint: "", apiKey: "", apiAgentId: "" };
+  const emptyForm = { nameAr: "", nameEn: "", nameTr: "", logoUrl: "", currencyUnit: isAppCharging ? "ماسات" : "ماسات", customCurrencyUnit: "", pricePerUnit: 0, minQuantity: 1, maxQuantity: null as number | null, description: "", sortOrder: 0, isActive: true, isAvailable: true, apiEndpoint: "", apiKey: "", apiAgentId: "" };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Item | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -362,6 +362,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       customCurrencyUnit: knownUnit === "أخرى" ? (item.currencyUnit ?? "") : "",
       pricePerUnit: item.pricePerUnit ?? 0,
       minQuantity: (item as any).minQuantity ?? 1,
+      maxQuantity: (item as any).maxQuantity ?? null,
       description: item.description ?? "",
       sortOrder: item.sortOrder,
       isActive: item.isActive,
@@ -400,6 +401,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
     };
     if (isAppCharging) {
       payload.minQuantity = formData.minQuantity > 0 ? formData.minQuantity : 1;
+      payload.maxQuantity = formData.maxQuantity && formData.maxQuantity > 0 ? formData.maxQuantity : null;
     }
     try {
       if (editTarget) {
@@ -787,6 +789,22 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                     />
                     <p className="text-xs text-muted-foreground">
                       المستخدم لن يستطيع طلب كمية أقل من هذا الرقم.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>الحد الأقصى لعدد {formData.currencyUnit === "أخرى" ? (formData.customCurrencyUnit || "الوحدات") : formData.currencyUnit} (اختياري)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={formData.maxQuantity === null || formData.maxQuantity === 0 ? "" : formData.maxQuantity}
+                      onChange={e => setFormData({ ...formData, maxQuantity: e.target.value === "" ? null : parseFloat(e.target.value) || null })}
+                      className="bg-background/50"
+                      dir="ltr"
+                      placeholder="اتركه فارغاً = بلا حد أقصى"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      المستخدم لن يستطيع طلب كمية أكثر من هذا الرقم.
                     </p>
                   </div>
                 </>
