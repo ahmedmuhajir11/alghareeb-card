@@ -150,6 +150,14 @@ async function run() {
     );
     // Add tax_percent column if not exists
     await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS tax_percent REAL DEFAULT 0");
+    // Trilingual columns
+    await c.query("ALTER TABLE sections ADD COLUMN IF NOT EXISTS name_tr text");
+    await c.query("ALTER TABLE items ADD COLUMN IF NOT EXISTS name_tr text");
+    await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS marquee_text_en text NOT NULL DEFAULT ''");
+    await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS marquee_text_tr text NOT NULL DEFAULT ''");
+    await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS welcome_message_tr text NOT NULL DEFAULT ''");
+    await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS notes_en text[] NOT NULL DEFAULT '{}'");
+    await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS notes_tr text[] NOT NULL DEFAULT '{}'");
     console.log('✅ DB migrations done');
   } finally {
     c.release();
