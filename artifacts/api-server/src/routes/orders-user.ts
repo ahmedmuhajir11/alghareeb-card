@@ -71,7 +71,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         return;
       }
       const pkgRes = await client.query(
-        `SELECT id, label, price_usd, api_endpoint, api_key FROM packages WHERE id=$1 AND item_id=$2`,
+        `SELECT id, label, price_usd, quantity, api_endpoint, api_key FROM packages WHERE id=$1 AND item_id=$2`,
         [pkgIdNum, itemIdNum]
       );
       if (pkgRes.rows.length === 0) {
@@ -87,6 +87,8 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         item.api_endpoint = pkg.api_endpoint;
         item.api_key = pkg.api_key;
       }
+      // Store package quantity for use in API call (YazanCard "amount" products need actual qty)
+      item._pkgQuantity = pkg.quantity ? Number(pkg.quantity) : null;
     }
 
     if (!priceUsd || priceUsd <= 0 || isNaN(priceUsd)) {
@@ -173,23 +175,25 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
         let apiRes: Response;
         if (isYazanCard) {
-          // yazancard.com: GET /newOrder/{id}/params?qty=...&player_id=...&api_token=...
+          // yazancard.com: GET /newOrder/{id}/params?qty=...&playerId=...
+          // Auth header: api-token (per official docs)
           const cleanKey = apiKey.trim();
           const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "") + "/params";
-          const qty = isPerQuantity ? parseFloat(quantity) : 1;
+          // For "amount" products, use package quantity; for per-quantity items use quantity
+          const apiQty = isPerQuantity
+            ? parseFloat(quantity)
+            : (item._pkgQuantity && item._pkgQuantity > 1 ? item._pkgQuantity : 1);
           const orderUuid = crypto.randomUUID();
           const url = new URL(chargeEndpoint);
-          url.searchParams.set("qty", String(qty));
+          url.searchParams.set("qty", String(apiQty));
           url.searchParams.set("order_uuid", orderUuid);
-          url.searchParams.set("api_token", cleanKey);
-          if (targetId) url.searchParams.set("player_id", String(targetId));
+          if (targetId) {
+            url.searchParams.set("playerId", String(targetId));
+            url.searchParams.set("player_id", String(targetId));
+          }
           apiRes = await fetch(url.toString(), {
             method: "GET",
-            headers: {
-              "Api-Token": cleanKey,
-              "api-token": cleanKey,
-              "Authorization": `Bearer ${cleanKey}`,
-            },
+            headers: { "api-token": cleanKey },
             signal: AbortSignal.timeout(20000),
           });
         } else {
@@ -210,39 +214,51 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           });
         }
 
-        const apiData = await apiRes.json().catch(() => ({})) as Record<string, unknown>;
+        // Safe JSON parse — HTML responses (IP block etc) return {}
+        const rawText = await apiRes.text().catch(() => "");
+        let apiData: Record<string, unknown> = {};
+        try { apiData = JSON.parse(rawText); } catch { /* HTML or non-JSON */ }
 
-        // If HTTP 200 OK and no explicit failure in body → success
+        // YazanCard success: { status: "OK", data: { status: "accept"|"wait", order_id: "..." } }
+        const isYazanResp = typeof apiData?.["status"] === "string";
+        const yzStatus = isYazanResp ? String(apiData["status"]) : "";
+        const yzDataStatus = (apiData?.["data"] as any)?.["status"] ?? "";
+        const yazanSuccess = yzStatus === "OK" && (yzDataStatus === "accept" || yzDataStatus === "wait");
+
+        // Generic success check
         const explicitFailure =
           apiData?.["success"] === false ||
-          apiData?.["status"] === "FAILED" ||
+          yzStatus === "ERROR" || yzStatus === "FAILED" || yzStatus === "error" ||
           apiData?.["status"] === "failed" ||
-          apiData?.["status"] === "error" ||
           apiData?.["code"] === 0;
-        const succeeded = apiRes.ok && !explicitFailure;
+        const succeeded = apiRes.ok && (yazanSuccess || (!isYazanResp && !explicitFailure));
 
         if (succeeded) {
           finalStatus = "completed";
           autoCharged = true;
-          const txId = String(apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? apiData?.["id"] ?? "N/A");
+          const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
+          const txId = String(yzOrderId ?? apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? apiData?.["id"] ?? "N/A");
           await pool.query(
             `UPDATE orders SET status='completed', notes=$1 WHERE id=$2`,
-            [`تم الشحن تلقائياً - معرف العملية: ${txId}`, order.id]
+            [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}`, order.id]
           );
         } else {
           finalStatus = "pending";
-          const errMsg = String(apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ?? "خطأ غير معروف");
-          const rawResp = JSON.stringify(apiData).slice(0, 300);
+          const errMsg = String(
+            apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ??
+            (rawText.includes("<!DOCTYPE") ? "IP محظور أو خطأ في الخادم" : "خطأ غير معروف")
+          );
+          const rawResp = rawText.slice(0, 200);
           await pool.query(
             `UPDATE orders SET notes=$1 WHERE id=$2`,
-            [`فشل الشحن التلقائي: ${errMsg} | رد API: ${rawResp}`, order.id]
+            [`فشل الشحن التلقائي: ${errMsg} | رد: ${rawResp}`, order.id]
           );
         }
       } catch (apiErr: any) {
         finalStatus = "pending";
         await pool.query(
           `UPDATE orders SET notes=$1 WHERE id=$2`,
-          [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"} - سيتم المعالجة يدوياً`, order.id]
+          [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"}`, order.id]
         ).catch(() => {});
       }
     }
