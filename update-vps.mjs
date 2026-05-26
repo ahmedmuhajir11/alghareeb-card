@@ -60,6 +60,7 @@
     'artifacts/api-server/src/routes/user-item-prices.ts',
     'artifacts/api-server/src/routes/payment-methods.ts',
     'artifacts/api-server/src/routes/yazancard.ts',
+    'artifacts/api-server/src/routes/currencies.ts',
     // Admin dashboard + YazanCard importer
     'artifacts/alghareeb-card/src/components/admin/YazanCardImporter.tsx',
     'artifacts/alghareeb-card/src/pages/admin/dashboard.tsx',
@@ -158,6 +159,29 @@ async function run() {
     await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS welcome_message_tr text NOT NULL DEFAULT ''");
     await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS notes_en text[] NOT NULL DEFAULT '{}'");
     await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS notes_tr text[] NOT NULL DEFAULT '{}'");
+    // Currencies table + is_active column + seed from settings
+    await c.query("CREATE TABLE IF NOT EXISTS currencies (id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, name_ar TEXT NOT NULL, name_en TEXT NOT NULL, usd_rate REAL NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW())");
+    await c.query("ALTER TABLE currencies ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true");
+    const stg = await c.query('SELECT * FROM settings LIMIT 1');
+    const st = stg.rows[0] || {};
+    const seedCurr = [
+      ['USD','دولار أمريكي','US Dollar', 1],
+      ['TRY','ليرة تركية','Turkish Lira', parseFloat(st.usd_to_try)||32],
+      ['SYP','ليرة سورية','Syrian Pound', parseFloat(st.usd_to_syp)||13000],
+      ['EUR','يورو','Euro', parseFloat(st.usd_to_eur)||0.92],
+      ['OMR','ريال عماني','Omani Rial', parseFloat(st.usd_to_omr)||0.385],
+      ['MAD','درهم مغربي','Moroccan Dirham', parseFloat(st.usd_to_mad)||10],
+      ['DZD','دينار جزائري','Algerian Dinar', parseFloat(st.usd_to_dzd)||135],
+      ['ILS','شيكل','Israeli Shekel', parseFloat(st.usd_to_ils)||3.7],
+      ['IQD','دينار عراقي','Iraqi Dinar', parseFloat(st.usd_to_iqd)||1310],
+      ['SAR','ريال سعودي','Saudi Riyal', parseFloat(st.usd_to_sar)||3.75],
+      ['EGP','جنيه مصري','Egyptian Pound', parseFloat(st.usd_to_egp)||50.9],
+      ['JOD','دينار أردني','Jordanian Dinar', parseFloat(st.usd_to_jod)||0.71],
+    ];
+    for (const [code,nameAr,nameEn,rate] of seedCurr) {
+      await c.query("INSERT INTO currencies (code,name_ar,name_en,usd_rate,is_active) VALUES ($1,$2,$3,$4,true) ON CONFLICT (code) DO NOTHING",[code,nameAr,nameEn,rate]);
+    }
+    console.log('✅ Currencies seeded');
     console.log('✅ DB migrations done');
   } finally {
     c.release();
