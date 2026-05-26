@@ -4,8 +4,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2, Plus, X } from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+async function adminFetch(path: string, opts?: RequestInit) {
+  const token = document.cookie.match(/admin_token=([^;]+)/)?.[1];
+  return fetch(`${API_BASE}${path}`, {
+    ...opts,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+}
+
+interface Currency { id: number; code: string; nameAr: string; nameEn: string; usdRate: number; isActive: boolean; }
 
 export default function SettingsManager() {
   const { data: settings, isLoading } = useGetSettings();
@@ -13,28 +31,27 @@ export default function SettingsManager() {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    usdToTry: 0,
-    usdToSyp: 0,
-    usdToEur: 0,
-    usdToOmr: 0,
-    usdToMad: 0,
-    usdToDzd: 0,
-    usdToIls: 0,
-    usdToIqd: 0,
-    usdToSar: 0,
-    usdToEgp: 0,
-    usdToJod: 0,
-    marqueeText: "",
-    marqueeTextEn: "",
-    marqueeTextTr: "",
-    whatsappNumber: "",
-    moneyTransferCurrencies: "",
-    welcomeMessage: "",
-    welcomeMessageAr: "",
-    welcomeMessageEn: "",
-    welcomeMessageTr: "",
+    usdToTry: 0, usdToSyp: 0, usdToEur: 0, usdToOmr: 0,
+    usdToMad: 0, usdToDzd: 0, usdToIls: 0, usdToIqd: 0,
+    usdToSar: 0, usdToEgp: 0, usdToJod: 0,
+    marqueeText: "", marqueeTextEn: "", marqueeTextTr: "",
+    whatsappNumber: "", moneyTransferCurrencies: "",
+    welcomeMessage: "", welcomeMessageAr: "", welcomeMessageEn: "", welcomeMessageTr: "",
   });
   const [newCurrency, setNewCurrency] = useState("");
+
+  // Currencies with toggle state
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(true);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+
+  // New currency form
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [newNameAr, setNewNameAr] = useState("");
+  const [newNameEn, setNewNameEn] = useState("");
+  const [newRate, setNewRate] = useState("");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -63,14 +80,19 @@ export default function SettingsManager() {
     }
   }, [settings]);
 
+  useEffect(() => {
+    adminFetch("/api/admin/currencies")
+      .then(r => r.json())
+      .then(d => setCurrencies(Array.isArray(d) ? d : []))
+      .catch(() => setCurrencies([]))
+      .finally(() => setCurrenciesLoading(false));
+  }, []);
+
   const currenciesList = formData.moneyTransferCurrencies.split(",").map(s => s.trim()).filter(Boolean);
-  const addCurrency = () => {
+  const addMoneyTransferCurrency = () => {
     const v = newCurrency.trim();
     if (!v) return;
-    if (currenciesList.includes(v)) {
-      toast({ variant: "destructive", title: "موجودة مسبقاً" });
-      return;
-    }
+    if (currenciesList.includes(v)) { toast({ variant: "destructive", title: "موجودة مسبقاً" }); return; }
     setFormData({ ...formData, moneyTransferCurrencies: [...currenciesList, v].join(",") });
     setNewCurrency("");
   };
@@ -78,19 +100,68 @@ export default function SettingsManager() {
     setFormData({ ...formData, moneyTransferCurrencies: currenciesList.filter(x => x !== c).join(",") });
   };
 
-  const RATE_FIELDS: { key: keyof typeof formData; label: string; placeholder: string }[] = [
-    { key: "usdToTry", label: "سعر صرف الليرة التركية (TRY)", placeholder: "مثال: 32" },
-    { key: "usdToSyp", label: "سعر صرف الليرة السورية (SYP)", placeholder: "مثال: 13000" },
-    { key: "usdToEur", label: "سعر صرف اليورو (EUR)", placeholder: "مثال: 0.92" },
-    { key: "usdToOmr", label: "سعر صرف الريال العماني (OMR)", placeholder: "مثال: 0.385" },
-    { key: "usdToMad", label: "سعر صرف الدرهم المغربي (MAD)", placeholder: "مثال: 10" },
-    { key: "usdToDzd", label: "سعر صرف الدينار الجزائري (DZD)", placeholder: "مثال: 135" },
-    { key: "usdToIls", label: "سعر صرف الشيكل الإسرائيلي (ILS)", placeholder: "مثال: 3.7" },
-    { key: "usdToIqd", label: "سعر صرف الدينار العراقي (IQD)", placeholder: "مثال: 1310" },
-    { key: "usdToSar", label: "سعر صرف الريال السعودي (SAR)", placeholder: "مثال: 3.75" },
-    { key: "usdToEgp", label: "سعر صرف الجنيه المصري (EGP)", placeholder: "مثال: 50.9" },
-    { key: "usdToJod", label: "سعر صرف الدينار الأردني (JOD)", placeholder: "مثال: 0.71" },
-  ];
+  async function toggleCurrency(id: number, isActive: boolean) {
+    setTogglingId(id);
+    try {
+      const res = await adminFetch(`/api/admin/currencies/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
+      });
+      if (!res.ok) throw new Error();
+      setCurrencies(prev => prev.map(c => c.id === id ? { ...c, isActive } : c));
+      const cur = currencies.find(c => c.id === id);
+      toast({ title: isActive ? `✅ تم تفعيل ${cur?.code}` : `⏸ تم إيقاف ${cur?.code}` });
+    } catch {
+      toast({ variant: "destructive", title: "خطأ في تغيير الحالة" });
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
+  async function saveRate(id: number, rate: number, nameAr: string, nameEn: string) {
+    const res = await adminFetch(`/api/admin/currencies/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ usdRate: rate, nameAr, nameEn }),
+    });
+    if (!res.ok) throw new Error();
+    setCurrencies(prev => prev.map(c => c.id === id ? { ...c, usdRate: rate } : c));
+  }
+
+  async function handleAddCurrency() {
+    if (!newCode || !newNameAr || !newNameEn || !newRate) {
+      toast({ variant: "destructive", title: "جميع الحقول مطلوبة" }); return;
+    }
+    const rate = parseFloat(newRate);
+    if (isNaN(rate) || rate <= 0) { toast({ variant: "destructive", title: "سعر الصرف غير صالح" }); return; }
+    setAdding(true);
+    try {
+      const res = await adminFetch("/api/admin/currencies", {
+        method: "POST",
+        body: JSON.stringify({ code: newCode, nameAr: newNameAr, nameEn: newNameEn, usdRate: rate }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "خطأ");
+      setCurrencies(prev => [...prev, data]);
+      setNewCode(""); setNewNameAr(""); setNewNameEn(""); setNewRate("");
+      setShowAddForm(false);
+      toast({ title: "✅ تمت إضافة العملة" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ", description: err.message });
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function deleteCurrency(id: number, nameAr: string) {
+    if (!confirm(`هل تريد حذف عملة "${nameAr}"؟`)) return;
+    try {
+      await adminFetch(`/api/admin/currencies/${id}`, { method: "DELETE" });
+      setCurrencies(prev => prev.filter(c => c.id !== id));
+      toast({ title: "تم حذف العملة" });
+    } catch {
+      toast({ variant: "destructive", title: "خطأ في الحذف" });
+    }
+  }
 
   const handleSave = () => {
     const arText = formData.welcomeMessageAr.trim();
@@ -98,158 +169,214 @@ export default function SettingsManager() {
     const combined = enText ? `${arText}||${enText}` : arText;
     const dataToSave = { ...formData, welcomeMessage: combined };
     updateSettings.mutate({ data: dataToSave }, {
-      onSuccess: () => {
-        toast({
-          title: "تم الحفظ",
-          description: "تم تحديث الإعدادات بنجاح",
-        });
-      },
-      onError: (err: any) => {
-        toast({
-          variant: "destructive",
-          title: "خطأ",
-          description: err.message || "حدث خطأ أثناء الحفظ",
-        });
-      }
+      onSuccess: () => toast({ title: "تم الحفظ", description: "تم تحديث الإعدادات بنجاح" }),
+      onError: (err: any) => toast({ variant: "destructive", title: "خطأ", description: err.message || "حدث خطأ أثناء الحفظ" }),
     });
   };
 
   if (isLoading) return <Skeleton className="w-full h-64 rounded-xl" />;
 
   return (
-    <Card className="neon-border bg-card/50">
-      <CardHeader>
-        <CardTitle>الإعدادات العامة وأسعار الصرف</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-xs text-muted-foreground">
-          أدخل سعر صرف كل عملة مقابل <span className="text-primary font-bold">1 دولار أمريكي (USD)</span>. مثال: إذا كان 1 دولار = 32 ليرة تركية، اكتب 32.
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {RATE_FIELDS.map(f => (
-            <div className="space-y-2" key={f.key}>
-              <label className="text-sm font-medium">{f.label}</label>
-              <Input
-                type="number"
-                step="any"
-                value={formData[f.key] as number}
-                onChange={e => setFormData({ ...formData, [f.key]: parseFloat(e.target.value) || 0 })}
-                placeholder={f.placeholder}
-                className="bg-background/50"
-                dir="ltr"
-              />
+    <div className="space-y-6">
+
+      {/* ─── Currency Availability Toggles ─── */}
+      <Card className="neon-border bg-card/50">
+        <CardHeader>
+          <CardTitle>العملات المتاحة وأسعار الصرف</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 text-xs text-muted-foreground">
+            فعّل أو أوقف أي عملة باستخدام زر التبديل. العملات المُفعّلة فقط تظهر للمستخدمين عند إنشاء الحساب.
+            أدخل سعر الصرف مقابل <span className="text-primary font-bold">1 دولار أمريكي (USD)</span>.
+          </div>
+
+          {currenciesLoading ? (
+            <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : (
+            <div className="space-y-2">
+              {currencies.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">لا توجد عملات بعد. أضف عملة أدناه.</p>
+              )}
+              {currencies.map(c => (
+                <CurrencyRateRow
+                  key={c.id}
+                  currency={c}
+                  toggling={togglingId === c.id}
+                  onToggle={toggleCurrency}
+                  onSaveRate={saveRate}
+                  onDelete={deleteCurrency}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          )}
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">رقم الواتساب (للطلبات)</label>
-          <Input 
-            value={formData.whatsappNumber} 
-            onChange={e => setFormData({...formData, whatsappNumber: e.target.value})}
-            className="bg-background/50 text-left"
-            dir="ltr"
-            placeholder="00905378221375"
-          />
-        </div>
+          {/* Add currency form */}
+          {showAddForm ? (
+            <div className="border border-primary/30 rounded-xl p-4 space-y-3 bg-primary/5">
+              <p className="text-sm font-semibold">إضافة عملة جديدة</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">رمز العملة (مثال: AED)</label>
+                  <Input value={newCode} onChange={e => setNewCode(e.target.value.toUpperCase())} placeholder="AED" className="bg-background/50 h-8 text-sm font-mono" dir="ltr" maxLength={10} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">سعر الصرف (1 USD = ؟)</label>
+                  <Input value={newRate} onChange={e => setNewRate(e.target.value)} type="number" step="any" placeholder="3.67" className="bg-background/50 h-8 text-sm" dir="ltr" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">الاسم بالعربي</label>
+                  <Input value={newNameAr} onChange={e => setNewNameAr(e.target.value)} placeholder="درهم إماراتي" className="bg-background/50 h-8 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">الاسم بالإنجليزي</label>
+                  <Input value={newNameEn} onChange={e => setNewNameEn(e.target.value)} placeholder="UAE Dirham" className="bg-background/50 h-8 text-sm" dir="ltr" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleAddCurrency} disabled={adding} size="sm" className="gap-1">
+                  {adding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}إضافة
+                </Button>
+                <Button onClick={() => { setShowAddForm(false); setNewCode(""); setNewNameAr(""); setNewNameEn(""); setNewRate(""); }} variant="ghost" size="sm">إلغاء</Button>
+              </div>
+            </div>
+          ) : (
+            <Button onClick={() => setShowAddForm(true)} variant="outline" size="sm" className="gap-2">
+              <Plus className="w-4 h-4" />إضافة عملة جديدة
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">الشريط الإخباري (Marquee) — العربية</label>
-          <Input 
-            value={formData.marqueeText} 
-            onChange={e => setFormData({...formData, marqueeText: e.target.value})}
-            className="bg-background/50"
-          />
-          <label className="text-sm font-medium block mt-2">Ticker — English</label>
-          <Input 
-            value={formData.marqueeTextEn} 
-            onChange={e => setFormData({...formData, marqueeTextEn: e.target.value})}
-            className="bg-background/50"
-            dir="ltr"
-            placeholder="English ticker text (optional)"
-          />
-          <label className="text-sm font-medium block mt-2">Ticker — Türkçe</label>
-          <Input 
-            value={formData.marqueeTextTr} 
-            onChange={e => setFormData({...formData, marqueeTextTr: e.target.value})}
-            className="bg-background/50"
-            dir="ltr"
-            placeholder="Türkçe haber şeridi metni (isteğe bağlı)"
-          />
-        </div>
-
-        <div className="space-y-2 border-t border-primary/10 pt-4">
-          <p className="text-xs text-muted-foreground bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
-            💡 رسالة الترحيب تظهر في نافذة منبثقة بعد كل تسجيل دخول. اتركها فارغة لإلغاء تفعيلها.
-          </p>
-          <label className="text-sm font-medium">رسالة الترحيب — العربية</label>
-          <Textarea
-            value={formData.welcomeMessageAr}
-            onChange={e => setFormData({...formData, welcomeMessageAr: e.target.value})}
-            className="bg-background/50 min-h-[90px] resize-y"
-            placeholder="مثال: تنبيه هام: تأكد دائماً من بيانات طريقة الدفع قبل إرسال أي مبلغ..."
-          />
-          <label className="text-sm font-medium block mt-3">Welcome Message — English</label>
-          <Textarea
-            value={formData.welcomeMessageEn}
-            onChange={e => setFormData({...formData, welcomeMessageEn: e.target.value})}
-            className="bg-background/50 min-h-[90px] resize-y"
-            placeholder="Important: Always verify payment method details before sending any amount..."
-            dir="ltr"
-          />
-          <label className="text-sm font-medium block mt-3">Hoş Geldiniz Mesajı — Türkçe</label>
-          <Textarea
-            value={formData.welcomeMessageTr}
-            onChange={e => setFormData({...formData, welcomeMessageTr: e.target.value})}
-            className="bg-background/50 min-h-[90px] resize-y"
-            placeholder="Önemli: Herhangi bir miktar göndermeden önce ödeme yöntemi bilgilerini doğrulayın..."
-            dir="ltr"
-          />
-        </div>
-
-        <div className="space-y-3 border-t border-primary/10 pt-4">
-          <div>
-            <label className="text-sm font-medium block mb-1">عملات الحوالات المالية</label>
-            <p className="text-xs text-muted-foreground">العملات التي يختار منها الزبون عند إرسال طلب حوالة (تظهر في قسم "الحوالات المالية").</p>
+      {/* ─── General Settings ─── */}
+      <Card className="neon-border bg-card/50">
+        <CardHeader>
+          <CardTitle>الإعدادات العامة</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">رقم الواتساب (للطلبات)</label>
+            <Input value={formData.whatsappNumber} onChange={e => setFormData({...formData, whatsappNumber: e.target.value})} className="bg-background/50 text-left" dir="ltr" placeholder="00905378221375" />
           </div>
-          <div className="flex flex-wrap gap-2">
-            {currenciesList.length === 0 && (
-              <span className="text-xs text-muted-foreground">لا توجد عملات. أضف واحدة أدناه.</span>
-            )}
-            {currenciesList.map(c => (
-              <span key={c} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-sm">
-                {c}
-                <button
-                  type="button"
-                  onClick={() => removeCurrency(c)}
-                  className="text-destructive hover:text-destructive font-bold mr-1"
-                  title="حذف"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={newCurrency}
-              onChange={e => setNewCurrency(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCurrency(); } }}
-              placeholder="مثال: درهم إماراتي"
-              className="bg-background/50"
-            />
-            <Button type="button" variant="outline" onClick={addCurrency}>إضافة</Button>
-          </div>
-        </div>
 
-        <Button 
-          onClick={handleSave} 
-          disabled={updateSettings.isPending}
-          className="w-full md:w-auto"
-        >
-          {updateSettings.isPending ? "جاري الحفظ..." : "حفظ الإعدادات"}
-        </Button>
-      </CardContent>
-    </Card>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">الشريط الإخباري (Marquee) — العربية</label>
+            <Input value={formData.marqueeText} onChange={e => setFormData({...formData, marqueeText: e.target.value})} className="bg-background/50" />
+            <label className="text-sm font-medium block mt-2">Ticker — English</label>
+            <Input value={formData.marqueeTextEn} onChange={e => setFormData({...formData, marqueeTextEn: e.target.value})} className="bg-background/50" dir="ltr" placeholder="English ticker text (optional)" />
+            <label className="text-sm font-medium block mt-2">Ticker — Türkçe</label>
+            <Input value={formData.marqueeTextTr} onChange={e => setFormData({...formData, marqueeTextTr: e.target.value})} className="bg-background/50" dir="ltr" placeholder="Türkçe haber şeridi metni (isteğe bağlı)" />
+          </div>
+
+          <div className="space-y-2 border-t border-primary/10 pt-4">
+            <p className="text-xs text-muted-foreground bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
+              💡 رسالة الترحيب تظهر في نافذة منبثقة بعد كل تسجيل دخول. اتركها فارغة لإلغاء تفعيلها.
+            </p>
+            <label className="text-sm font-medium">رسالة الترحيب — العربية</label>
+            <Textarea value={formData.welcomeMessageAr} onChange={e => setFormData({...formData, welcomeMessageAr: e.target.value})} className="bg-background/50 min-h-[90px] resize-y" placeholder="مثال: تنبيه هام: تأكد دائماً من بيانات طريقة الدفع قبل إرسال أي مبلغ..." />
+            <label className="text-sm font-medium block mt-3">Welcome Message — English</label>
+            <Textarea value={formData.welcomeMessageEn} onChange={e => setFormData({...formData, welcomeMessageEn: e.target.value})} className="bg-background/50 min-h-[90px] resize-y" placeholder="Important: Always verify payment method details before sending any amount..." dir="ltr" />
+            <label className="text-sm font-medium block mt-3">Hoş Geldiniz Mesajı — Türkçe</label>
+            <Textarea value={formData.welcomeMessageTr} onChange={e => setFormData({...formData, welcomeMessageTr: e.target.value})} className="bg-background/50 min-h-[90px] resize-y" placeholder="Önemli: Herhangi bir miktar göndermeden önce ödeme yöntemi bilgilerini doğrulayın..." dir="ltr" />
+          </div>
+
+          <div className="space-y-3 border-t border-primary/10 pt-4">
+            <div>
+              <label className="text-sm font-medium block mb-1">عملات الحوالات المالية</label>
+              <p className="text-xs text-muted-foreground">العملات التي يختار منها الزبون عند إرسال طلب حوالة (تظهر في قسم "الحوالات المالية").</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {currenciesList.length === 0 && <span className="text-xs text-muted-foreground">لا توجد عملات. أضف واحدة أدناه.</span>}
+              {currenciesList.map(c => (
+                <span key={c} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-sm">
+                  {c}
+                  <button type="button" onClick={() => removeCurrency(c)} className="text-destructive hover:text-destructive font-bold mr-1" title="حذف">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input value={newCurrency} onChange={e => setNewCurrency(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addMoneyTransferCurrency(); } }} placeholder="مثال: درهم إماراتي" className="bg-background/50" />
+              <Button type="button" variant="outline" onClick={addMoneyTransferCurrency}>إضافة</Button>
+            </div>
+          </div>
+
+          <Button onClick={handleSave} disabled={updateSettings.isPending} className="w-full md:w-auto">
+            {updateSettings.isPending ? "جاري الحفظ..." : "حفظ الإعدادات"}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Inline editable row for each currency ───
+function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }: {
+  currency: Currency;
+  toggling: boolean;
+  onToggle: (id: number, active: boolean) => void;
+  onSaveRate: (id: number, rate: number, nameAr: string, nameEn: string) => Promise<void>;
+  onDelete: (id: number, nameAr: string) => void;
+}) {
+  const { toast } = useToast();
+  const [rate, setRate] = useState(String(currency.usdRate));
+  const [saving, setSaving] = useState(false);
+
+  async function saveRate() {
+    const r = parseFloat(rate);
+    if (isNaN(r) || r <= 0) { toast({ variant: "destructive", title: "سعر غير صالح" }); return; }
+    setSaving(true);
+    try {
+      await onSaveRate(currency.id, r, currency.nameAr, currency.nameEn);
+      toast({ title: `تم حفظ سعر ${currency.code}` });
+    } catch {
+      toast({ variant: "destructive", title: "خطأ في الحفظ" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={`flex items-center gap-2 p-3 border rounded-xl transition-colors ${currency.isActive ? "bg-card/40 border-border/30" : "bg-muted/20 border-border/20 opacity-60"}`}>
+      {/* Toggle */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {toggling ? (
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+        ) : (
+          <Switch
+            checked={currency.isActive}
+            onCheckedChange={v => onToggle(currency.id, v)}
+            className="data-[state=checked]:bg-green-500 scale-90"
+          />
+        )}
+      </div>
+      {/* Code badge */}
+      <span className={`font-mono font-bold w-12 text-center rounded px-1.5 py-0.5 text-xs flex-shrink-0 ${currency.isActive ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted/30"}`}>
+        {currency.code}
+      </span>
+      {/* Name */}
+      <span className="text-sm flex-1 min-w-0 truncate">{currency.nameAr}</span>
+      {/* Rate input */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <span className="text-xs text-muted-foreground hidden sm:inline">1$=</span>
+        <Input
+          value={rate}
+          onChange={e => setRate(e.target.value)}
+          onBlur={saveRate}
+          onKeyDown={e => { if (e.key === "Enter") saveRate(); }}
+          type="number"
+          step="any"
+          className="h-7 w-24 text-sm bg-background/50 px-2"
+          dir="ltr"
+        />
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+      </div>
+      {/* Delete */}
+      <button
+        onClick={() => onDelete(currency.id, currency.nameAr)}
+        className="text-destructive/60 hover:text-destructive transition-colors flex-shrink-0 p-1"
+        title="حذف"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }
