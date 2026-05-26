@@ -399,7 +399,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* WhatsApp */}
             {settings?.whatsappNumber && (
               <a
-                href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}`}
+                href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, '').replace(/^00/, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.35)] hover:shadow-[0_0_18px_rgba(168,85,247,0.65)] transition-all"
@@ -412,7 +412,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Telegram */}
             <a
-              href="https://t.me/alghareebcard"
+              href="https://t.me/ahmedmuhajir"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.35)] hover:shadow-[0_0_18px_rgba(168,85,247,0.65)] transition-all"
