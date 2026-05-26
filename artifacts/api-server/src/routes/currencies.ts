@@ -8,6 +8,41 @@ const router: IRouter = Router();
 pool.query("ALTER TABLE currencies ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true")
   .catch(() => {/* already exists or no permission — ignore */});
 
+// Auto-seed: if currencies table is empty, seed from settings table
+(async () => {
+  try {
+    const count = await pool.query("SELECT COUNT(*) FROM currencies");
+    if (parseInt(count.rows[0].count) === 0) {
+      const s = await pool.query("SELECT * FROM settings LIMIT 1");
+      if (s.rows.length > 0) {
+        const r = s.rows[0];
+        const seed = [
+          { code: "USD", nameAr: "دولار أمريكي", nameEn: "US Dollar",        rate: 1 },
+          { code: "TRY", nameAr: "ليرة تركية",   nameEn: "Turkish Lira",      rate: parseFloat(r.usd_to_try)  || 32 },
+          { code: "SYP", nameAr: "ليرة سورية",   nameEn: "Syrian Pound",      rate: parseFloat(r.usd_to_syp)  || 13000 },
+          { code: "EUR", nameAr: "يورو",           nameEn: "Euro",              rate: parseFloat(r.usd_to_eur)  || 0.92 },
+          { code: "OMR", nameAr: "ريال عماني",    nameEn: "Omani Rial",        rate: parseFloat(r.usd_to_omr)  || 0.385 },
+          { code: "MAD", nameAr: "درهم مغربي",    nameEn: "Moroccan Dirham",   rate: parseFloat(r.usd_to_mad)  || 10 },
+          { code: "DZD", nameAr: "دينار جزائري",  nameEn: "Algerian Dinar",    rate: parseFloat(r.usd_to_dzd)  || 135 },
+          { code: "ILS", nameAr: "شيكل",           nameEn: "Israeli Shekel",    rate: parseFloat(r.usd_to_ils)  || 3.7 },
+          { code: "IQD", nameAr: "دينار عراقي",   nameEn: "Iraqi Dinar",       rate: parseFloat(r.usd_to_iqd)  || 1310 },
+          { code: "SAR", nameAr: "ريال سعودي",    nameEn: "Saudi Riyal",       rate: parseFloat(r.usd_to_sar)  || 3.75 },
+          { code: "EGP", nameAr: "جنيه مصري",     nameEn: "Egyptian Pound",    rate: parseFloat(r.usd_to_egp)  || 50.9 },
+          { code: "JOD", nameAr: "دينار أردني",   nameEn: "Jordanian Dinar",   rate: parseFloat(r.usd_to_jod)  || 0.71 },
+        ];
+        for (const c of seed) {
+          if (c.rate > 0) {
+            await pool.query(
+              "INSERT INTO currencies (code, name_ar, name_en, usd_rate, is_active) VALUES ($1,$2,$3,$4,true) ON CONFLICT (code) DO NOTHING",
+              [c.code, c.nameAr, c.nameEn, c.rate]
+            );
+          }
+        }
+      }
+    }
+  } catch { /* ignore seed errors */ }
+})();
+
 // Public: only active currencies (used by profile-setup and frontend)
 router.get("/currencies", async (_req: Request, res: Response): Promise<void> => {
   try {
