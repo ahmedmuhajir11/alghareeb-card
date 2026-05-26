@@ -419,9 +419,15 @@ router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res:
   let rawText = "";
   let httpStatus = 0;
   try {
+    const cleanKey = apiKey.trim();
+    chargeUrl.searchParams.set("api_token", cleanKey);
     const apiRes = await fetch(chargeUrl.toString(), {
       method: "GET",
-      headers: { "Api-Token": apiKey.trim(), "api-token": apiKey.trim() },
+      headers: {
+        "Api-Token": cleanKey,
+        "api-token": cleanKey,
+        "Authorization": `Bearer ${cleanKey}`,
+      },
       signal: AbortSignal.timeout(15000),
     });
     httpStatus = apiRes.status;

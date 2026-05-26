@@ -173,17 +173,23 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
         let apiRes: Response;
         if (isYazanCard) {
-          // yazancard.com: GET /newOrder/{id}/params?qty=...&playerId=...&api_token=...
+          // yazancard.com: GET /newOrder/{id}/params?qty=...&player_id=...&api_token=...
+          const cleanKey = apiKey.trim();
           const chargeEndpoint = apiEndpoint.replace(/\/params\/?$/, "") + "/params";
           const qty = isPerQuantity ? parseFloat(quantity) : 1;
           const orderUuid = crypto.randomUUID();
           const url = new URL(chargeEndpoint);
           url.searchParams.set("qty", String(qty));
           url.searchParams.set("order_uuid", orderUuid);
+          url.searchParams.set("api_token", cleanKey);
           if (targetId) url.searchParams.set("player_id", String(targetId));
           apiRes = await fetch(url.toString(), {
             method: "GET",
-            headers: { "Api-Token": apiKey, "api-token": apiKey },
+            headers: {
+              "Api-Token": cleanKey,
+              "api-token": cleanKey,
+              "Authorization": `Bearer ${cleanKey}`,
+            },
             signal: AbortSignal.timeout(20000),
           });
         } else {
