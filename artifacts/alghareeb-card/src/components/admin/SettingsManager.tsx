@@ -335,28 +335,39 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
   }
 
   return (
-    <div className={`flex items-center gap-2 p-3 border rounded-xl transition-colors ${currency.isActive ? "bg-card/40 border-border/30" : "bg-muted/20 border-border/20 opacity-60"}`}>
-      {/* Toggle */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {toggling ? (
-          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-        ) : (
-          <Switch
-            checked={currency.isActive}
-            onCheckedChange={v => onToggle(currency.id, v)}
-            className="data-[state=checked]:bg-green-500 scale-90"
-          />
-        )}
+    <div className={`p-3 border rounded-xl transition-colors ${currency.isActive ? "bg-card/40 border-border/30" : "bg-muted/20 border-border/20 opacity-60"}`}>
+      {/* Top row: toggle + code + name + delete */}
+      <div className="flex items-center gap-2 mb-2">
+        {/* Toggle */}
+        <div className="flex-shrink-0">
+          {toggling ? (
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          ) : (
+            <Switch
+              checked={currency.isActive}
+              onCheckedChange={v => onToggle(currency.id, v)}
+              className="data-[state=checked]:bg-green-500 scale-90"
+            />
+          )}
+        </div>
+        {/* Code badge */}
+        <span className={`font-mono font-bold w-12 text-center rounded px-1.5 py-0.5 text-xs flex-shrink-0 ${currency.isActive ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted/30"}`}>
+          {currency.code}
+        </span>
+        {/* Name — full, no truncation */}
+        <span className="text-sm font-medium flex-1">{currency.nameAr}</span>
+        {/* Delete */}
+        <button
+          onClick={() => onDelete(currency.id, currency.nameAr)}
+          className="text-destructive/60 hover:text-destructive transition-colors flex-shrink-0 p-1"
+          title="حذف"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
-      {/* Code badge */}
-      <span className={`font-mono font-bold w-12 text-center rounded px-1.5 py-0.5 text-xs flex-shrink-0 ${currency.isActive ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted/30"}`}>
-        {currency.code}
-      </span>
-      {/* Name */}
-      <span className="text-sm flex-1 min-w-0 truncate">{currency.nameAr}</span>
-      {/* Rate input */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <span className="text-xs text-muted-foreground hidden sm:inline">1$=</span>
+      {/* Bottom row: rate input */}
+      <div className="flex items-center gap-2 pr-2">
+        <span className="text-xs text-muted-foreground">1 دولار =</span>
         <Input
           value={rate}
           onChange={e => setRate(e.target.value)}
@@ -364,19 +375,12 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
           onKeyDown={e => { if (e.key === "Enter") saveRate(); }}
           type="number"
           step="any"
-          className="h-7 w-24 text-sm bg-background/50 px-2"
+          className="h-7 w-32 text-sm bg-background/50 px-2"
           dir="ltr"
         />
+        <span className="text-xs text-muted-foreground">{currency.code}</span>
         {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
       </div>
-      {/* Delete */}
-      <button
-        onClick={() => onDelete(currency.id, currency.nameAr)}
-        className="text-destructive/60 hover:text-destructive transition-colors flex-shrink-0 p-1"
-        title="حذف"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
     </div>
   );
 }
