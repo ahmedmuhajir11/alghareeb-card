@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>دليل إنشاء نسخة جديدة</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0d0d1a; color: #e0e0e0; padding: 30px 20px; }
+  .container { max-width: 800px; margin: 0 auto; }
+  h1 { color: #a855f7; font-size: 1.5rem; margin-bottom: 20px; text-align: center; }
+  .copy-btn {
+    display: block; width: 100%; padding: 14px;
+    background: #7c3aed; color: white; border: none; border-radius: 12px;
+    font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-bottom: 24px;
+    transition: background 0.2s;
+  }
+  .copy-btn:hover { background: #6d28d9; }
+  .copy-btn.copied { background: #16a34a; }
+  .guide-box {
+    background: #13131f; border: 1px solid #3b2a6b; border-radius: 12px;
+    padding: 24px; white-space: pre-wrap; font-size: 0.88rem;
+    line-height: 1.8; color: #ccc; direction: rtl; text-align: right;
+    max-height: 70vh; overflow-y: auto;
+  }
+  .guide-box code { color: #a78bfa; font-family: monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>دليل إنشاء نسخة جديدة من الموقع</h1>
+  <button class="copy-btn" onclick="copyGuide()">📋 انسخ الدليل كاملاً بضغطة واحدة</button>
+  <div class="guide-box" id="guide"></div>
+</div>
+
+<script>
+const guide = `================================================================
+ دليل إنشاء نسخة جديدة من الموقع لعميل جديد
+================================================================
+
+── ما يشتريه العميل أولاً ──────────────────────────────────────
+
+1. دومين (10–15 دولار/سنة):
+   → Namecheap.com  (الأرخص والأسهل)
+   → أو GoDaddy.com
+
+2. VPS من Hetzner.com:
+   → الباقة: CX22  (2 vCPU / 4GB RAM / ~4 يورو شهرياً)
+   → النظام: Ubuntu 22.04
+   → بعد الشراء تحصل على IP السيرفر
+
+3. قاعدة بيانات مجانية من Neon.tech:
+   → أنشئ مشروعاً جديداً
+   → احفظ رابط DATABASE_URL
+
+── الخطوات التقنية ─────────────────────────────────────────────
+
+الخطوة 1 — افتح مشروع Replit جديد:
+   → اذهب إلى replit.com
+   → أنشئ مشروعاً جديداً → Import from GitHub
+   → الرابط: https://github.com/ahmedmuhajir11/alghareeb-card
+   → افتح محادثة مع الذكاء الاصطناعي واطلب:
+     "غيّر اسم الموقع إلى [اسم العميل]
+      الألوان إلى [اللون المطلوب]
+      رقم الواتساب إلى [رقمه]
+      التيليجرام إلى [معرّفه]
+      الإيميل إلى [إيميله]"
+
+الخطوة 2 — إعداد السيرفر:
+   ssh root@[IP_السيرفر]
+   apt update && apt install -y nodejs npm git
+   npm install -g pnpm pm2
+   mkdir -p /var/www/[اسم_الموقع]
+   cd /var/www/[اسم_الموقع]
+   git clone https://github.com/[مستخدم_جيت_هاب]/[اسم_المشروع] .
+   pnpm install
+
+الخطوة 3 — ملف الإعدادات:
+   nano artifacts/api-server/.env
+
+   المحتوى:
+   DATABASE_URL=postgresql://...  ← من Neon
+   SESSION_SECRET=اكتب_كلمة_سرية_عشوائية_طويلة
+   PORT=3001
+   NODE_ENV=production
+
+الخطوة 4 — ربط الدومين:
+   في لوحة تحكم الدومين (Namecheap أو غيره) أضف:
+   A Record → @   → [IP_السيرفر]
+   A Record → www → [IP_السيرفر]
+   انتظر 10–30 دقيقة حتى ينتشر DNS
+
+الخطوة 5 — Nginx + SSL مجاني:
+   apt install -y nginx certbot python3-certbot-nginx
+
+   nano /etc/nginx/sites-available/[اسم_الموقع]
+
+   ضع هذا المحتوى:
+   ─────────────────────────────────────
+   server {
+       server_name [الدومين].com www.[الدومين].com;
+       location / {
+           proxy_pass http://localhost:3001;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+       }
+   }
+   ─────────────────────────────────────
+
+   ln -s /etc/nginx/sites-available/[اسم_الموقع] /etc/nginx/sites-enabled/
+   nginx -t && systemctl reload nginx
+   certbot --nginx -d [الدومين].com -d www.[الدومين].com
+
+الخطوة 6 — إنشاء قاعدة البيانات وتشغيل الموقع:
+   cd /var/www/[اسم_الموقع]
+   pnpm --filter @workspace/db run push
+   curl -fsSL https://raw.githubusercontent.com/[مستخدم]/[مشروع]/main/go.sh | bash
+
+── بيانات لوحة التحكم الافتراضية ──────────────────────────────
+
+   الرابط:   https://[الدومين].com/admin
+   المستخدم: abuhani
+   كلمة السر: abohane12345
+   ⚠️ يجب تغيير كلمة السر فور أول دخول
+
+── التحديثات المستقبلية ─────────────────────────────────────────
+
+   أمر واحد يحدّث كل شيء:
+   curl -fsSL https://raw.githubusercontent.com/[مستخدم]/[مشروع]/main/go.sh | bash
+
+── ملاحظات مهمة ────────────────────────────────────────────────
+
+   • كل عميل = مشروع Replit منفصل + VPS منفصل + DB منفصلة
+   • النسخة الاحتياطية تلقائية عبر Neon.tech
+   • الموقع عربي RTL بالكامل ويدعم متعدد العملات
+   • تكلفة العميل الشهرية: ~4 يورو (VPS) + 0 (DB مجانية)
+   • تكلفة الدومين: ~12 دولار سنوياً
+
+================================================================`;
+
+document.getElementById('guide').textContent = guide;
+
+function copyGuide() {
+  navigator.clipboard.writeText(guide).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✅ تم النسخ!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 انسخ الدليل كاملاً بضغطة واحدة';
+      btn.classList.remove('copied');
+    }, 3000);
+  });
+}
+</script>
+</body>
+</html>
