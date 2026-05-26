@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Check, X, Plus, Loader2 } from "lucide-react";
 
@@ -12,6 +13,7 @@ interface Currency {
   nameAr: string;
   nameEn: string;
   usdRate: number;
+  isActive: boolean;
 }
 
 async function adminFetch(path: string, opts?: RequestInit) {
@@ -27,8 +29,13 @@ async function adminFetch(path: string, opts?: RequestInit) {
 }
 
 function CurrencyRow({
-  currency, onDelete, onUpdate,
-}: { currency: Currency; onDelete: (id: number) => void; onUpdate: (id: number, rate: number, nameAr: string, nameEn: string) => void }) {
+  currency, onDelete, onUpdate, onToggle,
+}: {
+  currency: Currency;
+  onDelete: (id: number) => void;
+  onUpdate: (id: number, rate: number, nameAr: string, nameEn: string) => void;
+  onToggle: (id: number, isActive: boolean) => void;
+}) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [rate, setRate] = useState(String(currency.usdRate));
@@ -36,6 +43,7 @@ function CurrencyRow({
   const [nameEn, setNameEn] = useState(currency.nameEn);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   async function save() {
     const r = parseFloat(rate);
@@ -71,6 +79,23 @@ function CurrencyRow({
     }
   }
 
+  async function toggle(checked: boolean) {
+    setToggling(true);
+    try {
+      const res = await adminFetch(`/api/admin/currencies/${currency.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive: checked }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "خطأ");
+      onToggle(currency.id, checked);
+      toast({ title: checked ? `✅ تم تفعيل ${currency.code}` : `⏸ تم إيقاف ${currency.code}` });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ", description: err.message });
+    } finally {
+      setToggling(false);
+    }
+  }
+
   if (editing) {
     return (
       <div className="flex flex-wrap items-center gap-2 p-3 bg-primary/5 border border-primary/30 rounded-xl">
@@ -94,16 +119,27 @@ function CurrencyRow({
   }
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-card/40 border border-border/30 rounded-xl">
-      <span className="font-mono text-primary font-bold w-14 text-center bg-primary/10 rounded px-2 py-0.5 text-sm">{currency.code}</span>
+    <div className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${currency.isActive ? "bg-card/40 border-border/30" : "bg-muted/20 border-border/20 opacity-60"}`}>
+      <span className={`font-mono font-bold w-14 text-center rounded px-2 py-0.5 text-sm ${currency.isActive ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted/30"}`}>
+        {currency.code}
+      </span>
       <div className="min-w-0 flex-1">
         <p className="font-medium text-sm">{currency.nameAr}</p>
         <p className="text-xs text-muted-foreground">{currency.nameEn}</p>
       </div>
-      <div className="text-sm text-muted-foreground text-left" dir="ltr">
+      <div className="text-sm text-muted-foreground text-left hidden sm:block" dir="ltr">
         1 USD = <span className="text-foreground font-semibold">{currency.usdRate}</span>
       </div>
-      <div className="flex gap-1 mr-1">
+      <div className="flex items-center gap-2">
+        {toggling ? (
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+        ) : (
+          <Switch
+            checked={currency.isActive}
+            onCheckedChange={toggle}
+            className="data-[state=checked]:bg-green-500"
+          />
+        )}
         <Button size="sm" variant="ghost" onClick={() => setEditing(true)} className="h-7 w-7 p-0">
           <Pencil className="w-3 h-3" />
         </Button>
@@ -129,7 +165,7 @@ export default function CurrenciesManager() {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/currencies`);
+      const res = await adminFetch("/api/admin/currencies");
       const data = await res.json();
       setCurrencies(Array.isArray(data) ? data : []);
     } catch {
@@ -178,18 +214,31 @@ export default function CurrenciesManager() {
     setCurrencies(prev => prev.map(c => c.id === id ? { ...c, usdRate: rate, nameAr, nameEn } : c));
   }
 
+  function handleToggle(id: number, isActive: boolean) {
+    setCurrencies(prev => prev.map(c => c.id === id ? { ...c, isActive } : c));
+  }
+
+  const activeCount = currencies.filter(c => c.isActive).length;
+
   return (
     <div className="space-y-4">
       <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 text-xs text-muted-foreground">
-        أدخل سعر كل عملة مقابل <span className="text-primary font-bold">1 دولار أمريكي (USD)</span>. مثال: إذا 1 دولار = 32 ليرة تركية، اكتب 32. العملات هنا تُستخدم في اختيار عملة الحساب وفي تحويل المبالغ.
+        أدخل سعر كل عملة مقابل <span className="text-primary font-bold">1 دولار أمريكي (USD)</span>. مثال: إذا 1 دولار = 32 ليرة تركية، اكتب 32.
+        استخدم زر التبديل <span className="text-foreground font-semibold">تشغيل/إيقاف</span> للتحكم في ظهور العملة للمستخدمين عند إنشاء الحساب.
       </div>
+
+      {currencies.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          مُفعَّل: <span className="text-green-400 font-semibold">{activeCount}</span> / {currencies.length} عملة
+        </p>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
       ) : (
         <div className="space-y-2">
           {currencies.map(c => (
-            <CurrencyRow key={c.id} currency={c} onDelete={handleDelete} onUpdate={handleUpdate} />
+            <CurrencyRow key={c.id} currency={c} onDelete={handleDelete} onUpdate={handleUpdate} onToggle={handleToggle} />
           ))}
         </div>
       )}
