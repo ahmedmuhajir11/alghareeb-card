@@ -340,21 +340,42 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 });
 
-// ── One-time fix: replace placeholder token in packages/items ────────────────
+// ── One-time fix: force-set real token on ALL YazanCard items/packages ────────
 router.post("/admin/fix-yazancard-token", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const realToken = process.env.YAZANCARD_TOKEN?.trim();
   if (!realToken) { res.status(400).json({ error: "YAZANCARD_TOKEN غير موجود في .env" }); return; }
 
-  const placeholder = "YAZANCARD_TOKEN_PLACEHOLDER";
+  // Show current state for debugging
+  const before = await pool.query(
+    `SELECT 'items' AS tbl, id, name_ar, LEFT(api_key,10) AS key_prefix, api_endpoint
+     FROM items WHERE api_endpoint IS NOT NULL AND api_endpoint <> ''
+     UNION ALL
+     SELECT 'packages', id, label, LEFT(api_key,10), api_endpoint
+     FROM packages WHERE api_endpoint IS NOT NULL AND api_endpoint <> ''`
+  );
+
+  // Force-update ALL entries that have any api_endpoint (YazanCard or otherwise) with wrong token
   const [r1, r2] = await Promise.all([
-    pool.query("UPDATE packages SET api_key=$1 WHERE api_key=$2", [realToken, placeholder]),
-    pool.query("UPDATE items    SET api_key=$1 WHERE api_key=$2", [realToken, placeholder]),
+    pool.query(
+      `UPDATE packages SET api_key=$1
+       WHERE api_endpoint IS NOT NULL AND api_endpoint <> ''
+         AND (api_key IS NULL OR api_key <> $1)`,
+      [realToken]
+    ),
+    pool.query(
+      `UPDATE items SET api_key=$1
+       WHERE api_endpoint IS NOT NULL AND api_endpoint <> ''
+         AND (api_key IS NULL OR api_key <> $1)`,
+      [realToken]
+    ),
   ]);
+
   res.json({
-    message: "تم التحديث",
+    message: "تم التحديث القطعي",
     packagesUpdated: r1.rowCount,
     itemsUpdated: r2.rowCount,
-    tokenPrefix: realToken.slice(0, 6) + "...",
+    tokenPrefix: realToken.slice(0, 8) + "...",
+    beforeState: before.rows,
   });
 });
 
