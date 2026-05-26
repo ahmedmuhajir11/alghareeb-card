@@ -197,7 +197,7 @@ export default function SettingsManager() {
               {currencies.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-4">لا توجد عملات بعد. أضف عملة أدناه.</p>
               )}
-              {currencies.map(c => (
+              {currencies.filter(c => c.code !== "USD").map(c => (
                 <CurrencyRateRow
                   key={c.id}
                   currency={c}
@@ -319,6 +319,7 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
   const { toast } = useToast();
   const [rate, setRate] = useState(String(currency.usdRate));
   const [saving, setSaving] = useState(false);
+  const changed = rate !== String(currency.usdRate);
 
   async function saveRate() {
     const r = parseFloat(rate);
@@ -326,7 +327,7 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
     setSaving(true);
     try {
       await onSaveRate(currency.id, r, currency.nameAr, currency.nameEn);
-      toast({ title: `تم حفظ سعر ${currency.code}` });
+      toast({ title: `✅ تم حفظ سعر ${currency.code}` });
     } catch {
       toast({ variant: "destructive", title: "خطأ في الحفظ" });
     } finally {
@@ -338,7 +339,6 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
     <div className={`p-3 border rounded-xl transition-colors ${currency.isActive ? "bg-card/40 border-border/30" : "bg-muted/20 border-border/20 opacity-60"}`}>
       {/* Top row: toggle + code + name + delete */}
       <div className="flex items-center gap-2 mb-2">
-        {/* Toggle */}
         <div className="flex-shrink-0">
           {toggling ? (
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -350,13 +350,10 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
             />
           )}
         </div>
-        {/* Code badge */}
         <span className={`font-mono font-bold w-12 text-center rounded px-1.5 py-0.5 text-xs flex-shrink-0 ${currency.isActive ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted/30"}`}>
           {currency.code}
         </span>
-        {/* Name — full, no truncation */}
         <span className="text-sm font-medium flex-1">{currency.nameAr}</span>
-        {/* Delete */}
         <button
           onClick={() => onDelete(currency.id, currency.nameAr)}
           className="text-destructive/60 hover:text-destructive transition-colors flex-shrink-0 p-1"
@@ -365,21 +362,27 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
-      {/* Bottom row: rate input */}
+      {/* Bottom row: rate input + explicit save button */}
       <div className="flex items-center gap-2 pr-2">
-        <span className="text-xs text-muted-foreground">1 دولار =</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">1 دولار =</span>
         <Input
           value={rate}
           onChange={e => setRate(e.target.value)}
-          onBlur={saveRate}
           onKeyDown={e => { if (e.key === "Enter") saveRate(); }}
           type="number"
           step="any"
-          className="h-7 w-32 text-sm bg-background/50 px-2"
+          className="h-8 flex-1 text-sm bg-background/50 px-2"
           dir="ltr"
         />
         <span className="text-xs text-muted-foreground">{currency.code}</span>
-        {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+        <Button
+          size="sm"
+          onClick={saveRate}
+          disabled={saving || !changed}
+          className={`h-8 px-3 text-xs transition-all ${changed ? "bg-primary hover:bg-primary/90" : "opacity-40"}`}
+        >
+          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : "حفظ"}
+        </Button>
       </div>
     </div>
   );
