@@ -382,9 +382,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {settings?.whatsappNumber && (
             <div className="flex items-center justify-center gap-3 flex-wrap">
               <a
-                href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`tel:${settings.whatsappNumber.replace(/\s/g, '')}`}
                 className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-600/50 shadow-[0_0_12px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.7)] transition-all"
               >
                 <Phone className="w-5 h-5 text-purple-400" />
