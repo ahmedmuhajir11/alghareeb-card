@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, settingsTable } from "@workspace/db";
+import { db, settingsTable, pool } from "@workspace/db";
 import {
   GetSettingsResponse,
   UpdateSettingsBody,
@@ -29,6 +29,21 @@ router.get("/settings", async (req, res): Promise<void> => {
     settings = created;
   }
   const row = serializeRow(settings);
+
+  // Overlay exchange rates from currencies table (single source of truth)
+  try {
+    const curRes = await pool.query("SELECT code, usd_rate FROM currencies WHERE is_active = true");
+    const fieldMap: Record<string, string> = {
+      TRY: "usdToTry", SYP: "usdToSyp", EUR: "usdToEur", OMR: "usdToOmr",
+      MAD: "usdToMad", DZD: "usdToDzd", ILS: "usdToIls", IQD: "usdToIqd",
+      SAR: "usdToSar", EGP: "usdToEgp", JOD: "usdToJod",
+    };
+    for (const r of curRes.rows) {
+      const field = fieldMap[r.code?.toUpperCase()];
+      if (field) row[field] = parseFloat(r.usd_rate) || 0;
+    }
+  } catch { /* fallback to settings table values */ }
+
   // Coalesce null/undefined number fields to 0
   const numFields = [
     "usdToTry","usdToSyp","usdToEur","usdToOmr","usdToMad",
@@ -46,7 +61,6 @@ router.get("/settings", async (req, res): Promise<void> => {
   for (const f of strFields) {
     if (row[f] == null) row[f] = "";
   }
-  // updatedAt must be a string
   if (row["updatedAt"] == null) row["updatedAt"] = new Date().toISOString();
   const result = GetSettingsResponse.safeParse(row);
   if (!result.success) {
