@@ -170,9 +170,13 @@ router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Resp
 
       let amountToCredit = sentAmount;
       if (sentCurrency !== userCurrency) {
-        const currRates = await client.query("SELECT code, usd_rate FROM currencies");
+        // Use deposit_rate if set, otherwise fall back to usd_rate
+        const currRates = await client.query("SELECT code, usd_rate, deposit_rate FROM currencies");
         const rMap: Record<string, number> = { USD: 1 };
-        for (const row of currRates.rows) rMap[row.code] = parseFloat(row.usd_rate);
+        for (const row of currRates.rows) {
+          const rate = row.deposit_rate != null ? parseFloat(row.deposit_rate) : parseFloat(row.usd_rate);
+          if (rate > 0) rMap[row.code] = rate;
+        }
         const fromRate = rMap[sentCurrency] ?? null;
         const toRate = rMap[userCurrency] ?? null;
         const converted = (fromRate && toRate && isFinite(sentAmount)) ? (sentAmount / fromRate) * toRate : null;

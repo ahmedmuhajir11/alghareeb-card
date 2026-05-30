@@ -12,6 +12,7 @@ function mapRow(r: any) {
     nameAr: r.name_ar,
     nameEn: r.name_en,
     usdRate: parseFloat(r.usd_rate),
+    depositRate: r.deposit_rate != null ? parseFloat(r.deposit_rate) : null,
     isActive: r.is_active !== undefined ? Boolean(r.is_active) : true,
   };
 }
@@ -22,6 +23,12 @@ const ready = (async () => {
     // 1. Ensure is_active column exists
     await pool.query(
       "ALTER TABLE currencies ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true"
+    );
+  } catch { /* already exists */ }
+  try {
+    // 2. Ensure deposit_rate column exists (null = use usd_rate as fallback)
+    await pool.query(
+      "ALTER TABLE currencies ADD COLUMN IF NOT EXISTS deposit_rate REAL"
     );
   } catch { /* already exists */ }
 
@@ -124,9 +131,9 @@ router.post("/admin/currencies", requireAdmin, async (req: Request, res: Respons
 
 router.patch("/admin/currencies/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { usdRate, nameAr, nameEn, isActive } = req.body ?? {};
+  const { usdRate, depositRate, nameAr, nameEn, isActive } = req.body ?? {};
   try {
-    if (isActive !== undefined && usdRate === undefined) {
+    if (isActive !== undefined && usdRate === undefined && depositRate === undefined) {
       await pool.query(
         "UPDATE currencies SET is_active=$1, updated_at=NOW() WHERE id=$2",
         [Boolean(isActive), id]
@@ -137,9 +144,13 @@ router.patch("/admin/currencies/:id", requireAdmin, async (req: Request, res: Re
         res.status(400).json({ error: "سعر الصرف غير صالح" });
         return;
       }
+      // deposit_rate: null means "use usd_rate as fallback"
+      const depRate = (depositRate != null && depositRate !== "" && !isNaN(parseFloat(depositRate)) && parseFloat(depositRate) > 0)
+        ? parseFloat(depositRate)
+        : null;
       await pool.query(
-        "UPDATE currencies SET usd_rate=$1, name_ar=COALESCE($2,name_ar), name_en=COALESCE($3,name_en), updated_at=NOW() WHERE id=$4",
-        [rate, nameAr || null, nameEn || null, id]
+        "UPDATE currencies SET usd_rate=$1, deposit_rate=$2, name_ar=COALESCE($3,name_ar), name_en=COALESCE($4,name_en), updated_at=NOW() WHERE id=$5",
+        [rate, depRate, nameAr || null, nameEn || null, id]
       );
     }
     res.json({ success: true });

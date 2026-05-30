@@ -23,7 +23,7 @@ async function adminFetch(path: string, opts?: RequestInit) {
   });
 }
 
-interface Currency { id: number; code: string; nameAr: string; nameEn: string; usdRate: number; isActive: boolean; }
+interface Currency { id: number; code: string; nameAr: string; nameEn: string; usdRate: number; depositRate: number | null; isActive: boolean; }
 
 export default function SettingsManager() {
   const { data: settings, isLoading } = useGetSettings();
@@ -104,13 +104,13 @@ export default function SettingsManager() {
     }
   }
 
-  async function saveRate(id: number, rate: number, nameAr: string, nameEn: string) {
+  async function saveRate(id: number, rate: number, depositRate: number | null, nameAr: string, nameEn: string) {
     const res = await adminFetch(`/api/admin/currencies/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ usdRate: rate, nameAr, nameEn }),
+      body: JSON.stringify({ usdRate: rate, depositRate: depositRate ?? null, nameAr, nameEn }),
     });
     if (!res.ok) throw new Error();
-    setCurrencies(prev => prev.map(c => c.id === id ? { ...c, usdRate: rate } : c));
+    setCurrencies(prev => prev.map(c => c.id === id ? { ...c, usdRate: rate, depositRate } : c));
   }
 
   async function handleAddCurrency() {
@@ -171,9 +171,10 @@ export default function SettingsManager() {
           <CardTitle>العملات المتاحة وأسعار الصرف</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 text-xs text-muted-foreground">
-            فعّل أو أوقف أي عملة باستخدام زر التبديل. العملات المُفعّلة فقط تظهر للمستخدمين عند إنشاء الحساب.
-            أدخل سعر الصرف مقابل <span className="text-primary font-bold">1 دولار أمريكي (USD)</span>.
+          <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 text-xs text-muted-foreground space-y-1">
+            <p>فعّل أو أوقف أي عملة باستخدام زر التبديل. العملات المُفعّلة فقط تظهر للمستخدمين عند إنشاء الحساب.</p>
+            <p>📦 <span className="text-yellow-400 font-bold">معدل المنتجات</span> — يُستخدم لعرض أسعار المنتجات بعملة المستخدم.</p>
+            <p>💰 <span className="text-green-400 font-bold">معدل الإيداع</span> — يُستخدم عند احتساب رصيد الإيداعات. اتركه فارغاً ليطابق معدل المنتجات.</p>
           </div>
 
           {currenciesLoading ? (
@@ -299,21 +300,24 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
   currency: Currency;
   toggling: boolean;
   onToggle: (id: number, active: boolean) => void;
-  onSaveRate: (id: number, rate: number, nameAr: string, nameEn: string) => Promise<void>;
+  onSaveRate: (id: number, rate: number, depositRate: number | null, nameAr: string, nameEn: string) => Promise<void>;
   onDelete: (id: number, nameAr: string) => void;
 }) {
   const { toast } = useToast();
   const [rate, setRate] = useState(String(currency.usdRate));
+  const [depRate, setDepRate] = useState(currency.depositRate != null ? String(currency.depositRate) : "");
   const [saving, setSaving] = useState(false);
-  const changed = rate !== String(currency.usdRate);
+  const changed = rate !== String(currency.usdRate) || depRate !== (currency.depositRate != null ? String(currency.depositRate) : "");
 
   async function saveRate() {
     const r = parseFloat(rate);
-    if (isNaN(r) || r <= 0) { toast({ variant: "destructive", title: "سعر غير صالح" }); return; }
+    if (isNaN(r) || r <= 0) { toast({ variant: "destructive", title: "سعر المنتجات غير صالح" }); return; }
+    const dr = depRate.trim() !== "" ? parseFloat(depRate) : null;
+    if (dr !== null && (isNaN(dr) || dr <= 0)) { toast({ variant: "destructive", title: "سعر الإيداع غير صالح" }); return; }
     setSaving(true);
     try {
-      await onSaveRate(currency.id, r, currency.nameAr, currency.nameEn);
-      toast({ title: `✅ تم حفظ سعر ${currency.code}` });
+      await onSaveRate(currency.id, r, dr, currency.nameAr, currency.nameEn);
+      toast({ title: `✅ تم حفظ أسعار ${currency.code}` });
     } catch {
       toast({ variant: "destructive", title: "خطأ في الحفظ" });
     } finally {
@@ -348,19 +352,40 @@ function CurrencyRateRow({ currency, toggling, onToggle, onSaveRate, onDelete }:
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
-      {/* Bottom row: rate input + explicit save button */}
-      <div className="flex items-center gap-2 pr-2">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">1 دولار =</span>
-        <Input
-          value={rate}
-          onChange={e => setRate(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") saveRate(); }}
-          type="number"
-          step="any"
-          className="h-8 flex-1 text-sm bg-background/50 px-2"
-          dir="ltr"
-        />
-        <span className="text-xs text-muted-foreground">{currency.code}</span>
+      {/* Rate inputs */}
+      <div className="space-y-1.5 pr-2">
+        {/* Product rate */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-yellow-400 whitespace-nowrap w-24">📦 منتجات:</span>
+          <Input
+            value={rate}
+            onChange={e => setRate(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") saveRate(); }}
+            type="number"
+            step="any"
+            placeholder="سعر المنتجات"
+            className="h-8 flex-1 text-sm bg-background/50 px-2"
+            dir="ltr"
+          />
+          <span className="text-xs text-muted-foreground w-8">{currency.code}</span>
+        </div>
+        {/* Deposit rate */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-green-400 whitespace-nowrap w-24">💰 إيداع:</span>
+          <Input
+            value={depRate}
+            onChange={e => setDepRate(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") saveRate(); }}
+            type="number"
+            step="any"
+            placeholder={`فارغ = ${rate || currency.usdRate}`}
+            className="h-8 flex-1 text-sm bg-background/50 px-2"
+            dir="ltr"
+          />
+          <span className="text-xs text-muted-foreground w-8">{currency.code}</span>
+        </div>
+      </div>
+      <div className="mt-2 flex justify-end pr-2">
         <Button
           size="sm"
           onClick={saveRate}

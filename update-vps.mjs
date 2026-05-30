@@ -162,6 +162,7 @@ async function run() {
     // Currencies table + is_active column + seed from settings
     await c.query("CREATE TABLE IF NOT EXISTS currencies (id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, name_ar TEXT NOT NULL, name_en TEXT NOT NULL, usd_rate REAL NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW())");
     await c.query("ALTER TABLE currencies ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true");
+    await c.query("ALTER TABLE currencies ADD COLUMN IF NOT EXISTS deposit_rate REAL");
     const stg = await c.query('SELECT * FROM settings LIMIT 1');
     const st = stg.rows[0] || {};
     const seedCurr = [
