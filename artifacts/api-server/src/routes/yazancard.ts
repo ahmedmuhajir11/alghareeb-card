@@ -270,13 +270,23 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
   let allProducts: any[] = [];
   try {
     const r = await fetch(`${resolvedBase}/products`, {
-      headers: { Authorization: `Bearer ${resolvedToken}` },
+      headers: { "Api-Token": resolvedToken },
+      signal: AbortSignal.timeout(15000),
     });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d: any = await r.json();
-    allProducts = Array.isArray(d) ? d : (d.products ?? d.data ?? []);
+    if (!r.ok) {
+      const errText = await r.text().catch(() => "");
+      res.status(400).json({ error: `API error ${r.status}: ${errText.slice(0, 120)}` });
+      return;
+    }
+    const raw = await r.text();
+    let d: any;
+    try { d = JSON.parse(raw); } catch {
+      res.status(400).json({ error: "الـ API أعاد بيانات غير صالحة (ليست JSON)" });
+      return;
+    }
+    allProducts = Array.isArray(d) ? d : (d.products ?? d.data ?? Object.values(d));
   } catch (err: any) {
-    res.status(502).json({ error: `فشل جلب المنتجات: ${err.message}` });
+    res.status(400).json({ error: `فشل جلب المنتجات: ${err.message}` });
     return;
   }
 
