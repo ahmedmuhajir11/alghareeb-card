@@ -352,6 +352,18 @@ export default function YazanCardImporter() {
           </div>
         </div>
 
+        {/* Markup — always visible so admin can set it before fetching */}
+        <div className="pt-1">
+          <Label className="text-sm mb-1.5 block">نسبة الربح %</Label>
+          <div className="flex items-center gap-2">
+            <Input type="number" min={0} max={200} value={markupPercent} onChange={e => setMarkupPercent(Number(e.target.value))} className="w-28" />
+            <span className="text-muted-foreground text-sm whitespace-nowrap">%</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {markupPercent === 0 ? "بدون ربح — سعر التكلفة مباشرة" : `شراء 10 → بيع ${(10 * (1 + markupPercent / 100)).toFixed(2)}`}
+          </p>
+        </div>
+
         <Button
           onClick={fetchProducts}
           disabled={loading || (!providerBase) || (!useEnvToken && !customToken)}
