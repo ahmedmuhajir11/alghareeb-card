@@ -47,6 +47,7 @@
     'artifacts/alghareeb-card/src/pages/level.tsx',
     'artifacts/alghareeb-card/src/pages/wallet.tsx',
     'artifacts/alghareeb-card/src/pages/kyc.tsx',
+    'artifacts/alghareeb-card/src/pages/my-deposits.tsx',
     'artifacts/alghareeb-card/src/lib/translations.ts',
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
     'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
@@ -61,6 +62,7 @@
     'artifacts/api-server/src/routes/payment-methods.ts',
     'artifacts/api-server/src/routes/yazancard.ts',
     'artifacts/api-server/src/routes/currencies.ts',
+    'artifacts/api-server/src/routes/deposits.ts',
     // Admin dashboard + YazanCard importer
     'artifacts/alghareeb-card/src/components/admin/YazanCardImporter.tsx',
     'artifacts/alghareeb-card/src/pages/admin/dashboard.tsx',
