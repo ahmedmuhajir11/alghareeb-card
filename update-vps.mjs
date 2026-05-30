@@ -71,7 +71,7 @@
       const dest = `${BASE}/${filePath}`;
       mkdirSync(dirname(dest), { recursive: true });
       // Use raw.githubusercontent.com — no token needed for public repos
-      const url = `https://raw.githubusercontent.com/${REPO}/main/${filePath}`;
+      const url = `https://raw.githubusercontent.com/${REPO}/main/${filePath}?t=${Date.now()}`;
       const file = createWriteStream(dest);
       get(url, res => {
         if (res.statusCode === 301 || res.statusCode === 302) {

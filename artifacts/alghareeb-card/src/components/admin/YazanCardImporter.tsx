@@ -72,8 +72,14 @@ export default function YazanCardImporter() {
         credentials: "include",
         body: JSON.stringify(body),
       });
-      const d = await res.json();
-      if (!res.ok) { setSyncResult(`❌ ${d.error}`); return; }
+      const text = await res.text();
+      if (!res.ok) {
+        let msg = text.slice(0, 120);
+        try { msg = JSON.parse(text).error ?? msg; } catch { /* keep raw */ }
+        setSyncResult(`❌ ${res.status}: ${msg}`);
+        return;
+      }
+      const d = JSON.parse(text);
       setSyncResult(`✅ تم تحديث ${d.updated} سعر من أصل ${d.total} منتج${d.errors?.length ? ` (${d.errors.length} خطأ)` : ""}`);
     } catch (e: any) {
       setSyncResult(`❌ ${e.message}`);
