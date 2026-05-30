@@ -13,6 +13,8 @@ type MyDeposit = {
   paymentMethodName: string;
   amount: number;
   currency: string;
+  creditedAmount: number | null;
+  userCurrency: string;
   receiptUrl: string | null;
   status: "pending" | "approved" | "rejected";
   adminNote: string | null;
@@ -157,7 +159,11 @@ export default function MyDepositsPage() {
                       <span className="text-muted-foreground">{t('deposits.opNum')} :</span>
                       <span className="font-bold font-mono">{d.id}</span>
                       <span className="text-muted-foreground">{t('deposits.total')} :</span>
-                      <span className="font-bold">{d.amount.toFixed(0)} {d.currency}</span>
+                      <span className="font-bold">
+                        {d.creditedAmount != null
+                          ? `${d.creditedAmount.toFixed(0)} ${d.userCurrency}`
+                          : `${d.amount.toFixed(0)} ${d.currency}`}
+                      </span>
                       <span className="text-muted-foreground">{t('deposits.amount')} :</span>
                       <span className="font-bold">{d.amount.toFixed(2)} {d.currency}</span>
                       <span className="text-muted-foreground">{t('deposits.date')} :</span>

@@ -94,7 +94,15 @@ router.get("/deposits", requireUser, async (req: Request, res: Response): Promis
   const user = (req as any).currentUser;
   try {
     const result = await pool.query(
-      `SELECT * FROM deposit_requests WHERE user_id=$1 ORDER BY created_at DESC`,
+      `SELECT dr.*,
+              u.currency AS user_currency,
+              wt.amount  AS credited_amount
+       FROM deposit_requests dr
+       JOIN users u ON u.id = dr.user_id
+       LEFT JOIN wallet_transactions wt
+              ON wt.ref_id = dr.id AND wt.type = 'deposit'
+       WHERE dr.user_id = $1
+       ORDER BY dr.created_at DESC`,
       [user.id]
     );
     res.json(result.rows.map(r => ({
@@ -102,6 +110,8 @@ router.get("/deposits", requireUser, async (req: Request, res: Response): Promis
       paymentMethodName: r.payment_method_name,
       amount: parseFloat(r.amount),
       currency: r.currency,
+      creditedAmount: r.credited_amount != null ? parseFloat(r.credited_amount) : null,
+      userCurrency: r.user_currency,
       receiptUrl: r.receipt_url,
       status: r.status,
       adminNote: r.admin_note,
