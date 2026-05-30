@@ -40,7 +40,8 @@ export default function YazanCardImporter() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [markupPercent, setMarkupPercent] = useState(0);
+  const [markupPercent, setMarkupPercent] = useState(() => Number(localStorage.getItem("yz_markup") ?? 0));
+  const [markupSaved, setMarkupSaved] = useState(false);
   const [sectionId, setSectionId] = useState<number | "">("");
   const [sections, setSections] = useState<Section[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
@@ -356,8 +357,24 @@ export default function YazanCardImporter() {
         <div className="pt-1">
           <Label className="text-sm mb-1.5 block">نسبة الربح %</Label>
           <div className="flex items-center gap-2">
-            <Input type="number" min={0} max={200} value={markupPercent} onChange={e => setMarkupPercent(Number(e.target.value))} className="w-28" />
+            <Input
+              type="number" min={0} max={200}
+              value={markupPercent}
+              onChange={e => { setMarkupPercent(Number(e.target.value)); setMarkupSaved(false); }}
+              className="w-28"
+            />
             <span className="text-muted-foreground text-sm whitespace-nowrap">%</span>
+            <Button
+              size="sm"
+              variant={markupSaved ? "outline" : "default"}
+              className={markupSaved ? "text-green-400 border-green-500/50" : ""}
+              onClick={() => {
+                localStorage.setItem("yz_markup", String(markupPercent));
+                setMarkupSaved(true);
+              }}
+            >
+              {markupSaved ? "✓ تم الحفظ" : "حفظ"}
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {markupPercent === 0 ? "بدون ربح — سعر التكلفة مباشرة" : `شراء 10 → بيع ${(10 * (1 + markupPercent / 100)).toFixed(2)}`}
