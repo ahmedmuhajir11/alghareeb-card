@@ -95,28 +95,60 @@ router.get("/deposits", requireUser, async (req: Request, res: Response): Promis
   try {
     const result = await pool.query(
       `SELECT dr.*,
-              u.currency AS user_currency,
-              wt.amount  AS credited_amount
+              u.currency                     AS user_currency,
+              wt.amount                      AS credited_amount,
+              -- deposit_rate for user's currency (used for Sham Cash style conversions)
+              COALESCE(uc.deposit_rate, uc.usd_rate) AS user_deposit_rate,
+              -- deposit_rate for deposit currency (to convert TO usd first if needed)
+              COALESCE(dc.deposit_rate, dc.usd_rate) AS dep_deposit_rate
        FROM deposit_requests dr
        JOIN users u ON u.id = dr.user_id
        LEFT JOIN wallet_transactions wt
               ON wt.ref_id = dr.id AND wt.type = 'deposit'
+       LEFT JOIN currencies uc ON uc.code = u.currency
+       LEFT JOIN currencies dc ON dc.code = dr.currency
        WHERE dr.user_id = $1
        ORDER BY dr.created_at DESC`,
       [user.id]
     );
-    res.json(result.rows.map(r => ({
-      id: r.id,
-      paymentMethodName: r.payment_method_name,
-      amount: parseFloat(r.amount),
-      currency: r.currency,
-      creditedAmount: r.credited_amount != null ? parseFloat(r.credited_amount) : null,
-      userCurrency: r.user_currency,
-      receiptUrl: r.receipt_url,
-      status: r.status,
-      adminNote: r.admin_note,
-      createdAt: r.created_at,
-    })));
+    res.json(result.rows.map(r => {
+      // For approved deposits use the actual credited amount from wallet_transactions
+      let creditedAmount: number | null = r.credited_amount != null ? parseFloat(r.credited_amount) : null;
+
+      // For pending/rejected deposits, estimate using current deposit rates
+      if (creditedAmount == null) {
+        const amt = parseFloat(r.amount);
+        const depCurrency: string = r.currency;
+        const userCurrency: string = r.user_currency;
+        if (depCurrency === userCurrency) {
+          creditedAmount = amt;
+        } else {
+          const depRate: number = r.dep_deposit_rate ? parseFloat(r.dep_deposit_rate) : 1;
+          const userRate: number = r.user_deposit_rate ? parseFloat(r.user_deposit_rate) : 1;
+          // Convert: amount / depRate = USD amount; USD amount * userRate = user currency amount
+          if (depCurrency === "USD") {
+            creditedAmount = amt * userRate;
+          } else if (userCurrency === "USD") {
+            creditedAmount = amt / depRate;
+          } else {
+            creditedAmount = (amt / depRate) * userRate;
+          }
+        }
+      }
+
+      return {
+        id: r.id,
+        paymentMethodName: r.payment_method_name,
+        amount: parseFloat(r.amount),
+        currency: r.currency,
+        creditedAmount,
+        userCurrency: r.user_currency,
+        receiptUrl: r.receipt_url,
+        status: r.status,
+        adminNote: r.admin_note,
+        createdAt: r.created_at,
+      };
+    }));
   } catch {
     res.status(500).json({ error: "خطأ في جلب الطلبات" });
   }
