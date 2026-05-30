@@ -368,12 +368,16 @@ export default function YazanCardImporter() {
               size="sm"
               variant={markupSaved ? "outline" : "default"}
               className={markupSaved ? "text-green-400 border-green-500/50" : ""}
-              onClick={() => {
+              disabled={syncing}
+              onClick={async () => {
                 localStorage.setItem("yz_markup", String(markupPercent));
                 setMarkupSaved(true);
+                await syncPrices();
               }}
             >
-              {markupSaved ? "✓ تم الحفظ" : "حفظ"}
+              {syncing
+                ? <><Loader2 className="w-3 h-3 animate-spin" />جاري التحديث...</>
+                : markupSaved ? "✓ تم الحفظ" : "حفظ وتحديث الأسعار"}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
