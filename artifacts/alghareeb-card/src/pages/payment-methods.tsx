@@ -174,6 +174,37 @@ function useFetchSettings() {
   });
 }
 
+// Deposit rate map: uses deposit_rate if set, falls back to usd_rate
+function useFetchDepositRates(): Record<string, number> {
+  const { data } = useQuery<Array<{ code: string; usdRate: number; depositRate: number | null }>>({
+    queryKey: ["/api/currencies", "deposit"],
+    queryFn: async () => {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/currencies`.replace(/\/\//g, "/").replace(":/", "://"));
+      if (!res.ok) throw new Error("failed");
+      return res.json();
+    },
+    staleTime: 60_000,
+  });
+  const map: Record<string, number> = { USD: 1 };
+  if (data) {
+    for (const c of data) {
+      const rate = (c.depositRate != null && c.depositRate > 0) ? c.depositRate : c.usdRate;
+      if (rate > 0) map[c.code.toUpperCase()] = rate;
+    }
+  }
+  return map;
+}
+
+function convertWithRateMap(amount: number, from: string, to: string, rateMap: Record<string, number>): number | null {
+  if (!isFinite(amount) || amount <= 0) return null;
+  const f = from.toUpperCase(), t = to.toUpperCase();
+  if (f === t) return amount;
+  const fromRate = rateMap[f] ?? null;
+  const toRate = rateMap[t] ?? null;
+  if (!fromRate || !toRate) return null;
+  return (amount / fromRate) * toRate;
+}
+
 type PaymentField = { label: string; value: string; isCopyable: boolean };
 type PaymentMethod = {
   id: number;
@@ -307,6 +338,7 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: settings } = useFetchSettings();
+  const depositRates = useFetchDepositRates();
 
   const taxPct = typeof method.taxPercent === "number" && method.taxPercent > 0 ? method.taxPercent : 0;
 
@@ -315,8 +347,9 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
     if (!amt || amt <= 0) return null;
     const netAmt = taxPct > 0 ? amt * (1 - taxPct / 100) : amt;
     if (sentCurrency.toUpperCase() === userCurrency) return netAmt;
-    return convertAmount(netAmt, sentCurrency, userCurrency, settings);
-  }, [sentCurrency, userCurrency, amount, settings, taxPct]);
+    // Use deposit_rate for the preview (falls back to usd_rate if not set)
+    return convertWithRateMap(netAmt, sentCurrency, userCurrency, depositRates);
+  }, [sentCurrency, userCurrency, amount, depositRates, taxPct]);
 
   if (!isSignedIn) {
     return (
