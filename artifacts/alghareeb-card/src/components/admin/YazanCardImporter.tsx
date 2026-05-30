@@ -53,6 +53,34 @@ export default function YazanCardImporter() {
   const [importMode, setImportMode] = useState<"flat" | "grouped">("flat");
   const [fixingToken, setFixingToken] = useState(false);
   const [fixResult, setFixResult] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  async function syncPrices() {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const body: Record<string, unknown> = {
+        baseUrl: providerBase,
+        markupPercent: Number(markupPercent),
+        sourceCurrency,
+      };
+      if (!useEnvToken && customToken) body.token = customToken;
+      const res = await fetch("/api/admin/provider/sync-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+      const d = await res.json();
+      if (!res.ok) { setSyncResult(`❌ ${d.error}`); return; }
+      setSyncResult(`✅ تم تحديث ${d.updated} سعر من أصل ${d.total} منتج${d.errors?.length ? ` (${d.errors.length} خطأ)` : ""}`);
+    } catch (e: any) {
+      setSyncResult(`❌ ${e.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   async function fixYazanToken() {
     setFixingToken(true);
@@ -237,6 +265,32 @@ export default function YazanCardImporter() {
         </div>
         <Button size="sm" variant="outline" className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10 shrink-0" onClick={fixYazanToken} disabled={fixingToken}>
           {fixingToken ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />جاري...</> : "إصلاح التوكن"}
+        </Button>
+      </div>
+
+      {/* Sync prices banner */}
+      <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex-1 text-sm">
+          <p className="font-semibold text-blue-400 flex items-center gap-1.5">
+            <RefreshCw className="w-4 h-4" />
+            تحديث أسعار المنتجات من المزود
+          </p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            يجلب أحدث الأسعار من المزود المختار ويُحدّث الباقات الموجودة في قاعدة البيانات — استخدم هذا يومياً للحفاظ على الأسعار محدّثة
+          </p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            سيُطبَّق نفس الـ Markup ({markupPercent}%) والعملة ({sourceCurrency}) المضبوطين أدناه
+          </p>
+          {syncResult && <p className="mt-1.5 text-xs font-mono">{syncResult}</p>}
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10 shrink-0 gap-1.5"
+          onClick={syncPrices}
+          disabled={syncing}
+        >
+          {syncing ? <><Loader2 className="w-4 h-4 animate-spin" />جاري التحديث...</> : <><RefreshCw className="w-4 h-4" />تحديث الأسعار الآن</>}
         </Button>
       </div>
 

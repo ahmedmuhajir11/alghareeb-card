@@ -254,6 +254,85 @@ router.post("/admin/provider/import", requireAdmin, async (req: Request, res: Re
   res.json({ imported: imported.length, skipped: skipped.length, errors, names: imported });
 });
 
+// ─── Sync prices: update existing packages/items prices from provider ───
+router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const { baseUrl, token, markupPercent = 0, sourceCurrency = "USD" } = req.body;
+
+  const resolvedToken = (token as string) || process.env.YAZANCARD_TOKEN || "";
+  const resolvedBase = normalizeBase((baseUrl as string) || "https://api.yazancard.com/client/api");
+
+  if (!resolvedToken) {
+    res.status(400).json({ error: "token مطلوب" });
+    return;
+  }
+
+  // Fetch all products from provider
+  let allProducts: any[] = [];
+  try {
+    const r = await fetch(`${resolvedBase}/products`, {
+      headers: { Authorization: `Bearer ${resolvedToken}` },
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d: any = await r.json();
+    allProducts = Array.isArray(d) ? d : (d.products ?? d.data ?? []);
+  } catch (err: any) {
+    res.status(502).json({ error: `فشل جلب المنتجات: ${err.message}` });
+    return;
+  }
+
+  // Resolve exchange rate
+  let currencyRate = 1;
+  if (sourceCurrency && sourceCurrency !== "USD") {
+    try {
+      const rateRes = await db.select().from(settingsTable).limit(1);
+      const s = rateRes[0];
+      if (s) {
+        if (sourceCurrency === "TRY") currencyRate = (s as any).usdToTry ?? 1;
+        else if (sourceCurrency === "SYP") currencyRate = (s as any).usdToSyp ?? 1;
+        else if (sourceCurrency === "EUR") currencyRate = (s as any).usdToEur ?? 1;
+      }
+    } catch { /* use 1 */ }
+  }
+
+  const markup = 1 + Number(markupPercent) / 100;
+  let updated = 0;
+  const errors: string[] = [];
+
+  for (const p of allProducts) {
+    try {
+      const endpoint = `${resolvedBase}/newOrder/${p.id}`;
+      const newPriceUsd = (Number(p.price) / currencyRate) * markup;
+      if (!isFinite(newPriceUsd) || newPriceUsd <= 0) continue;
+
+      // Update matching packages
+      const pkgs = await db.select({ id: packagesTable.id })
+        .from(packagesTable)
+        .where(eq(packagesTable.apiEndpoint as any, endpoint));
+      for (const pkg of pkgs) {
+        await db.update(packagesTable)
+          .set({ priceUsd: newPriceUsd } as any)
+          .where(eq(packagesTable.id, pkg.id));
+        updated++;
+      }
+
+      // Update matching items (flat mode items)
+      const items = await db.select({ id: itemsTable.id })
+        .from(itemsTable)
+        .where(eq(itemsTable.apiEndpoint, endpoint));
+      for (const item of items) {
+        await db.update(itemsTable)
+          .set({ pricePerUnit: newPriceUsd } as any)
+          .where(eq(itemsTable.id, item.id));
+        updated++;
+      }
+    } catch (err: any) {
+      errors.push(`${p.name}: ${err.message}`);
+    }
+  }
+
+  res.json({ updated, total: allProducts.length, errors });
+});
+
 // Legacy import route
 router.post("/admin/yazancard/import", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const token = process.env.YAZANCARD_TOKEN || "";
