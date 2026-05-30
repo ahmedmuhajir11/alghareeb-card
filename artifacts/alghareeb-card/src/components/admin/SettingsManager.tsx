@@ -31,9 +31,6 @@ export default function SettingsManager() {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    usdToTry: 0, usdToSyp: 0, usdToEur: 0, usdToOmr: 0,
-    usdToMad: 0, usdToDzd: 0, usdToIls: 0, usdToIqd: 0,
-    usdToSar: 0, usdToEgp: 0, usdToJod: 0,
     marqueeText: "", marqueeTextEn: "", marqueeTextTr: "",
     whatsappNumber: "", moneyTransferCurrencies: "",
     welcomeMessage: "", welcomeMessageAr: "", welcomeMessageEn: "", welcomeMessageTr: "",
@@ -56,17 +53,6 @@ export default function SettingsManager() {
   useEffect(() => {
     if (settings) {
       setFormData({
-        usdToTry: settings.usdToTry || 0,
-        usdToSyp: settings.usdToSyp || 0,
-        usdToEur: settings.usdToEur || 0,
-        usdToOmr: settings.usdToOmr || 0,
-        usdToMad: settings.usdToMad || 0,
-        usdToDzd: settings.usdToDzd || 0,
-        usdToIls: settings.usdToIls || 0,
-        usdToIqd: settings.usdToIqd || 0,
-        usdToSar: settings.usdToSar || 0,
-        usdToEgp: settings.usdToEgp || 0,
-        usdToJod: settings.usdToJod || 0,
         marqueeText: settings.marqueeText || "",
         marqueeTextEn: (settings as any).marqueeTextEn || "",
         marqueeTextTr: (settings as any).marqueeTextTr || "",

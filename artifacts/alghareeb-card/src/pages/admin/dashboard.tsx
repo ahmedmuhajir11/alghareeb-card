@@ -11,7 +11,7 @@ import OrdersManager from "@/components/admin/OrdersManager";
 import UsersManager from "@/components/admin/UsersManager";
 import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users, BadgeCheck, BarChart2, Package } from "lucide-react";
 import IdentitiesManager from "@/components/admin/IdentitiesManager";
-import CurrenciesManager from "@/components/admin/CurrenciesManager";
+
 import StatsManager from "@/components/admin/StatsManager";
 import YazanCardImporter from "@/components/admin/YazanCardImporter";
 
@@ -144,10 +144,6 @@ export default function AdminDashboard() {
         <TabsContent value="settings" className="mt-6">
           <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm space-y-8">
             <SettingsManager />
-            <div className="border-t border-border/40 pt-6">
-              <h3 className="text-base font-bold mb-4">إدارة العملات وأسعار الصرف</h3>
-              <CurrenciesManager />
-            </div>
           </div>
         </TabsContent>
 

@@ -10,31 +10,27 @@ const ADMIN_PASSWORD = "abohane12345";
 const JWT_SECRET = process.env.SESSION_SECRET ?? "alghareeb-card-secret-key-2024";
 const COOKIE_NAME = "admin_token";
 
-function rateForCurrency(currency: string, settings: any): number | null {
+async function getCurrencyRates(): Promise<Record<string, number>> {
+  const res = await pool.query("SELECT code, usd_rate FROM currencies WHERE is_active = true");
+  const map: Record<string, number> = { USD: 1 };
+  for (const row of res.rows) {
+    const rate = parseFloat(row.usd_rate);
+    if (rate > 0) map[row.code.toUpperCase()] = rate;
+  }
+  return map;
+}
+
+function rateForCurrency(currency: string, rates: Record<string, number>): number | null {
   const c = (currency || "").toUpperCase();
-  if (c === "USD") return 1;
-  const map: Record<string, number | undefined> = {
-    TRY: settings?.usd_to_try,
-    SYP: settings?.usd_to_syp,
-    EUR: settings?.usd_to_eur,
-    OMR: settings?.usd_to_omr,
-    MAD: settings?.usd_to_mad,
-    DZD: settings?.usd_to_dzd,
-    ILS: settings?.usd_to_ils,
-    IQD: settings?.usd_to_iqd,
-    SAR: settings?.usd_to_sar,
-    EGP: settings?.usd_to_egp,
-    JOD: settings?.usd_to_jod,
-  };
-  const v = map[c];
+  const v = rates[c];
   return typeof v === "number" && v > 0 ? v : null;
 }
 
-function convertCurrency(amount: number, from: string, to: string, settings: any): number | null {
+function convertCurrency(amount: number, from: string, to: string, rates: Record<string, number>): number | null {
   if (!isFinite(amount)) return null;
   if ((from || "").toUpperCase() === (to || "").toUpperCase()) return amount;
-  const fromRate = rateForCurrency(from, settings);
-  const toRate = rateForCurrency(to, settings);
+  const fromRate = rateForCurrency(from, rates);
+  const toRate = rateForCurrency(to, rates);
   if (fromRate === null || toRate === null) return null;
   const usd = amount / fromRate;
   return usd * toRate;
