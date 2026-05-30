@@ -30,9 +30,9 @@ router.get("/settings", async (req, res): Promise<void> => {
   }
   const row = serializeRow(settings);
 
-  // Overlay exchange rates from currencies table (single source of truth)
+  // Overlay exchange rates from currencies table — use deposit_rate if set, else usd_rate
   try {
-    const curRes = await pool.query("SELECT code, usd_rate FROM currencies WHERE is_active = true");
+    const curRes = await pool.query("SELECT code, usd_rate, deposit_rate FROM currencies WHERE is_active = true");
     const fieldMap: Record<string, string> = {
       TRY: "usdToTry", SYP: "usdToSyp", EUR: "usdToEur", OMR: "usdToOmr",
       MAD: "usdToMad", DZD: "usdToDzd", ILS: "usdToIls", IQD: "usdToIqd",
@@ -40,7 +40,12 @@ router.get("/settings", async (req, res): Promise<void> => {
     };
     for (const r of curRes.rows) {
       const field = fieldMap[r.code?.toUpperCase()];
-      if (field) row[field] = parseFloat(r.usd_rate) || 0;
+      if (field) {
+        const rate = (r.deposit_rate != null && parseFloat(r.deposit_rate) > 0)
+          ? parseFloat(r.deposit_rate)
+          : parseFloat(r.usd_rate);
+        row[field] = rate || 0;
+      }
     }
   } catch { /* fallback to settings table values */ }
 
