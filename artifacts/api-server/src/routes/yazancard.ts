@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, itemsTable, packagesTable, settingsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { requireAdmin } from "../middleware/requireAdmin";
 
 const router: IRouter = Router();
@@ -287,9 +287,9 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       const rateRes = await db.select().from(settingsTable).limit(1);
       const s = rateRes[0];
       if (s) {
-        if (sourceCurrency === "TRY") currencyRate = (s as any).usdToTry ?? 1;
-        else if (sourceCurrency === "SYP") currencyRate = (s as any).usdToSyp ?? 1;
-        else if (sourceCurrency === "EUR") currencyRate = (s as any).usdToEur ?? 1;
+        if (sourceCurrency === "TRY") currencyRate = s.usdToTry ?? 1;
+        else if (sourceCurrency === "SYP") currencyRate = s.usdToSyp ?? 1;
+        else if (sourceCurrency === "EUR") currencyRate = s.usdToEur ?? 1;
       }
     } catch { /* use 1 */ }
   }
@@ -304,24 +304,24 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       const newPriceUsd = (Number(p.price) / currencyRate) * markup;
       if (!isFinite(newPriceUsd) || newPriceUsd <= 0) continue;
 
-      // Update matching packages
+      // Update matching packages (grouped import mode)
       const pkgs = await db.select({ id: packagesTable.id })
         .from(packagesTable)
-        .where(eq(packagesTable.apiEndpoint as any, endpoint));
+        .where(sql`${packagesTable}.api_endpoint = ${endpoint}`);
       for (const pkg of pkgs) {
         await db.update(packagesTable)
-          .set({ priceUsd: newPriceUsd } as any)
+          .set({ priceUsd: newPriceUsd })
           .where(eq(packagesTable.id, pkg.id));
         updated++;
       }
 
-      // Update matching items (flat mode items)
+      // Update matching items (flat import mode)
       const items = await db.select({ id: itemsTable.id })
         .from(itemsTable)
         .where(eq(itemsTable.apiEndpoint, endpoint));
       for (const item of items) {
         await db.update(itemsTable)
-          .set({ pricePerUnit: newPriceUsd } as any)
+          .set({ pricePerUnit: newPriceUsd })
           .where(eq(itemsTable.id, item.id));
         updated++;
       }
