@@ -296,10 +296,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {tickerMode === "marquee" && marqueeText && (
         <div className="bg-gradient-neon text-white py-2 overflow-hidden relative border-b border-primary/20">
-          <div className="inline-flex whitespace-nowrap" style={{ animation: "marqueeScroll 30s linear infinite", width: "200%" }}>
-            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ width: "50%", display: "inline-block", textAlign: "center" }}>{marqueeText}</span>
-            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ width: "50%", display: "inline-block", textAlign: "center" }} aria-hidden="true">{marqueeText}</span>
-          </div>
+          <span
+            className="font-bold tracking-wider text-sm md:text-base neon-text inline-block whitespace-nowrap"
+            style={{ animation: "marqueeRTL 25s linear infinite" }}
+          >
+            {marqueeText}
+          </span>
         </div>
       )}
 
