@@ -318,34 +318,50 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       const productName = (p.name as string) || "";
       let matchedThis = false;
 
+      const isAvailable = p.available !== false;
+
       // 1) Update matching packages by apiEndpoint (grouped import mode)
-      const pkgs = await db.select({ id: packagesTable.id })
+      const pkgs = await db.select({ id: packagesTable.id, priceUsd: packagesTable.priceUsd, isAvailable: packagesTable.isAvailable })
         .from(packagesTable)
         .where(sql`${packagesTable}.api_endpoint = ${endpoint}`);
       for (const pkg of pkgs) {
-        await db.update(packagesTable)
-          .set({ priceUsd: newPriceUsd })
-          .where(eq(packagesTable.id, pkg.id));
-        updated++;
-        matchedThis = true;
+        const priceChanged = Math.abs((pkg.priceUsd ?? 0) - newPriceUsd) > 0.0001;
+        const availChanged = (pkg.isAvailable ?? true) !== isAvailable;
+        if (priceChanged || availChanged) {
+          await db.update(packagesTable)
+            .set({ priceUsd: newPriceUsd, isAvailable })
+            .where(eq(packagesTable.id, pkg.id));
+          updated++;
+          matchedThis = true;
+          if (productName && !updatedNames.includes(productName)) updatedNames.push(productName);
+        } else {
+          matchedThis = true; // matched but unchanged — don't count or show
+        }
       }
 
       // 2) Update matching items by apiEndpoint (flat import mode — endpoint stored)
-      const itemsByEndpoint = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr })
+      const itemsByEndpoint = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr, pricePerUnit: itemsTable.pricePerUnit, isAvailable: itemsTable.isAvailable })
         .from(itemsTable)
         .where(eq(itemsTable.apiEndpoint, endpoint));
       for (const item of itemsByEndpoint) {
-        await db.update(itemsTable)
-          .set({ pricePerUnit: newPriceUsd })
-          .where(eq(itemsTable.id, item.id));
-        updated++;
-        matchedThis = true;
-        if (productName && !updatedNames.includes(productName)) updatedNames.push(productName);
+        const priceChanged = Math.abs((item.pricePerUnit ?? 0) - newPriceUsd) > 0.0001;
+        const availChanged = (item.isAvailable ?? true) !== isAvailable;
+        if (priceChanged || availChanged) {
+          await db.update(itemsTable)
+            .set({ pricePerUnit: newPriceUsd, isAvailable })
+            .where(eq(itemsTable.id, item.id));
+          updated++;
+          matchedThis = true;
+          const displayName = item.nameAr || item.nameEn || productName;
+          if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
+        } else {
+          matchedThis = true;
+        }
       }
 
       // 3) Fallback: match items by name when no apiEndpoint is stored
       if (!matchedThis && productName) {
-        const itemsByName = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr })
+        const itemsByName = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr, pricePerUnit: itemsTable.pricePerUnit, isAvailable: itemsTable.isAvailable })
           .from(itemsTable)
           .where(
             and(
@@ -354,17 +370,20 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
             )
           );
         for (const item of itemsByName) {
-          await db.update(itemsTable)
-            .set({ pricePerUnit: newPriceUsd, apiEndpoint: endpoint })
-            .where(eq(itemsTable.id, item.id));
-          updated++;
-          const displayName = item.nameAr || item.nameEn || productName;
-          if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
+          const priceChanged = Math.abs((item.pricePerUnit ?? 0) - newPriceUsd) > 0.0001;
+          const availChanged = (item.isAvailable ?? true) !== isAvailable;
+          if (priceChanged || availChanged) {
+            await db.update(itemsTable)
+              .set({ pricePerUnit: newPriceUsd, isAvailable, apiEndpoint: endpoint })
+              .where(eq(itemsTable.id, item.id));
+            updated++;
+            const displayName = item.nameAr || item.nameEn || productName;
+            if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
+          } else {
+            // Still store the endpoint for faster future lookups
+            await db.update(itemsTable).set({ apiEndpoint: endpoint }).where(eq(itemsTable.id, item.id));
+          }
         }
-      }
-
-      if (matchedThis && productName && !updatedNames.includes(productName)) {
-        updatedNames.push(productName);
       }
     } catch (err: any) {
       errors.push(`${p.name}: ${err.message}`);
