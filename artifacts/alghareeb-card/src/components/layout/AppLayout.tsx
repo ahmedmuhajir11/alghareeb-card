@@ -9,7 +9,7 @@ import WelcomeModal from "@/components/WelcomeModal";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-function MarqueeText({ text }: { text: string }) {
+function MarqueeText({ text, rtl }: { text: string; rtl: boolean }) {
   const spanRef = useRef<HTMLSpanElement>(null);
   const posRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
@@ -19,20 +19,31 @@ function MarqueeText({ text }: { text: string }) {
     if (!span) return;
     const vw = window.innerWidth;
     const textW = span.offsetWidth;
-    // start off-screen to the left
-    posRef.current = -textW;
     const speed = 1.2; // px per frame ~72px/s at 60fps
+
+    if (rtl) {
+      // RTL language (Arabic): scroll right-to-left — enter from right, exit left
+      posRef.current = vw;
+    } else {
+      // LTR language: scroll left-to-right — enter from left, exit right
+      posRef.current = -textW;
+    }
 
     function step() {
       if (posRef.current === null) return;
-      posRef.current += speed;
-      if (posRef.current > vw) posRef.current = -textW;
+      if (rtl) {
+        posRef.current -= speed;
+        if (posRef.current < -textW) posRef.current = vw;
+      } else {
+        posRef.current += speed;
+        if (posRef.current > vw) posRef.current = -textW;
+      }
       span!.style.transform = `translateX(${posRef.current}px)`;
       rafRef.current = requestAnimationFrame(step);
     }
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [text]);
+  }, [text, rtl]);
 
   return (
     <div className="bg-gradient-neon text-white py-2 overflow-hidden border-b border-primary/20">
@@ -333,7 +344,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {tickerMode === "marquee" && marqueeText && (
-        <MarqueeText text={marqueeText} />
+        <MarqueeText text={marqueeText} rtl={isRtlLang} />
       )}
 
       {tickerMode === "notifications" && currentMsg && (
