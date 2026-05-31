@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminPushBanner from "@/components/admin/AdminPushBanner";
 import SettingsManager from "@/components/admin/SettingsManager";
@@ -18,13 +18,25 @@ import YazanCardImporter from "@/components/admin/YazanCardImporter";
 const VALID_TABS = ["stats","orders","deposits","users","sections","payments","slider","ticker","notifications","identities","settings","yazancard"];
 const TAB_CLASS = "flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-colors";
 
+function getTabFromUrl(): string {
+  const p = new URLSearchParams(window.location.search).get("tab") ?? "";
+  return VALID_TABS.includes(p) ? p : "stats";
+}
+
 export default function AdminDashboard() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab") ?? "";
-  const activeTab = VALID_TABS.includes(tabParam) ? tabParam : "stats";
+  const [activeTab, setActiveTab] = useState(getTabFromUrl);
+
+  useEffect(() => {
+    const onPop = () => setActiveTab(getTabFromUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   function handleTabChange(value: string) {
-    setSearchParams({ tab: value }, { replace: true });
+    setActiveTab(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", value);
+    window.history.replaceState(null, "", url.toString());
   }
 
   return (
