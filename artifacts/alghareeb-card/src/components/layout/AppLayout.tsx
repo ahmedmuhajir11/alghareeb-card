@@ -295,10 +295,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {tickerMode === "marquee" && marqueeText && (
-        <div className="bg-gradient-neon text-white py-2 overflow-hidden border-b border-primary/20" dir="ltr">
-          <div style={{ display: "flex", flexDirection: "row", whiteSpace: "nowrap", animation: "marqueeRTL 20s linear infinite", willChange: "transform" }}>
-            <span className="font-bold tracking-wider text-sm md:text-base neon-text text-center" style={{ display: "inline-block", minWidth: "100vw" }}>{marqueeText}</span>
-            <span className="font-bold tracking-wider text-sm md:text-base neon-text text-center" style={{ display: "inline-block", minWidth: "100vw" }} aria-hidden="true">{marqueeText}</span>
+        <div className="bg-gradient-neon text-white border-b border-primary/20 relative overflow-hidden" style={{ height: "2.25rem" }} dir="ltr">
+          <div
+            className="absolute top-0 left-0 h-full flex items-center"
+            style={{ width: "200vw", animation: "marqueeRTL 20s linear infinite", willChange: "transform" }}
+          >
+            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ width: "100vw", textAlign: "center", flexShrink: 0 }}>{marqueeText}</span>
+            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ width: "100vw", textAlign: "center", flexShrink: 0 }} aria-hidden="true">{marqueeText}</span>
           </div>
         </div>
       )}
