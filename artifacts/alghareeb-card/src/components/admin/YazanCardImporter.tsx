@@ -56,10 +56,12 @@ export default function YazanCardImporter() {
   const [fixResult, setFixResult] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [syncNames, setSyncNames] = useState<string[]>([]);
 
   async function syncPrices() {
     setSyncing(true);
     setSyncResult(null);
+    setSyncNames([]);
     try {
       const body: Record<string, unknown> = {
         baseUrl: providerBase,
@@ -82,6 +84,7 @@ export default function YazanCardImporter() {
       }
       const d = JSON.parse(text);
       setSyncResult(`✅ تم تحديث ${d.updated} سعر من أصل ${d.total} منتج${d.errors?.length ? ` (${d.errors.length} خطأ)` : ""}`);
+      if (Array.isArray(d.updatedNames)) setSyncNames(d.updatedNames);
     } catch (e: any) {
       setSyncResult(`❌ ${e.message}`);
     } finally {
@@ -289,6 +292,20 @@ export default function YazanCardImporter() {
             سيُطبَّق نفس الـ Markup ({markupPercent}%) والعملة ({sourceCurrency}) المضبوطين أدناه
           </p>
           {syncResult && <p className="mt-1.5 text-xs font-mono">{syncResult}</p>}
+          {syncNames.length > 0 && (
+            <div className="mt-2 border border-border rounded-md overflow-hidden">
+              <p className="text-xs text-muted-foreground px-2 py-1 bg-muted/30 border-b border-border">
+                التطبيقات المحدّثة ({syncNames.length}):
+              </p>
+              <ul className="max-h-40 overflow-y-auto divide-y divide-border/40">
+                {syncNames.map((name, i) => (
+                  <li key={i} className="text-xs px-2 py-1 text-green-400 flex items-center gap-1.5">
+                    <span className="text-green-500">✓</span> {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         <Button
           size="sm"

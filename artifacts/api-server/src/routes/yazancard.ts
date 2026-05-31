@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, itemsTable, packagesTable, settingsTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, or, ilike } from "drizzle-orm";
 import { requireAdmin } from "../middleware/requireAdmin";
 
 const router: IRouter = Router();
@@ -306,6 +306,7 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
 
   const markup = 1 + Number(markupPercent) / 100;
   let updated = 0;
+  const updatedNames: string[] = [];
   const errors: string[] = [];
 
   for (const p of allProducts) {
@@ -314,7 +315,10 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       const newPriceUsd = (Number(p.price) / currencyRate) * markup;
       if (!isFinite(newPriceUsd) || newPriceUsd <= 0) continue;
 
-      // Update matching packages (grouped import mode)
+      const productName = (p.name as string) || "";
+      let matchedThis = false;
+
+      // 1) Update matching packages by apiEndpoint (grouped import mode)
       const pkgs = await db.select({ id: packagesTable.id })
         .from(packagesTable)
         .where(sql`${packagesTable}.api_endpoint = ${endpoint}`);
@@ -323,24 +327,51 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
           .set({ priceUsd: newPriceUsd })
           .where(eq(packagesTable.id, pkg.id));
         updated++;
+        matchedThis = true;
       }
 
-      // Update matching items (flat import mode)
-      const items = await db.select({ id: itemsTable.id })
+      // 2) Update matching items by apiEndpoint (flat import mode — endpoint stored)
+      const itemsByEndpoint = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr })
         .from(itemsTable)
         .where(eq(itemsTable.apiEndpoint, endpoint));
-      for (const item of items) {
+      for (const item of itemsByEndpoint) {
         await db.update(itemsTable)
           .set({ pricePerUnit: newPriceUsd })
           .where(eq(itemsTable.id, item.id));
         updated++;
+        matchedThis = true;
+        if (productName && !updatedNames.includes(productName)) updatedNames.push(productName);
+      }
+
+      // 3) Fallback: match items by name when no apiEndpoint is stored
+      if (!matchedThis && productName) {
+        const itemsByName = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr })
+          .from(itemsTable)
+          .where(
+            and(
+              or(ilike(itemsTable.nameEn, productName), ilike(itemsTable.nameAr, productName)),
+              sql`(${itemsTable.apiEndpoint} IS NULL OR ${itemsTable.apiEndpoint} = '')`
+            )
+          );
+        for (const item of itemsByName) {
+          await db.update(itemsTable)
+            .set({ pricePerUnit: newPriceUsd, apiEndpoint: endpoint })
+            .where(eq(itemsTable.id, item.id));
+          updated++;
+          const displayName = item.nameAr || item.nameEn || productName;
+          if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
+        }
+      }
+
+      if (matchedThis && productName && !updatedNames.includes(productName)) {
+        updatedNames.push(productName);
       }
     } catch (err: any) {
       errors.push(`${p.name}: ${err.message}`);
     }
   }
 
-  res.json({ updated, total: allProducts.length, errors });
+  res.json({ updated, total: allProducts.length, updatedNames, errors });
 });
 
 // Legacy import route
