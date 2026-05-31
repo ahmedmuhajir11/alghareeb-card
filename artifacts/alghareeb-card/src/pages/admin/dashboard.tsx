@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminPushBanner from "@/components/admin/AdminPushBanner";
 import SettingsManager from "@/components/admin/SettingsManager";
@@ -11,13 +12,21 @@ import OrdersManager from "@/components/admin/OrdersManager";
 import UsersManager from "@/components/admin/UsersManager";
 import { Layers, CreditCard, Image, Bell, Settings, Megaphone, Wallet, ShoppingBag, Users, BadgeCheck, BarChart2, Package } from "lucide-react";
 import IdentitiesManager from "@/components/admin/IdentitiesManager";
-
 import StatsManager from "@/components/admin/StatsManager";
 import YazanCardImporter from "@/components/admin/YazanCardImporter";
 
+const VALID_TABS = ["stats","orders","deposits","users","sections","payments","slider","ticker","notifications","identities","settings","yazancard"];
 const TAB_CLASS = "flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-colors";
 
 export default function AdminDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") ?? "";
+  const activeTab = VALID_TABS.includes(tabParam) ? tabParam : "stats";
+
+  function handleTabChange(value: string) {
+    setSearchParams({ tab: value }, { replace: true });
+  }
+
   return (
     <div className="space-y-8 pb-10">
       <div className="border-b border-border/30 pb-4">
@@ -27,7 +36,7 @@ export default function AdminDashboard() {
 
       <AdminPushBanner />
 
-      <Tabs defaultValue="stats" className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="overflow-x-auto pb-1">
           <TabsList className="flex w-max min-w-full md:grid md:grid-cols-12 bg-card border border-primary/20 h-auto p-1 gap-1">
             <TabsTrigger value="stats" className={TAB_CLASS}>
