@@ -128,10 +128,6 @@ const YZT = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
 async function run() {
   const c = await pool.connect();
   try {
-    // Remove auto-inserted Wowo/Taka items (and their packages/orders)
-    await c.query("DELETE FROM packages WHERE item_id IN (SELECT id FROM items WHERE name_en ILIKE 'wowo' OR name_en ILIKE 'taka')");
-    await c.query("DELETE FROM orders WHERE item_id IN (SELECT id FROM items WHERE name_en ILIKE 'wowo' OR name_en ILIKE 'taka')");
-    await c.query("DELETE FROM items WHERE name_en ILIKE 'wowo' OR name_en ILIKE 'taka'");
     await c.query(
       "UPDATE items SET api_endpoint=$1, api_key=$2 WHERE name_en ILIKE '%party star%'",
       ['https://api.yazancard.com/client/api/newOrder/145/params', YZT]
