@@ -66,12 +66,12 @@ router.post("/admin/login", async (req: Request, res: Response): Promise<void> =
   const { username, password } = parsed.data;
 
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    const token = jwt.sign({ isAdmin: true }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ isAdmin: true }, JWT_SECRET, { expiresIn: "12h" });
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 12 * 60 * 60 * 1000,
     });
     res.json(AdminLoginResponse.parse({ success: true, message: "تم تسجيل الدخول بنجاح" }));
     return;
