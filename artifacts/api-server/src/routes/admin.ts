@@ -97,8 +97,17 @@ router.get("/admin/me", async (req: Request, res: Response): Promise<void> => {
 router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const status = (req.query.status as string) || "all";
   try {
-    let q = `SELECT d.*, u.name as user_name, u.email as user_email, u.account_number as user_account
-             FROM deposit_requests d LEFT JOIN users u ON u.id = d.user_id`;
+    let q = `SELECT d.*,
+              u.name as user_name, u.email as user_email, u.account_number as user_account,
+              u.currency as user_currency,
+              wt.amount as credited_amount,
+              COALESCE(uc.deposit_rate, uc.usd_rate) AS user_deposit_rate,
+              COALESCE(dc.deposit_rate, dc.usd_rate) AS dep_deposit_rate
+             FROM deposit_requests d
+             LEFT JOIN users u ON u.id = d.user_id
+             LEFT JOIN wallet_transactions wt ON wt.ref_id = d.id AND wt.type = 'deposit'
+             LEFT JOIN currencies uc ON uc.code = u.currency
+             LEFT JOIN currencies dc ON dc.code = d.currency`;
     const params: any[] = [];
     if (status !== "all") {
       params.push(status);
@@ -106,22 +115,47 @@ router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response):
     }
     q += " ORDER BY d.created_at DESC";
     const result = await pool.query(q, params);
-    res.json(result.rows.map(r => ({
-      id: r.id,
-      userId: r.user_id,
-      userName: r.user_name,
-      userEmail: r.user_email,
-      userAccount: r.user_account,
-      paymentMethodName: r.payment_method_name,
-      amount: parseFloat(r.amount),
-      currency: r.currency,
-      receiptUrl: r.receipt_url,
-      senderName: r.sender_name,
-      status: r.status,
-      adminNote: r.admin_note,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
-    })));
+    res.json(result.rows.map(r => {
+      // Actual credited amount (approved deposits)
+      let creditedAmount: number | null = r.credited_amount != null ? parseFloat(r.credited_amount) : null;
+      // Estimated credited amount for pending/rejected deposits
+      if (creditedAmount == null && r.user_currency) {
+        const amt = parseFloat(r.amount);
+        const depCurrency: string = r.currency;
+        const userCurrency: string = r.user_currency;
+        if (depCurrency === userCurrency) {
+          creditedAmount = amt;
+        } else {
+          const depRate: number = r.dep_deposit_rate ? parseFloat(r.dep_deposit_rate) : 1;
+          const userRate: number = r.user_deposit_rate ? parseFloat(r.user_deposit_rate) : 1;
+          if (depCurrency === "USD") {
+            creditedAmount = amt * userRate;
+          } else if (userCurrency === "USD") {
+            creditedAmount = amt / depRate;
+          } else {
+            creditedAmount = (amt / depRate) * userRate;
+          }
+        }
+      }
+      return {
+        id: r.id,
+        userId: r.user_id,
+        userName: r.user_name,
+        userEmail: r.user_email,
+        userAccount: r.user_account,
+        userCurrency: r.user_currency ?? null,
+        creditedAmount,
+        paymentMethodName: r.payment_method_name,
+        amount: parseFloat(r.amount),
+        currency: r.currency,
+        receiptUrl: r.receipt_url,
+        senderName: r.sender_name,
+        status: r.status,
+        adminNote: r.admin_note,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      };
+    }));
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في جلب الطلبات: " + err.message });
   }

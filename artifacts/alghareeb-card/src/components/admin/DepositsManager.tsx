@@ -14,6 +14,8 @@ type DepositRow = {
   userName: string | null;
   userEmail: string | null;
   userAccount: string | null;
+  userCurrency: string | null;
+  creditedAmount: number | null;
   paymentMethodName: string;
   amount: number;
   currency: string;
@@ -211,9 +213,22 @@ function DepositCard({ d, executor }: { d: DepositRow; executor: any }) {
               التاريخ: {new Date(d.createdAt).toLocaleString("ar")}
             </div>
           </div>
-          <div className="text-left">
-            <div className="text-2xl font-black text-primary">{d.amount.toFixed(2)}</div>
-            <div className="text-xs text-muted-foreground">{d.currency}</div>
+          <div className="text-left min-w-[110px]">
+            {/* Credited amount in user's account currency */}
+            {d.creditedAmount != null && d.userCurrency && d.userCurrency !== d.currency ? (
+              <>
+                <div className="text-2xl font-black text-green-400">
+                  {d.creditedAmount.toFixed(0)}
+                </div>
+                <div className="text-xs font-semibold text-green-400/80 mb-0.5">{d.userCurrency}</div>
+                <div className="text-xs text-muted-foreground">{d.amount.toFixed(2)} {d.currency}</div>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-black text-primary">{d.amount.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">{d.currency}</div>
+              </>
+            )}
           </div>
         </div>
 

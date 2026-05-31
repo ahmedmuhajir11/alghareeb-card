@@ -38,6 +38,7 @@
     'artifacts/alghareeb-card/src/components/admin/TickerManager.tsx',
     'artifacts/alghareeb-card/src/components/layout/AppLayout.tsx',
     'artifacts/alghareeb-card/src/components/admin/OrdersManager.tsx',
+    'artifacts/alghareeb-card/src/components/admin/DepositsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/PaymentMethodsManager.tsx',
     'artifacts/alghareeb-card/src/components/WelcomeModal.tsx',
     'artifacts/alghareeb-card/src/pages/home.tsx',
