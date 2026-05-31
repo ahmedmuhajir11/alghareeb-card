@@ -35,16 +35,14 @@ function MarqueeText({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <div className="bg-gradient-neon text-white border-b border-primary/20" style={{ height: "2.25rem", overflow: "hidden", position: "relative" }}>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center" }}>
-        <span
-          ref={spanRef}
-          className="neon-text"
-          style={{ whiteSpace: "nowrap", fontWeight: "bold", fontSize: "0.9rem" }}
-        >
-          {text}
-        </span>
-      </div>
+    <div className="bg-gradient-neon text-white border-b border-primary/20" style={{ height: "2.25rem", overflow: "hidden", display: "flex", alignItems: "center" }}>
+      <span
+        ref={spanRef}
+        className="neon-text"
+        style={{ whiteSpace: "nowrap", fontWeight: "bold", fontSize: "0.9rem", flexShrink: 0 }}
+      >
+        {text}
+      </span>
     </div>
   );
 }
