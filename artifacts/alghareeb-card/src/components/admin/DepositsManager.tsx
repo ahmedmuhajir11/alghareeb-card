@@ -213,20 +213,28 @@ function DepositCard({ d, executor }: { d: DepositRow; executor: any }) {
               التاريخ: {new Date(d.createdAt).toLocaleString("ar")}
             </div>
           </div>
-          <div className="text-left min-w-[110px]">
-            {/* Credited amount in user's account currency */}
+          <div className="text-left min-w-[120px] space-y-1.5">
             {d.creditedAmount != null && d.userCurrency && d.userCurrency !== d.currency ? (
               <>
-                <div className="text-2xl font-black text-green-400">
-                  {d.creditedAmount.toFixed(0)}
+                <div>
+                  <div className="text-[10px] text-muted-foreground mb-0.5">الإجمالي</div>
+                  <div className="text-xl font-black text-green-400 leading-none">
+                    {d.creditedAmount.toFixed(0)} <span className="text-sm font-semibold">{d.userCurrency}</span>
+                  </div>
                 </div>
-                <div className="text-xs font-semibold text-green-400/80 mb-0.5">{d.userCurrency}</div>
-                <div className="text-xs text-muted-foreground">{d.amount.toFixed(2)} {d.currency}</div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground mb-0.5">القيمة المرسلة</div>
+                  <div className="text-sm font-bold text-foreground">
+                    {d.amount.toFixed(2)} <span className="text-xs text-muted-foreground">{d.currency}</span>
+                  </div>
+                </div>
               </>
             ) : (
               <>
-                <div className="text-2xl font-black text-primary">{d.amount.toFixed(2)}</div>
-                <div className="text-xs text-muted-foreground">{d.currency}</div>
+                <div className="text-[10px] text-muted-foreground mb-0.5">القيمة المرسلة</div>
+                <div className="text-2xl font-black text-primary leading-none">
+                  {d.amount.toFixed(2)} <span className="text-sm font-semibold text-muted-foreground">{d.currency}</span>
+                </div>
               </>
             )}
           </div>
