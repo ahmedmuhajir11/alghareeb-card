@@ -295,13 +295,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {tickerMode === "marquee" && marqueeText && (
-        <div className="bg-gradient-neon text-white py-2 overflow-hidden relative border-b border-primary/20" style={{ direction: "ltr" }}>
-          <span
-            className="font-bold tracking-wider text-sm md:text-base neon-text inline-block whitespace-nowrap"
-            style={{ paddingLeft: "100%", animation: "marqueeRTL 25s linear infinite" }}
-          >
-            {marqueeText}
-          </span>
+        <div className="bg-gradient-neon text-white py-2 overflow-hidden border-b border-primary/20" dir="ltr">
+          <div style={{ display: "inline-flex", whiteSpace: "nowrap", animation: "marqueeRTL 20s linear infinite" }}>
+            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ paddingRight: "6rem" }}>{marqueeText}</span>
+            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ paddingRight: "6rem" }} aria-hidden="true">{marqueeText}</span>
+          </div>
         </div>
       )}
 
