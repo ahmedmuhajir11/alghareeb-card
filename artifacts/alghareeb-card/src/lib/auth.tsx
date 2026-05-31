@@ -17,6 +17,7 @@ export interface AuthUser {
   avatarUrl?: string | null;
   isReseller?: boolean;
   apiToken?: string | null;
+  allowedIps?: string | null;
 }
 
 interface AuthCtx {

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { Copy, Check, RefreshCw, Code2, Lock } from "lucide-react";
+import { Copy, Check, RefreshCw, Code2, Lock, Save, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -52,6 +53,9 @@ export default function ResellerApiPage() {
   const { user, refetch } = useAuth();
   const { toast } = useToast();
   const [regenerating, setRegenerating] = useState(false);
+  const [ips, setIps] = useState<string>(() => user?.allowedIps ?? "");
+  const [savingIps, setSavingIps] = useState(false);
+  const allowAll = !ips.trim();
 
   if (!user?.isReseller) {
     return (
@@ -66,10 +70,7 @@ export default function ResellerApiPage() {
   async function regenerateToken() {
     setRegenerating(true);
     try {
-      const res = await fetch(`${API_BASE}/api/reseller/regenerate-token`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE}/api/reseller/regenerate-token`, { method: "POST", credentials: "include" });
       if (!res.ok) throw new Error("فشل");
       await refetch();
       toast({ title: "تم تجديد التوكن بنجاح" });
@@ -77,6 +78,25 @@ export default function ResellerApiPage() {
       toast({ title: "حدث خطأ", variant: "destructive" });
     } finally {
       setRegenerating(false);
+    }
+  }
+
+  async function saveIps() {
+    setSavingIps(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/reseller/save-ips`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ips }),
+      });
+      if (!res.ok) throw new Error("فشل");
+      await refetch();
+      toast({ title: allowAll ? "تم الحفظ — مسموح لكل الـ IPs" : "تم حفظ قائمة الـ IPs" });
+    } catch {
+      toast({ title: "حدث خطأ أثناء الحفظ", variant: "destructive" });
+    } finally {
+      setSavingIps(false);
     }
   }
 
@@ -98,11 +118,48 @@ export default function ResellerApiPage() {
           <CopyButton text={user.apiToken ?? ""} />
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">ضع هذا التوكن في هيدر كل طلب: <code className="text-primary">Api-Token: YOUR_TOKEN</code></p>
+          <p className="text-xs text-muted-foreground">
+            ضع في كل طلب: <code className="text-primary">Api-Token: YOUR_TOKEN</code>
+          </p>
           <Button size="sm" variant="outline" disabled={regenerating} onClick={regenerateToken} className="gap-1.5 text-xs">
             <RefreshCw className={`w-3 h-3 ${regenerating ? "animate-spin" : ""}`} />
             تجديد
           </Button>
+        </div>
+      </div>
+
+      {/* IP Whitelist */}
+      <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-primary" />
+          <p className="text-sm font-bold">الـ IPs المسموح لها بالوصول</p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          كل IP في سطر منفصل. اتركه فارغاً للسماح لكل الـ IPs.
+        </p>
+        <Textarea
+          dir="ltr"
+          value={ips}
+          onChange={(e) => setIps(e.target.value)}
+          placeholder={"192.168.1.1\n34.47.130.135\n128.140.66.140"}
+          rows={5}
+          className="font-mono text-xs resize-none bg-background/60"
+        />
+        <div className="flex items-center justify-between">
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${allowAll ? "bg-amber-500/15 text-amber-300" : "bg-green-500/15 text-green-300"}`}>
+            {allowAll ? "مسموح لكل الـ IPs" : `${ips.split("\n").filter(l => l.trim()).length} IP مسجّل`}
+          </span>
+          <div className="flex gap-2">
+            {!allowAll && (
+              <Button size="sm" variant="ghost" className="text-xs text-muted-foreground" onClick={() => setIps("")}>
+                مسح الكل
+              </Button>
+            )}
+            <Button size="sm" disabled={savingIps} onClick={saveIps} className="gap-1.5 text-xs">
+              <Save className={`w-3 h-3 ${savingIps ? "animate-pulse" : ""}`} />
+              حفظ
+            </Button>
+          </div>
         </div>
       </div>
 

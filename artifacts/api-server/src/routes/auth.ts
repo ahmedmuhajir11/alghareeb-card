@@ -58,6 +58,7 @@ function mapUser(row: any) {
     createdAt: row.created_at,
     isReseller: row.is_reseller || false,
     apiToken: row.api_token || null,
+    allowedIps: row.allowed_ips || null,
   };
 }
 
