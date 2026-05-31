@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload, ImagePlus, Link, Images, MessageCircle } from "lucide-react";
+import { Trash2, Upload, ImagePlus, Link, Images, MessageCircle, Save } from "lucide-react";
 import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -20,7 +20,7 @@ export default function SliderManager() {
   const [regTitle, setRegTitle] = useState("");
   const [regImageUrl, setRegImageUrl] = useState("");
   const [regUploading, setRegUploading] = useState(false);
-  const [regAddingUrl, setRegAddingUrl] = useState(false);
+  const [regSaving, setRegSaving] = useState(false);
 
   // --- WhatsApp / clickable image form state ---
   const waFileRef = useRef<HTMLInputElement>(null);
@@ -28,7 +28,7 @@ export default function SliderManager() {
   const [waImageUrl, setWaImageUrl] = useState("");
   const [waLinkUrl, setWaLinkUrl] = useState("https://wa.me/905378221375");
   const [waUploading, setWaUploading] = useState(false);
-  const [waAddingUrl, setWaAddingUrl] = useState(false);
+  const [waSaving, setWaSaving] = useState(false);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListSliderImagesQueryKey() });
 
@@ -53,7 +53,7 @@ export default function SliderManager() {
       if (res.url) {
         await createImg.mutateAsync({ data: { imageUrl: res.url, title: regTitle || undefined, sortOrder: (images?.length || 0) + 1 } });
         toast({ title: "✅ تمت إضافة الصورة العادية" });
-        setRegTitle("");
+        setRegTitle(""); setRegImageUrl("");
         invalidate();
       }
     } catch (err: any) {
@@ -64,9 +64,9 @@ export default function SliderManager() {
     }
   };
 
-  const handleRegAddByUrl = async () => {
-    if (!regImageUrl.trim()) { toast({ variant: "destructive", title: "أدخل رابط الصورة" }); return; }
-    setRegAddingUrl(true);
+  const handleRegSave = async () => {
+    if (!regImageUrl.trim()) { toast({ variant: "destructive", title: "أدخل رابط الصورة أولاً" }); return; }
+    setRegSaving(true);
     try {
       await createImg.mutateAsync({ data: { imageUrl: regImageUrl.trim(), title: regTitle || undefined, sortOrder: (images?.length || 0) + 1 } });
       toast({ title: "✅ تمت إضافة الصورة العادية" });
@@ -74,7 +74,7 @@ export default function SliderManager() {
       invalidate();
     } catch (err: any) {
       toast({ variant: "destructive", title: "خطأ", description: err.message || "فشل الإضافة" });
-    } finally { setRegAddingUrl(false); }
+    } finally { setRegSaving(false); }
   };
 
   // --- WhatsApp image handlers ---
@@ -88,7 +88,7 @@ export default function SliderManager() {
       if (res.url) {
         await createImg.mutateAsync({ data: { imageUrl: res.url, title: waTitle || undefined, linkUrl: waLinkUrl.trim(), sortOrder: (images?.length || 0) + 1 } });
         toast({ title: "✅ تمت إضافة الصورة القابلة للضغط" });
-        setWaTitle("");
+        setWaTitle(""); setWaImageUrl("");
         invalidate();
       }
     } catch (err: any) {
@@ -99,10 +99,10 @@ export default function SliderManager() {
     }
   };
 
-  const handleWaAddByUrl = async () => {
-    if (!waImageUrl.trim()) { toast({ variant: "destructive", title: "أدخل رابط الصورة" }); return; }
-    if (!waLinkUrl.trim()) { toast({ variant: "destructive", title: "أدخل رابط الضغط" }); return; }
-    setWaAddingUrl(true);
+  const handleWaSave = async () => {
+    if (!waImageUrl.trim()) { toast({ variant: "destructive", title: "أدخل رابط الصورة أولاً" }); return; }
+    if (!waLinkUrl.trim()) { toast({ variant: "destructive", title: "أدخل رابط الضغط أولاً" }); return; }
+    setWaSaving(true);
     try {
       await createImg.mutateAsync({ data: { imageUrl: waImageUrl.trim(), title: waTitle || undefined, linkUrl: waLinkUrl.trim(), sortOrder: (images?.length || 0) + 1 } });
       toast({ title: "✅ تمت إضافة الصورة القابلة للضغط" });
@@ -110,7 +110,7 @@ export default function SliderManager() {
       invalidate();
     } catch (err: any) {
       toast({ variant: "destructive", title: "خطأ", description: err.message || "فشل الإضافة" });
-    } finally { setWaAddingUrl(false); }
+    } finally { setWaSaving(false); }
   };
 
   const regularImages = images?.filter(img => !img.linkUrl) ?? [];
@@ -178,19 +178,30 @@ export default function SliderManager() {
               <label className="text-sm font-medium flex items-center gap-1">
                 <Link className="w-4 h-4 text-primary" /> رابط الصورة
               </label>
-              <div className="flex gap-2">
-                <Input value={regImageUrl} onChange={e => setRegImageUrl(e.target.value)} placeholder="https://i.imgur.com/xxxxx.jpg" className="bg-background/50 text-left flex-1" dir="ltr" />
-                <Button onClick={handleRegAddByUrl} disabled={regAddingUrl || !regImageUrl.trim()} className="flex-shrink-0 gap-2 bg-primary hover:bg-primary/90">
-                  {regAddingUrl ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Link className="w-4 h-4" />}
-                  {regAddingUrl ? "جاري..." : "إضافة"}
-                </Button>
-              </div>
+              <Input
+                value={regImageUrl}
+                onChange={e => setRegImageUrl(e.target.value)}
+                placeholder="https://i.imgur.com/xxxxx.jpg"
+                className="bg-background/50 text-left"
+                dir="ltr"
+              />
               {regImageUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-primary/20 aspect-[21/9] bg-background/30">
+                <div className="rounded-lg overflow-hidden border border-primary/20 aspect-[21/9] bg-background/30">
                   <img src={regImageUrl} alt="معاينة" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
                 </div>
               )}
             </div>
+
+            <Button
+              onClick={handleRegSave}
+              disabled={regSaving || !regImageUrl.trim()}
+              className="w-full gap-2 bg-primary hover:bg-primary/90 text-white font-bold"
+            >
+              {regSaving
+                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> جاري الحفظ...</>
+                : <><Save className="w-4 h-4" /> حفظ الصورة</>
+              }
+            </Button>
 
             <div className="border-t border-border/30 pt-3">
               <label className="text-sm font-medium block mb-2">أو ارفع من الهاتف</label>
@@ -262,19 +273,30 @@ export default function SliderManager() {
               <label className="text-sm font-medium flex items-center gap-1">
                 <Link className="w-4 h-4 text-green-400" /> رابط الصورة
               </label>
-              <div className="flex gap-2">
-                <Input value={waImageUrl} onChange={e => setWaImageUrl(e.target.value)} placeholder="https://i.imgur.com/xxxxx.jpg" className="bg-background/50 text-left flex-1" dir="ltr" />
-                <Button onClick={handleWaAddByUrl} disabled={waAddingUrl || !waImageUrl.trim() || !waLinkUrl.trim()} className="flex-shrink-0 gap-2 bg-green-600 hover:bg-green-500 text-white">
-                  {waAddingUrl ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Link className="w-4 h-4" />}
-                  {waAddingUrl ? "جاري..." : "إضافة"}
-                </Button>
-              </div>
+              <Input
+                value={waImageUrl}
+                onChange={e => setWaImageUrl(e.target.value)}
+                placeholder="https://i.imgur.com/xxxxx.jpg"
+                className="bg-background/50 text-left"
+                dir="ltr"
+              />
               {waImageUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-green-500/20 aspect-[21/9] bg-background/30">
+                <div className="rounded-lg overflow-hidden border border-green-500/20 aspect-[21/9] bg-background/30">
                   <img src={waImageUrl} alt="معاينة" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
                 </div>
               )}
             </div>
+
+            <Button
+              onClick={handleWaSave}
+              disabled={waSaving || !waImageUrl.trim() || !waLinkUrl.trim()}
+              className="w-full gap-2 bg-green-600 hover:bg-green-500 text-white font-bold"
+            >
+              {waSaving
+                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> جاري الحفظ...</>
+                : <><Save className="w-4 h-4" /> حفظ الصورة</>
+              }
+            </Button>
 
             <div className="border-t border-green-500/20 pt-3">
               <label className="text-sm font-medium block mb-2">أو ارفع من الهاتف</label>
