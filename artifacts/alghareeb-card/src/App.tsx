@@ -28,6 +28,7 @@ import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
 import ProfileSetupPage from "@/pages/profile-setup";
 import KycPage from "@/pages/kyc";
+import ResellerApiPage from "@/pages/reseller-api";
 import AppLayout from "@/components/layout/AppLayout";
 import AdminLayout from "@/components/layout/AdminLayout";
 
@@ -69,6 +70,9 @@ function Router() {
       </Route>
       <Route path="/level">
         <AppLayout><LevelPage /></AppLayout>
+      </Route>
+      <Route path="/reseller-api">
+        <AppLayout><ResellerApiPage /></AppLayout>
       </Route>
       <Route path="/kyc">
         <KycPage />

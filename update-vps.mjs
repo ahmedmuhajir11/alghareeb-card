@@ -68,6 +68,14 @@
     // Admin dashboard + YazanCard importer
     'artifacts/alghareeb-card/src/components/admin/YazanCardImporter.tsx',
     'artifacts/alghareeb-card/src/pages/admin/dashboard.tsx',
+    // Reseller API system
+    'artifacts/api-server/src/routes/reseller.ts',
+    'artifacts/api-server/src/routes/admin-users.ts',
+    'artifacts/api-server/src/routes/auth.ts',
+    'artifacts/alghareeb-card/src/lib/auth.tsx',
+    'artifacts/alghareeb-card/src/App.tsx',
+    'artifacts/alghareeb-card/src/pages/reseller-api.tsx',
+    'artifacts/alghareeb-card/src/components/admin/UsersManager.tsx',
   ];
 
   function download(filePath) {
@@ -153,6 +161,9 @@ async function run() {
       ['https://api.yazancard.com/client/api/newOrder/287/params', YZT,
        '\u0643\u0648\u064a\u0646\u0632', '\u062a\u0627\u0643\u0627']
     );
+    // Reseller API columns
+    await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_reseller BOOLEAN NOT NULL DEFAULT false");
+    await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS api_token TEXT");
     // Add tax_percent column if not exists
     await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS tax_percent REAL DEFAULT 0");
     // Trilingual columns

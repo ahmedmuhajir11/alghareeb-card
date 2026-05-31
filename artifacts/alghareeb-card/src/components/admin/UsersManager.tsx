@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users, Search, ShieldCheck, Wallet, ShoppingBag, ArrowDownCircle,
-  Loader2, Mail, Hash, KeyRound, Pencil, X, Trash2, AlertTriangle
+  Loader2, Mail, Hash, KeyRound, Pencil, X, Trash2, AlertTriangle, Code2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ type AdminUser = {
   currency: string;
   level: string;
   isVerified: boolean;
+  isReseller: boolean;
+  apiToken: string | null;
   totalPurchases: number;
   totalDeposits: number;
   createdAt: string;
@@ -357,6 +359,9 @@ export default function UsersManager() {
   const [pwUser, setPwUser] = useState<AdminUser | null>(null);
   const [balUser, setBalUser] = useState<AdminUser | null>(null);
   const [delUser, setDelUser] = useState<AdminUser | null>(null);
+  const [togglingReseller, setTogglingReseller] = useState<number | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const usersQuery = useQuery<AdminUser[]>({
     queryKey: ["admin-users", query],
@@ -454,6 +459,25 @@ export default function UsersManager() {
             <Button
               size="sm"
               variant="outline"
+              disabled={togglingReseller === selected.id}
+              className={`gap-1.5 ${selected.isReseller ? "border-green-500/40 text-green-300 hover:bg-green-500/10" : "border-purple-500/40 text-purple-300 hover:bg-purple-500/10"}`}
+              onClick={async () => {
+                setTogglingReseller(selected.id);
+                try {
+                  const res = await fetch(`${API_BASE}/admin/users/${selected.id}/reseller`, { method: "PATCH", credentials: "include" });
+                  if (!res.ok) throw new Error("فشل");
+                  await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                  setSelected(null);
+                  toast({ title: selected.isReseller ? "تم إلغاء تفعيل API" : "تم تفعيل API للريسيلر" });
+                } catch { toast({ title: "حدث خطأ", variant: "destructive" }); }
+                setTogglingReseller(null);
+              }}
+            >
+              <Code2 className="w-3.5 h-3.5" /> {selected.isReseller ? "إلغاء API" : "تفعيل API"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               className="gap-1.5 border-rose-500/40 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
               onClick={() => setDelUser(selected)}
             >
@@ -539,6 +563,23 @@ export default function UsersManager() {
                       className="p-2 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-400 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      title={u.isReseller ? "مفعّل API" : "تفعيل API"}
+                      disabled={togglingReseller === u.id}
+                      onClick={async () => {
+                        setTogglingReseller(u.id);
+                        try {
+                          const res = await fetch(`${API_BASE}/admin/users/${u.id}/reseller`, { method: "PATCH", credentials: "include" });
+                          if (!res.ok) throw new Error();
+                          await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                          toast({ title: u.isReseller ? "تم إلغاء تفعيل API" : "تم تفعيل API" });
+                        } catch { toast({ title: "حدث خطأ", variant: "destructive" }); }
+                        setTogglingReseller(null);
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${u.isReseller ? "text-green-400 hover:bg-green-500/10" : "text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+                    >
+                      <Code2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

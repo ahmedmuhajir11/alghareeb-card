@@ -15,6 +15,8 @@ export interface AuthUser {
   isVerified: boolean;
   profileCompleted: boolean;
   avatarUrl?: string | null;
+  isReseller?: boolean;
+  apiToken?: string | null;
 }
 
 interface AuthCtx {

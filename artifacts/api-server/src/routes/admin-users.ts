@@ -18,7 +18,7 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
     }
     const result = await pool.query(
       `SELECT u.id, u.account_number, u.name, u.email, u.phone, u.balance, u.currency,
-              u.level, u.is_verified, u.created_at,
+              u.level, u.is_verified, u.is_reseller, u.api_token, u.created_at,
               COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id=u.id AND type='purchase'), 0) AS total_purchases,
               COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id=u.id AND type='deposit'), 0) AS total_deposits
        FROM users u ${where}
@@ -36,6 +36,8 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
       currency: r.currency,
       level: r.level,
       isVerified: r.is_verified,
+      isReseller: r.is_reseller || false,
+      apiToken: r.api_token || null,
       totalPurchases: parseFloat(r.total_purchases),
       totalDeposits: parseFloat(r.total_deposits),
       createdAt: r.created_at,
@@ -173,6 +175,31 @@ router.delete("/admin/users/:id", requireAdmin, async (req: Request, res: Respon
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
+  }
+});
+
+// Toggle reseller API access for a user
+router.patch("/admin/users/:id/reseller", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(req.params.id, 10);
+  if (!Number.isFinite(userId)) { res.status(400).json({ error: "معرّف غير صحيح" }); return; }
+  try {
+    const u = await pool.query("SELECT id, is_reseller, api_token FROM users WHERE id=$1", [userId]);
+    if (u.rows.length === 0) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
+    const current = u.rows[0];
+    const newValue = !current.is_reseller;
+    let token = current.api_token;
+    if (newValue && !token) {
+      // Generate a new unique token
+      const crypto = await import("crypto");
+      token = crypto.randomBytes(32).toString("hex");
+    }
+    await pool.query(
+      "UPDATE users SET is_reseller=$1, api_token=COALESCE($2, api_token), updated_at=NOW() WHERE id=$3",
+      [newValue, token, userId]
+    );
+    res.json({ success: true, isReseller: newValue, apiToken: newValue ? token : null });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

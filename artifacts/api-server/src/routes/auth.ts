@@ -56,6 +56,8 @@ function mapUser(row: any) {
     profileCompleted: row.profile_completed,
     avatarUrl: row.avatar_url || null,
     createdAt: row.created_at,
+    isReseller: row.is_reseller || false,
+    apiToken: row.api_token || null,
   };
 }
 

@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown, BadgeCheck } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown, BadgeCheck, Code2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -48,6 +48,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
           { href: "/level", label: t('sidebar.myLevel'), icon: <Trophy className="w-5 h-5" /> },
           { href: "/orders", label: t('sidebar.myOrders'), icon: <ShoppingBag className="w-5 h-5" /> },
           { href: "/kyc", label: t('sidebar.verifyAccount'), icon: <BadgeCheck className="w-5 h-5" /> },
+          ...(user?.isReseller ? [{ href: "/reseller-api", label: "API", icon: <Code2 className="w-5 h-5" /> }] : []),
         ]
       : []),
     { href: "/about", label: t('sidebar.aboutUs'), icon: <Info className="w-5 h-5" /> },
