@@ -40,6 +40,7 @@
     'artifacts/alghareeb-card/src/components/admin/OrdersManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/DepositsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/PaymentMethodsManager.tsx',
+    'artifacts/alghareeb-card/src/components/admin/SliderManager.tsx',
     'artifacts/alghareeb-card/src/components/WelcomeModal.tsx',
     'artifacts/alghareeb-card/src/pages/home.tsx',
     'artifacts/alghareeb-card/src/pages/item.tsx',
