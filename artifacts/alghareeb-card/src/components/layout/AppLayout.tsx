@@ -9,7 +9,9 @@ import WelcomeModal from "@/components/WelcomeModal";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-function MarqueeText({ text, rtl }: { text: string; rtl: boolean }) {
+function MarqueeText({ text }: { text: string }) {
+  const { lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const spanRef = useRef<HTMLSpanElement>(null);
   const posRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
@@ -19,19 +21,15 @@ function MarqueeText({ text, rtl }: { text: string; rtl: boolean }) {
     if (!span) return;
     const vw = window.innerWidth;
     const textW = span.offsetWidth;
-    const speed = 1.2; // px per frame ~72px/s at 60fps
+    const speed = 1.2;
 
-    if (rtl) {
-      // Arabic/Kurdish/Farsi: left-to-right — enter from left, exit right
-      posRef.current = -textW;
-    } else {
-      // English/Turkish: right-to-left — enter from right, exit left
-      posRef.current = vw;
-    }
+    // Arabic/Kurdish/Farsi → يسار لليمين (enter left, exit right)
+    // English/Turkish     → يمين لليسار  (enter right, exit left)
+    posRef.current = isRtlLang ? -textW : vw;
 
     function step() {
       if (posRef.current === null) return;
-      if (rtl) {
+      if (isRtlLang) {
         posRef.current += speed;
         if (posRef.current > vw) posRef.current = -textW;
       } else {
@@ -43,7 +41,7 @@ function MarqueeText({ text, rtl }: { text: string; rtl: boolean }) {
     }
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [text, rtl]);
+  }, [text, isRtlLang]);
 
   return (
     <div className="bg-gradient-neon text-white py-2 overflow-hidden border-b border-primary/20">
@@ -344,7 +342,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {tickerMode === "marquee" && marqueeText && (
-        <MarqueeText text={marqueeText} rtl={isRtlLang} />
+        <MarqueeText text={marqueeText} />
       )}
 
       {tickerMode === "notifications" && currentMsg && (
