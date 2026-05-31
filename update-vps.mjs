@@ -128,39 +128,13 @@ const YZT = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
 async function run() {
   const c = await pool.connect();
   try {
-    await c.query(
-      "INSERT INTO items (name_ar, name_en, section_id, is_active, is_available, sort_order, price_per_unit, currency_unit, min_quantity, api_endpoint, api_key) " +
-      "VALUES ($1,$2,2,true,true,11,0.035,$3,1000,$4,$5) ON CONFLICT DO NOTHING",
-      ['\u0648\u064a\u0648\u064a\u0648', 'Wowo', '\u0630\u0647\u0628',
-       'https://api.yazancard.com/client/api/newOrder/274/params', YZT]
-    );
-    await c.query(
-      "INSERT INTO items (name_ar, name_en, section_id, is_active, is_available, sort_order, price_per_unit, currency_unit, min_quantity, api_endpoint, api_key) " +
-      "VALUES ($1,$2,2,true,true,12,0.005,$3,10000,$4,$5) ON CONFLICT DO NOTHING",
-      ['\u062a\u0627\u0643\u0627', 'Taka', '\u0643\u0648\u064a\u0646\u0632',
-       'https://api.yazancard.com/client/api/newOrder/287/params', YZT]
-    );
+    // Remove auto-inserted Wowo/Taka items (and their packages/orders)
+    await c.query("DELETE FROM packages WHERE item_id IN (SELECT id FROM items WHERE name_en ILIKE 'wowo' OR name_en ILIKE 'taka')");
+    await c.query("DELETE FROM orders WHERE item_id IN (SELECT id FROM items WHERE name_en ILIKE 'wowo' OR name_en ILIKE 'taka')");
+    await c.query("DELETE FROM items WHERE name_en ILIKE 'wowo' OR name_en ILIKE 'taka'");
     await c.query(
       "UPDATE items SET api_endpoint=$1, api_key=$2 WHERE name_en ILIKE '%party star%'",
       ['https://api.yazancard.com/client/api/newOrder/145/params', YZT]
-    );
-    await c.query(
-      "UPDATE items SET api_endpoint=$1, api_key=$2, " +
-      "price_per_unit=COALESCE(NULLIF(price_per_unit,0),0.035), " +
-      "currency_unit=COALESCE(NULLIF(currency_unit,''),$3), " +
-      "min_quantity=COALESCE(NULLIF(min_quantity,0),1000) " +
-      "WHERE name_en ILIKE '%wowo%' OR name_ar=$4",
-      ['https://api.yazancard.com/client/api/newOrder/274/params', YZT,
-       '\u0630\u0647\u0628', '\u0648\u064a\u0648\u064a\u0648']
-    );
-    await c.query(
-      "UPDATE items SET api_endpoint=$1, api_key=$2, " +
-      "price_per_unit=COALESCE(NULLIF(price_per_unit,0),0.005), " +
-      "currency_unit=COALESCE(NULLIF(currency_unit,''),$3), " +
-      "min_quantity=COALESCE(NULLIF(min_quantity,0),10000) " +
-      "WHERE name_en ILIKE '%taka%' OR name_ar=$4",
-      ['https://api.yazancard.com/client/api/newOrder/287/params', YZT,
-       '\u0643\u0648\u064a\u0646\u0632', '\u062a\u0627\u0643\u0627']
     );
     // Reseller API columns
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_reseller BOOLEAN NOT NULL DEFAULT false");
