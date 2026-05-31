@@ -296,11 +296,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {tickerMode === "marquee" && marqueeText && (
         <>
-          <style>{`@keyframes __mq { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
-          <div dir="ltr" className="bg-gradient-neon text-white border-b border-primary/20" style={{ height: "2.25rem", overflow: "hidden", position: "relative" }}>
+          <style>{`@keyframes __mq { from { transform: translateX(-50%) } to { transform: translateX(0%) } }`}</style>
+          <div dir="rtl" className="bg-gradient-neon text-white border-b border-primary/20" style={{ height: "2.25rem", overflow: "hidden", position: "relative" }}>
             <div style={{ position: "absolute", top: 0, left: 0, height: "100%", display: "flex", alignItems: "center", width: "200vw", animation: "__mq 20s linear infinite" }}>
-              <span className="neon-text" style={{ width: "100vw", textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", whiteSpace: "nowrap", overflow: "hidden" }}>{marqueeText}</span>
-              <span className="neon-text" style={{ width: "100vw", textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", whiteSpace: "nowrap", overflow: "hidden" }} aria-hidden="true">{marqueeText}</span>
+              <span className="neon-text" style={{ width: "100vw", textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", flexShrink: 0 }}>{marqueeText}</span>
+              <span className="neon-text" style={{ width: "100vw", textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", flexShrink: 0 }} aria-hidden="true">{marqueeText}</span>
             </div>
           </div>
         </>
