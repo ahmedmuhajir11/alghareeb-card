@@ -22,21 +22,21 @@ function MarqueeText({ text, rtl }: { text: string; rtl: boolean }) {
     const speed = 1.2; // px per frame ~72px/s at 60fps
 
     if (rtl) {
-      // RTL language (Arabic): scroll right-to-left — enter from right, exit left
-      posRef.current = vw;
-    } else {
-      // LTR language: scroll left-to-right — enter from left, exit right
+      // Arabic/Kurdish/Farsi: left-to-right — enter from left, exit right
       posRef.current = -textW;
+    } else {
+      // English/Turkish: right-to-left — enter from right, exit left
+      posRef.current = vw;
     }
 
     function step() {
       if (posRef.current === null) return;
       if (rtl) {
-        posRef.current -= speed;
-        if (posRef.current < -textW) posRef.current = vw;
-      } else {
         posRef.current += speed;
         if (posRef.current > vw) posRef.current = -textW;
+      } else {
+        posRef.current -= speed;
+        if (posRef.current < -textW) posRef.current = vw;
       }
       span!.style.transform = `translateX(${posRef.current}px)`;
       rafRef.current = requestAnimationFrame(step);
