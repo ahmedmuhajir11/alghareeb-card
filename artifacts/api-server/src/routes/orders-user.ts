@@ -135,9 +135,9 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     }
 
     const orderRes = await client.query(
-      `INSERT INTO orders (user_id, item_name, package_name, target_id, amount, currency, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending') RETURNING *`,
-      [user.id, item.name_ar, packageName, targetId || null, cost, userCurrency]
+      `INSERT INTO orders (user_id, item_name, package_name, package_id, target_id, amount, currency, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`,
+      [user.id, item.name_ar, packageName, packageId ? parseInt(packageId, 10) : null, targetId || null, cost, userCurrency]
     );
     const order = orderRes.rows[0];
 

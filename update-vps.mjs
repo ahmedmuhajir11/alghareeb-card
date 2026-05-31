@@ -165,6 +165,7 @@ async function run() {
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_reseller BOOLEAN NOT NULL DEFAULT false");
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS api_token TEXT");
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS allowed_ips TEXT");
+    await c.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS package_id INTEGER REFERENCES packages(id)");
     // Add tax_percent column if not exists
     await c.query("ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS tax_percent REAL DEFAULT 0");
     // Trilingual columns

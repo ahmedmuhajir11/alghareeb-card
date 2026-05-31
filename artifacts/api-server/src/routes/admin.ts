@@ -268,8 +268,11 @@ router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Resp
 router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const status = (req.query.status as string) || "all";
   try {
-    let q = `SELECT o.*, u.name as user_name, u.email as user_email, u.account_number as user_account
-             FROM orders o LEFT JOIN users u ON u.id = o.user_id`;
+    let q = `SELECT o.*, u.name as user_name, u.email as user_email, u.account_number as user_account,
+                    p.label as p_label, p.quantity as p_quantity
+             FROM orders o
+             LEFT JOIN users u ON u.id = o.user_id
+             LEFT JOIN packages p ON p.id = o.package_id`;
     const params: any[] = [];
     if (status !== "all") {
       params.push(status);
@@ -285,6 +288,8 @@ router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): P
       userAccount: r.user_account,
       itemName: r.item_name,
       packageName: r.package_name,
+      packageLabel: r.p_label || null,
+      packageQuantity: r.p_quantity ? parseFloat(r.p_quantity) : null,
       targetId: r.target_id,
       amount: parseFloat(r.amount),
       currency: r.currency,

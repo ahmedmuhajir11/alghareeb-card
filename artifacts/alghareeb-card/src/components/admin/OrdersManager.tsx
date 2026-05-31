@@ -16,6 +16,8 @@ type OrderRow = {
   userAccount: string | null;
   itemName: string;
   packageName: string | null;
+  packageLabel: string | null;
+  packageQuantity: number | null;
   targetId: string | null;
   amount: number;
   currency: string;
@@ -189,9 +191,17 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
               <span className="font-bold text-base">{o.itemName}</span>
               <span className={`text-[10px] px-2 py-0.5 rounded-full border ${statusBadge.cls}`}>{statusBadge.label}</span>
             </div>
-            {o.packageName && (
+            {(o.packageLabel || o.packageName) && (
               <div className="text-sm text-foreground/80 mr-6">
-                الباقة: <span className="font-semibold text-primary">{o.packageName}</span>
+                الباقة:{" "}
+                <span className="font-semibold text-primary">
+                  {o.packageLabel ?? o.packageName}
+                </span>
+                {o.packageQuantity != null && o.packageQuantity > 0 && (
+                  <span className="mr-1.5 text-xs text-muted-foreground">
+                    ({o.packageQuantity})
+                  </span>
+                )}
               </div>
             )}
             {o.targetId && (
