@@ -269,6 +269,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => { document.body.style.overflow = ""; };
   }, [sidebarOpen]);
 
+  const tickerMode = (settings as any)?.tickerMode || "notifications";
+
   const rawMsg = messages.length > 0 ? messages[msgIndex % messages.length]?.text : null;
   const currentMsg = rawMsg
     ? rawMsg.includes('||')
@@ -281,12 +283,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       : rawMsg
     : null;
 
+  const marqueeText = lang === 'tr'
+    ? (settings as any)?.marqueeTextTr || settings?.marqueeText || ""
+    : lang === 'en'
+    ? (settings as any)?.marqueeTextEn || settings?.marqueeText || ""
+    : settings?.marqueeText || "";
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
       <WelcomeModal />
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {currentMsg && (
+      {tickerMode === "marquee" && marqueeText && (
+        <div className="bg-gradient-neon text-white py-2 overflow-hidden relative border-b border-primary/20">
+          <div className="inline-flex whitespace-nowrap" style={{ animation: "marqueeScroll 30s linear infinite", width: "200%" }}>
+            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ width: "50%", display: "inline-block", textAlign: "center" }}>{marqueeText}</span>
+            <span className="font-bold tracking-wider text-sm md:text-base neon-text" style={{ width: "50%", display: "inline-block", textAlign: "center" }} aria-hidden="true">{marqueeText}</span>
+          </div>
+        </div>
+      )}
+
+      {tickerMode === "notifications" && currentMsg && (
         <div className="bg-gradient-neon text-white py-2 overflow-hidden relative border-b border-primary/20">
           <div
             className="text-center font-bold tracking-wider text-sm md:text-base neon-text"

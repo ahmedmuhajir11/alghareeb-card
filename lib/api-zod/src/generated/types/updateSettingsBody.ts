@@ -26,4 +26,5 @@ export interface UpdateSettingsBody {
   welcomeMessage?: string;
   welcomeMessageEn?: string;
   welcomeMessageTr?: string;
+  tickerMode?: string;
 }

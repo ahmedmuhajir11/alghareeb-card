@@ -227,3 +227,8 @@ body {
   animation: marquee 20s linear infinite;
   white-space: nowrap;
 }
+
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

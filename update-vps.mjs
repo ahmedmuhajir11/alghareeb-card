@@ -142,6 +142,7 @@ async function run() {
     // Trilingual columns
     await c.query("ALTER TABLE sections ADD COLUMN IF NOT EXISTS name_tr text");
     await c.query("ALTER TABLE items ADD COLUMN IF NOT EXISTS name_tr text");
+    await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS ticker_mode text NOT NULL DEFAULT 'notifications'");
     await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS marquee_text_en text NOT NULL DEFAULT ''");
     await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS marquee_text_tr text NOT NULL DEFAULT ''");
     await c.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS welcome_message_tr text NOT NULL DEFAULT ''");

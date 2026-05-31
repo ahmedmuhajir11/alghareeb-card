@@ -522,6 +522,8 @@ components:
           type: string
         welcomeMessageTr:
           type: string
+        tickerMode:
+          type: string
         updatedAt:
           type: string
       required:
@@ -587,6 +589,8 @@ components:
         welcomeMessageEn:
           type: string
         welcomeMessageTr:
+          type: string
+        tickerMode:
           type: string
 
     Section:

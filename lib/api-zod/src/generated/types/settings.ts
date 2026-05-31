@@ -27,5 +27,6 @@ export interface Settings {
   welcomeMessage: string;
   welcomeMessageEn: string;
   welcomeMessageTr: string;
+  tickerMode?: string;
   updatedAt: string;
 }

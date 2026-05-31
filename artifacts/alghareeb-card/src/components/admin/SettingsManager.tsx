@@ -30,6 +30,7 @@ export default function SettingsManager() {
   const updateSettings = useUpdateSettings();
   const { toast } = useToast();
 
+  const [tickerMode, setTickerMode] = useState<"marquee" | "notifications">("notifications");
   const [formData, setFormData] = useState({
     marqueeText: "", marqueeTextEn: "", marqueeTextTr: "",
     whatsappNumber: "", moneyTransferCurrencies: "",
@@ -52,6 +53,7 @@ export default function SettingsManager() {
 
   useEffect(() => {
     if (settings) {
+      setTickerMode(((settings as any).tickerMode || "notifications") as "marquee" | "notifications");
       setFormData({
         marqueeText: settings.marqueeText || "",
         marqueeTextEn: (settings as any).marqueeTextEn || "",
@@ -153,7 +155,7 @@ export default function SettingsManager() {
     const arText = formData.welcomeMessageAr.trim();
     const enText = formData.welcomeMessageEn.trim();
     const combined = enText ? `${arText}||${enText}` : arText;
-    const dataToSave = { ...formData, welcomeMessage: combined };
+    const dataToSave = { ...formData, welcomeMessage: combined, tickerMode };
     updateSettings.mutate({ data: dataToSave }, {
       onSuccess: () => toast({ title: "تم الحفظ", description: "تم تحديث الإعدادات بنجاح" }),
       onError: (err: any) => toast({ variant: "destructive", title: "خطأ", description: err.message || "حدث خطأ أثناء الحفظ" }),
@@ -245,13 +247,51 @@ export default function SettingsManager() {
             <Input value={formData.whatsappNumber} onChange={e => setFormData({...formData, whatsappNumber: e.target.value})} className="bg-background/50 text-left" dir="ltr" placeholder="00905378221375" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">الشريط الإخباري (Marquee) — العربية</label>
-            <Input value={formData.marqueeText} onChange={e => setFormData({...formData, marqueeText: e.target.value})} className="bg-background/50" />
-            <label className="text-sm font-medium block mt-2">Ticker — English</label>
-            <Input value={formData.marqueeTextEn} onChange={e => setFormData({...formData, marqueeTextEn: e.target.value})} className="bg-background/50" dir="ltr" placeholder="English ticker text (optional)" />
-            <label className="text-sm font-medium block mt-2">Ticker — Türkçe</label>
-            <Input value={formData.marqueeTextTr} onChange={e => setFormData({...formData, marqueeTextTr: e.target.value})} className="bg-background/50" dir="ltr" placeholder="Türkçe haber şeridi metni (isteğe bağlı)" />
+          <div className="space-y-3">
+            <label className="text-sm font-medium block">نوع الشريط العلوي</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTickerMode("notifications")}
+                className={`rounded-lg border px-3 py-3 text-sm font-medium transition-all text-right ${
+                  tickerMode === "notifications"
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-primary/20 bg-background/30 text-muted-foreground"
+                }`}
+              >
+                <div className="font-bold">🔔 شريط الإشعارات</div>
+                <div className="text-xs opacity-70 mt-1">رسائل تتبدّل كل 4 ثواني</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTickerMode("marquee")}
+                className={`rounded-lg border px-3 py-3 text-sm font-medium transition-all text-right ${
+                  tickerMode === "marquee"
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-primary/20 bg-background/30 text-muted-foreground"
+                }`}
+              >
+                <div className="font-bold">📢 الشريط الإخباري</div>
+                <div className="text-xs opacity-70 mt-1">نص يتحرك من اليسار لليمين</div>
+              </button>
+            </div>
+
+            {tickerMode === "marquee" && (
+              <div className="space-y-2 border border-primary/20 rounded-lg p-3 bg-primary/5">
+                <label className="text-sm font-medium">النص — العربية</label>
+                <Input value={formData.marqueeText} onChange={e => setFormData({...formData, marqueeText: e.target.value})} className="bg-background/50" />
+                <label className="text-sm font-medium block mt-2">Text — English</label>
+                <Input value={formData.marqueeTextEn} onChange={e => setFormData({...formData, marqueeTextEn: e.target.value})} className="bg-background/50" dir="ltr" placeholder="English marquee text (optional)" />
+                <label className="text-sm font-medium block mt-2">Metin — Türkçe</label>
+                <Input value={formData.marqueeTextTr} onChange={e => setFormData({...formData, marqueeTextTr: e.target.value})} className="bg-background/50" dir="ltr" placeholder="Türkçe haber şeridi metni (isteğe bağlı)" />
+              </div>
+            )}
+
+            {tickerMode === "notifications" && (
+              <p className="text-xs text-muted-foreground bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
+                💡 لإدارة رسائل شريط الإشعارات اذهب إلى تبويب <strong>«شريط الإشعارات»</strong> في لوحة التحكم.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2 border-t border-primary/10 pt-4">
