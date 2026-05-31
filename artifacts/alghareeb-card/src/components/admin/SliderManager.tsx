@@ -51,10 +51,8 @@ export default function SliderManager() {
     try {
       const res = await uploadImg.mutateAsync({ data: { file } });
       if (res.url) {
-        await createImg.mutateAsync({ data: { imageUrl: res.url, title: regTitle || undefined, sortOrder: (images?.length || 0) + 1 } });
-        toast({ title: "✅ تمت إضافة الصورة العادية" });
-        setRegTitle(""); setRegImageUrl("");
-        invalidate();
+        setRegImageUrl(res.url);
+        toast({ title: "✅ تم رفع الصورة — اضغط «حفظ الصورة» لإضافتها" });
       }
     } catch (err: any) {
       toast({ variant: "destructive", title: "خطأ", description: err.message || "فشل الرفع" });
@@ -86,10 +84,8 @@ export default function SliderManager() {
     try {
       const res = await uploadImg.mutateAsync({ data: { file } });
       if (res.url) {
-        await createImg.mutateAsync({ data: { imageUrl: res.url, title: waTitle || undefined, linkUrl: waLinkUrl.trim(), sortOrder: (images?.length || 0) + 1 } });
-        toast({ title: "✅ تمت إضافة الصورة القابلة للضغط" });
-        setWaTitle(""); setWaImageUrl("");
-        invalidate();
+        setWaImageUrl(res.url);
+        toast({ title: "✅ تم رفع الصورة — اضغط «حفظ الصورة» لإضافتها" });
       }
     } catch (err: any) {
       toast({ variant: "destructive", title: "خطأ", description: err.message || "فشل الرفع" });
