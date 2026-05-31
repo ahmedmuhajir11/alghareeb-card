@@ -3,11 +3,49 @@ import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
 import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown, BadgeCheck, Code2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+function MarqueeText({ text }: { text: string }) {
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const posRef = useRef<number | null>(null);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const span = spanRef.current;
+    if (!span) return;
+    const vw = window.innerWidth;
+    const textW = span.offsetWidth;
+    // start off-screen to the left
+    posRef.current = -textW;
+    const speed = 1.2; // px per frame ~72px/s at 60fps
+
+    function step() {
+      if (posRef.current === null) return;
+      posRef.current += speed;
+      if (posRef.current > vw) posRef.current = -textW;
+      span!.style.transform = `translateX(${posRef.current}px)`;
+      rafRef.current = requestAnimationFrame(step);
+    }
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [text]);
+
+  return (
+    <div className="bg-gradient-neon text-white border-b border-primary/20" style={{ height: "2.25rem", overflow: "hidden", position: "relative" }}>
+      <span
+        ref={spanRef}
+        className="neon-text"
+        style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", whiteSpace: "nowrap", fontWeight: "bold", fontSize: "0.9rem" }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
 
 const LEVEL_KEY_MAP: Record<string, string> = {
   'عادي': 'normal', 'برونزي': 'bronze', 'البرونزي': 'bronze', 'برونز': 'bronze',
@@ -295,15 +333,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {tickerMode === "marquee" && marqueeText && (
-        <>
-          <style>{`@keyframes __mq { from { transform: translateX(-50%) } to { transform: translateX(0%) } }`}</style>
-          <div dir="rtl" className="bg-gradient-neon text-white border-b border-primary/20" style={{ height: "2.25rem", overflow: "hidden", position: "relative" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, height: "100%", display: "flex", alignItems: "center", width: "200vw", animation: "__mq 20s linear infinite" }}>
-              <span className="neon-text" style={{ width: "100vw", textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", flexShrink: 0 }}>{marqueeText}</span>
-              <span className="neon-text" style={{ width: "100vw", textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", flexShrink: 0 }} aria-hidden="true">{marqueeText}</span>
-            </div>
-          </div>
-        </>
+        <MarqueeText text={marqueeText} />
       )}
 
       {tickerMode === "notifications" && currentMsg && (
