@@ -76,7 +76,7 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="yazancard" className={TAB_CLASS}>
               <Package className="w-4 h-4 flex-shrink-0" />
-              يزن كارد
+              استيراد API
             </TabsTrigger>
           </TabsList>
         </div>
