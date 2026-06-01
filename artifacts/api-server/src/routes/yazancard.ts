@@ -309,6 +309,7 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
   const updatedNames: string[] = [];
   const errors: string[] = [];
   const unavailableFromProvider: string[] = [];
+  const unavailableNotInDb: string[] = [];
 
   for (const p of allProducts) {
     try {
@@ -400,12 +401,16 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
           }
         }
       }
+      // Track unavailable products that couldn't be found in DB
+      if (!matchedThis && !isAvailable) {
+        unavailableNotInDb.push(productName || String(p.id));
+      }
     } catch (err: any) {
       errors.push(`${p.name}: ${err.message}`);
     }
   }
 
-  res.json({ updated, total: allProducts.length, updatedNames, unavailableFromProvider, errors });
+  res.json({ updated, total: allProducts.length, updatedNames, unavailableFromProvider, unavailableNotInDb, errors });
 });
 
 // Legacy import route

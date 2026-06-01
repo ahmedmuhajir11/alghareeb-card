@@ -58,12 +58,14 @@ export default function YazanCardImporter() {
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [syncNames, setSyncNames] = useState<string[]>([]);
   const [syncUnavailable, setSyncUnavailable] = useState<string[]>([]);
+  const [syncUnavailableNotInDb, setSyncUnavailableNotInDb] = useState<string[]>([]);
 
   async function syncPrices() {
     setSyncing(true);
     setSyncResult(null);
     setSyncNames([]);
     setSyncUnavailable([]);
+    setSyncUnavailableNotInDb([]);
     try {
       const body: Record<string, unknown> = {
         baseUrl: providerBase,
@@ -88,6 +90,7 @@ export default function YazanCardImporter() {
       setSyncResult(`✅ تم تحديث ${d.updated} سعر من أصل ${d.total} منتج${d.errors?.length ? ` (${d.errors.length} خطأ)` : ""}`);
       if (Array.isArray(d.updatedNames)) setSyncNames(d.updatedNames);
       if (Array.isArray(d.unavailableFromProvider)) setSyncUnavailable(d.unavailableFromProvider);
+      if (Array.isArray(d.unavailableNotInDb)) setSyncUnavailableNotInDb(d.unavailableNotInDb);
     } catch (e: any) {
       setSyncResult(`❌ ${e.message}`);
     } finally {
@@ -312,12 +315,26 @@ export default function YazanCardImporter() {
           {syncUnavailable.length > 0 && (
             <div className="mt-2 border border-orange-500/30 rounded-md overflow-hidden">
               <p className="text-xs text-orange-400 px-2 py-1 bg-orange-500/10 border-b border-orange-500/20">
-                🚫 غير متاح عند المزود ({syncUnavailable.length}) — هؤلاء موجودون في API يزن كارد بحالة "غير متاح":
+                🚫 غير متاح عند المزود ({syncUnavailable.length}) — يزن كارد يرسلهم بحالة "غير متاح":
               </p>
-              <ul className="max-h-48 overflow-y-auto divide-y divide-border/40">
+              <ul className="max-h-40 overflow-y-auto divide-y divide-border/40">
                 {syncUnavailable.map((name, i) => (
                   <li key={i} className="text-xs px-2 py-1 text-orange-300 flex items-center gap-1.5">
                     <span className="text-orange-500">✕</span> {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {syncUnavailableNotInDb.length > 0 && (
+            <div className="mt-2 border border-red-500/30 rounded-md overflow-hidden">
+              <p className="text-xs text-red-400 px-2 py-1 bg-red-500/10 border-b border-red-500/20">
+                ⚠️ غير متاح ولا يُطابق أي منتج في موقعك ({syncUnavailableNotInDb.length}) — لم نجدهم بالاسم أو الـ endpoint:
+              </p>
+              <ul className="max-h-40 overflow-y-auto divide-y divide-border/40">
+                {syncUnavailableNotInDb.map((name, i) => (
+                  <li key={i} className="text-xs px-2 py-1 text-red-300 flex items-center gap-1.5">
+                    <span className="text-red-500">!</span> {name}
                   </li>
                 ))}
               </ul>
