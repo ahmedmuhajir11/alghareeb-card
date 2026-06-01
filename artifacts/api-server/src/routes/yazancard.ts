@@ -325,8 +325,10 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
         .from(packagesTable)
         .where(sql`${packagesTable}.api_endpoint = ${endpoint}`);
       for (const pkg of pkgs) {
-        const priceChanged = Math.abs((pkg.priceUsd ?? 0) - newPriceUsd) > 0.0001;
-        const availChanged = (pkg.isAvailable ?? true) !== isAvailable;
+        // Only flag price as changed when we have a known previous price (not NULL)
+        const priceChanged = pkg.priceUsd !== null && Math.abs(pkg.priceUsd - newPriceUsd) > 0.0001;
+        // isAvailable has DB default true (never null), compare directly
+        const availChanged = pkg.isAvailable !== isAvailable;
         if (priceChanged || availChanged) {
           await db.update(packagesTable)
             .set({ priceUsd: newPriceUsd, isAvailable })
@@ -335,7 +337,11 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
           matchedThis = true;
           if (productName && !updatedNames.includes(productName)) updatedNames.push(productName);
         } else {
-          matchedThis = true; // matched but unchanged — don't count or show
+          // Silently update price if it was NULL (first-time sync, not a real change)
+          if (pkg.priceUsd === null) {
+            await db.update(packagesTable).set({ priceUsd: newPriceUsd }).where(eq(packagesTable.id, pkg.id));
+          }
+          matchedThis = true;
         }
       }
 
@@ -344,8 +350,8 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
         .from(itemsTable)
         .where(eq(itemsTable.apiEndpoint, endpoint));
       for (const item of itemsByEndpoint) {
-        const priceChanged = Math.abs((item.pricePerUnit ?? 0) - newPriceUsd) > 0.0001;
-        const availChanged = (item.isAvailable ?? true) !== isAvailable;
+        const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
+        const availChanged = item.isAvailable !== isAvailable;
         if (priceChanged || availChanged) {
           await db.update(itemsTable)
             .set({ pricePerUnit: newPriceUsd, isAvailable })
@@ -355,6 +361,9 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
           const displayName = item.nameAr || item.nameEn || productName;
           if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
         } else {
+          if (item.pricePerUnit === null) {
+            await db.update(itemsTable).set({ pricePerUnit: newPriceUsd }).where(eq(itemsTable.id, item.id));
+          }
           matchedThis = true;
         }
       }
@@ -370,8 +379,8 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
             )
           );
         for (const item of itemsByName) {
-          const priceChanged = Math.abs((item.pricePerUnit ?? 0) - newPriceUsd) > 0.0001;
-          const availChanged = (item.isAvailable ?? true) !== isAvailable;
+          const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
+          const availChanged = item.isAvailable !== isAvailable;
           if (priceChanged || availChanged) {
             await db.update(itemsTable)
               .set({ pricePerUnit: newPriceUsd, isAvailable, apiEndpoint: endpoint })
@@ -380,8 +389,10 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
             const displayName = item.nameAr || item.nameEn || productName;
             if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
           } else {
-            // Still store the endpoint for faster future lookups
-            await db.update(itemsTable).set({ apiEndpoint: endpoint }).where(eq(itemsTable.id, item.id));
+            // Store endpoint for faster future lookups; silently set price if NULL
+            await db.update(itemsTable)
+              .set({ apiEndpoint: endpoint, ...(item.pricePerUnit === null ? { pricePerUnit: newPriceUsd } : {}) })
+              .where(eq(itemsTable.id, item.id));
           }
         }
       }
