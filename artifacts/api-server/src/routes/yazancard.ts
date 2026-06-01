@@ -399,19 +399,10 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
         matchedThis = true;
       }
 
-      // 3) Name fallback — only when endpoint didn't match anything
+      // 3) Name fallback — exact normalized name match only (no partial/word matching)
       if (!matchedThis && productName) {
         const normName = productName.toLowerCase().trim().replace(/\s+/g, " ");
-        // Try exact normalized match first, then word-by-word
-        let nameMatches = itemByNormName.get(normName) || [];
-        if (!nameMatches.length) {
-          // Word-by-word: find items whose nameEn contains ALL significant words
-          const words = normName.split(" ").filter(w => w.length > 2);
-          nameMatches = allDbItems.filter(item => {
-            const en = (item.nameEn || "").toLowerCase();
-            return words.length > 0 && words.every(w => en.includes(w));
-          }).slice(0, 3);
-        }
+        const nameMatches = itemByNormName.get(normName) || [];
         for (const item of nameMatches) {
           const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
           const availChanged = item.isAvailable !== isAvailable;
