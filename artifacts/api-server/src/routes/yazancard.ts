@@ -373,16 +373,24 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
         }
       }
 
-      // 3) Fallback: match items by name when no apiEndpoint is stored
+      // 3) Fallback: match items by name (runs whenever endpoint didn't match anything)
+      //    No restriction on existing apiEndpoint — item may have a stale/changed endpoint
       if (!matchedThis && productName) {
-        const itemsByName = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr, pricePerUnit: itemsTable.pricePerUnit, isAvailable: itemsTable.isAvailable })
+        const words = productName.trim().split(/\s+/).filter(w => w.length > 2);
+        // Build OR conditions: exact name match OR contains any significant word
+        const nameConditions = [
+          ilike(itemsTable.nameEn, productName),
+          ilike(itemsTable.nameEn, `%${productName}%`),
+          ...words.map(w => ilike(itemsTable.nameEn, `%${w}%`)),
+        ];
+        const itemsByName = await db.select({
+          id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr,
+          pricePerUnit: itemsTable.pricePerUnit, isAvailable: itemsTable.isAvailable,
+          apiEndpoint: itemsTable.apiEndpoint,
+        })
           .from(itemsTable)
-          .where(
-            and(
-              or(ilike(itemsTable.nameEn, productName), ilike(itemsTable.nameAr, productName)),
-              sql`(${itemsTable.apiEndpoint} IS NULL OR ${itemsTable.apiEndpoint} = '')`
-            )
-          );
+          .where(or(...nameConditions))
+          .limit(5); // safety cap to avoid matching too broadly
         for (const item of itemsByName) {
           const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
           const availChanged = item.isAvailable !== isAvailable;
@@ -394,11 +402,12 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
             const displayName = item.nameAr || item.nameEn || productName;
             if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
           } else {
-            // Store endpoint for faster future lookups; silently set price if NULL
+            // Update endpoint to latest (stale endpoint fix); silently set price if NULL
             await db.update(itemsTable)
               .set({ apiEndpoint: endpoint, ...(item.pricePerUnit === null ? { pricePerUnit: newPriceUsd } : {}) })
               .where(eq(itemsTable.id, item.id));
           }
+          matchedThis = true;
         }
       }
       // Track unavailable products that couldn't be found in DB
