@@ -457,4 +457,13 @@ router.post("/admin/yazancard/import", requireAdmin, async (req: Request, res: R
   res.json({ imported: imported.length, errors, names: imported });
 });
 
+// Emergency reset: mark ALL items and packages as available again
+router.post("/admin/provider/reset-availability", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const [itemsResult] = await Promise.all([
+    db.update(itemsTable).set({ isAvailable: true }).returning({ id: itemsTable.id }),
+    db.update(packagesTable).set({ isAvailable: true }),
+  ]);
+  res.json({ ok: true, itemsReset: itemsResult.length });
+});
+
 export default router;

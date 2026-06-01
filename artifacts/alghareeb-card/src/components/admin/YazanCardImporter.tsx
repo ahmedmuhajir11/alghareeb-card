@@ -54,6 +54,8 @@ export default function YazanCardImporter() {
   const [importMode, setImportMode] = useState<"flat" | "grouped">("flat");
   const [fixingToken, setFixingToken] = useState(false);
   const [fixResult, setFixResult] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [syncNames, setSyncNames] = useState<string[]>([]);
@@ -96,6 +98,21 @@ export default function YazanCardImporter() {
     } finally {
       setSyncing(false);
     }
+  }
+
+  async function resetAvailability() {
+    setResetting(true);
+    setResetResult(null);
+    try {
+      const res = await fetch("/api/admin/provider/reset-availability", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const d = await res.json();
+      if (res.ok) setResetResult(`✅ تم إعادة تفعيل ${d.itemsReset} تطبيق`);
+      else setResetResult(`❌ ${d.error}`);
+    } catch (e: any) { setResetResult(`❌ ${e.message}`); }
+    finally { setResetting(false); }
   }
 
   async function fixYazanToken() {
@@ -281,6 +298,18 @@ export default function YazanCardImporter() {
         </div>
         <Button size="sm" variant="outline" className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10 shrink-0" onClick={fixYazanToken} disabled={fixingToken}>
           {fixingToken ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />جاري...</> : "إصلاح التوكن"}
+        </Button>
+      </div>
+
+      {/* Reset availability banner */}
+      <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex-1 text-sm">
+          <p className="font-semibold text-red-400">🔄 إعادة تفعيل جميع التطبيقات</p>
+          <p className="text-muted-foreground text-xs mt-0.5">اضغط إذا تم تعطيل تطبيقات بشكل خاطئ — سيُعيد تفعيل كل التطبيقات والباقات دفعة واحدة</p>
+          {resetResult && <p className="mt-1 text-xs font-mono">{resetResult}</p>}
+        </div>
+        <Button size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 shrink-0" onClick={resetAvailability} disabled={resetting}>
+          {resetting ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />جاري...</> : "إعادة تفعيل الكل"}
         </Button>
       </div>
 
