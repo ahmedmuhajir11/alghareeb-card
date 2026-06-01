@@ -399,19 +399,21 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
         matchedThis = true;
       }
 
-      // 3) Name fallback — exact normalized name match only (no partial/word matching)
+      // 3) Name fallback — exact normalized name match, price update ONLY (no availability change)
+      //    Availability is only synced when matched by apiEndpoint (reliable link)
       if (!matchedThis && productName) {
         const normName = productName.toLowerCase().trim().replace(/\s+/g, " ");
         const nameMatches = itemByNormName.get(normName) || [];
         for (const item of nameMatches) {
           const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
-          const availChanged = item.isAvailable !== isAvailable;
-          if (priceChanged || availChanged) {
-            await db.update(itemsTable).set({ pricePerUnit: newPriceUsd, isAvailable, apiEndpoint: endpoint }).where(eq(itemsTable.id, item.id));
+          if (priceChanged) {
+            // Update price only — availability is NOT changed via name matching
+            await db.update(itemsTable).set({ pricePerUnit: newPriceUsd, apiEndpoint: endpoint }).where(eq(itemsTable.id, item.id));
             updated++;
             const displayName = item.nameAr || item.nameEn || productName;
             if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
           } else {
+            // Store endpoint for future reliable matching; silently set price if NULL
             await db.update(itemsTable).set({ apiEndpoint: endpoint, ...(item.pricePerUnit === null ? { pricePerUnit: newPriceUsd } : {}) }).where(eq(itemsTable.id, item.id));
           }
           matchedThis = true;
