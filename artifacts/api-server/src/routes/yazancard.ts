@@ -308,6 +308,7 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
   let updated = 0;
   const updatedNames: string[] = [];
   const errors: string[] = [];
+  const unavailableFromProvider: string[] = [];
 
   for (const p of allProducts) {
     try {
@@ -318,7 +319,10 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       const productName = (p.name as string) || "";
       let matchedThis = false;
 
-      const isAvailable = p.available !== false;
+      // Handle all falsy forms: false, 0, "false", "0", "no"
+      const rawAvail = p.available;
+      const isAvailable = rawAvail !== false && rawAvail !== 0 && rawAvail !== "false" && rawAvail !== "0" && rawAvail !== "no";
+      if (!isAvailable) unavailableFromProvider.push(productName || String(p.id));
 
       // 1) Update matching packages by apiEndpoint (grouped import mode)
       const pkgs = await db.select({ id: packagesTable.id, priceUsd: packagesTable.priceUsd, isAvailable: packagesTable.isAvailable })
@@ -401,7 +405,7 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
     }
   }
 
-  res.json({ updated, total: allProducts.length, updatedNames, errors });
+  res.json({ updated, total: allProducts.length, updatedNames, unavailableFromProvider, errors });
 });
 
 // Legacy import route

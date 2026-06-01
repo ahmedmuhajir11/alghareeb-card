@@ -57,11 +57,13 @@ export default function YazanCardImporter() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [syncNames, setSyncNames] = useState<string[]>([]);
+  const [syncUnavailable, setSyncUnavailable] = useState<string[]>([]);
 
   async function syncPrices() {
     setSyncing(true);
     setSyncResult(null);
     setSyncNames([]);
+    setSyncUnavailable([]);
     try {
       const body: Record<string, unknown> = {
         baseUrl: providerBase,
@@ -85,6 +87,7 @@ export default function YazanCardImporter() {
       const d = JSON.parse(text);
       setSyncResult(`✅ تم تحديث ${d.updated} سعر من أصل ${d.total} منتج${d.errors?.length ? ` (${d.errors.length} خطأ)` : ""}`);
       if (Array.isArray(d.updatedNames)) setSyncNames(d.updatedNames);
+      if (Array.isArray(d.unavailableFromProvider)) setSyncUnavailable(d.unavailableFromProvider);
     } catch (e: any) {
       setSyncResult(`❌ ${e.message}`);
     } finally {
@@ -301,6 +304,20 @@ export default function YazanCardImporter() {
                 {syncNames.map((name, i) => (
                   <li key={i} className="text-xs px-2 py-1 text-green-400 flex items-center gap-1.5">
                     <span className="text-green-500">✓</span> {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {syncUnavailable.length > 0 && (
+            <div className="mt-2 border border-orange-500/30 rounded-md overflow-hidden">
+              <p className="text-xs text-orange-400 px-2 py-1 bg-orange-500/10 border-b border-orange-500/20">
+                🚫 غير متاح عند المزود ({syncUnavailable.length}) — هؤلاء موجودون في API يزن كارد بحالة "غير متاح":
+              </p>
+              <ul className="max-h-48 overflow-y-auto divide-y divide-border/40">
+                {syncUnavailable.map((name, i) => (
+                  <li key={i} className="text-xs px-2 py-1 text-orange-300 flex items-center gap-1.5">
+                    <span className="text-orange-500">✕</span> {name}
                   </li>
                 ))}
               </ul>
