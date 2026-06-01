@@ -311,6 +311,48 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
   const unavailableFromProvider: string[] = [];
   const unavailableNotInDb: string[] = [];
 
+  // ── Load all DB records once ──────────────────────────────────────────────
+  const allDbItems = await db.select({
+    id: itemsTable.id,
+    nameEn: itemsTable.nameEn,
+    nameAr: itemsTable.nameAr,
+    apiEndpoint: itemsTable.apiEndpoint,
+    pricePerUnit: itemsTable.pricePerUnit,
+    isAvailable: itemsTable.isAvailable,
+  }).from(itemsTable);
+
+  const allDbPkgs = await db.select({
+    id: packagesTable.id,
+    apiEndpoint: sql<string>`${packagesTable}.api_endpoint`,
+    priceUsd: packagesTable.priceUsd,
+    isAvailable: packagesTable.isAvailable,
+  }).from(packagesTable).where(sql`${packagesTable}.api_endpoint IS NOT NULL AND ${packagesTable}.api_endpoint <> ''`);
+
+  // Build fast lookup maps
+  const pkgByEndpoint = new Map<string, typeof allDbPkgs[0][]>();
+  for (const pkg of allDbPkgs) {
+    const key = pkg.apiEndpoint;
+    if (!pkgByEndpoint.has(key)) pkgByEndpoint.set(key, []);
+    pkgByEndpoint.get(key)!.push(pkg);
+  }
+
+  const itemByEndpoint = new Map<string, typeof allDbItems[0][]>();
+  const itemByNormName = new Map<string, typeof allDbItems[0][]>();
+  for (const item of allDbItems) {
+    if (item.apiEndpoint) {
+      const key = item.apiEndpoint;
+      if (!itemByEndpoint.has(key)) itemByEndpoint.set(key, []);
+      itemByEndpoint.get(key)!.push(item);
+    }
+    // Normalize: lowercase, trim, collapse spaces
+    const norm = (item.nameEn || "").toLowerCase().trim().replace(/\s+/g, " ");
+    if (norm) {
+      if (!itemByNormName.has(norm)) itemByNormName.set(norm, []);
+      itemByNormName.get(norm)!.push(item);
+    }
+  }
+
+  // ── Process each provider product ────────────────────────────────────────
   for (const p of allProducts) {
     try {
       const endpoint = `${resolvedBase}/newOrder/${p.id}`;
@@ -318,99 +360,73 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       if (!isFinite(newPriceUsd) || newPriceUsd <= 0) continue;
 
       const productName = (p.name as string) || "";
-      let matchedThis = false;
 
-      // Handle all falsy forms: false, 0, "false", "0", "no"
+      // Handle all falsy availability forms: false, 0, "false", "0", "no"
       const rawAvail = p.available;
       const isAvailable = rawAvail !== false && rawAvail !== 0 && rawAvail !== "false" && rawAvail !== "0" && rawAvail !== "no";
       if (!isAvailable) unavailableFromProvider.push(productName || String(p.id));
 
-      // 1) Update matching packages by apiEndpoint (grouped import mode)
-      const pkgs = await db.select({ id: packagesTable.id, priceUsd: packagesTable.priceUsd, isAvailable: packagesTable.isAvailable })
-        .from(packagesTable)
-        .where(sql`${packagesTable}.api_endpoint = ${endpoint}`);
-      for (const pkg of pkgs) {
-        // Only flag price as changed when we have a known previous price (not NULL)
+      let matchedThis = false;
+
+      // 1) Packages by endpoint
+      const matchedPkgs = pkgByEndpoint.get(endpoint) || [];
+      for (const pkg of matchedPkgs) {
         const priceChanged = pkg.priceUsd !== null && Math.abs(pkg.priceUsd - newPriceUsd) > 0.0001;
-        // isAvailable has DB default true (never null), compare directly
         const availChanged = pkg.isAvailable !== isAvailable;
         if (priceChanged || availChanged) {
-          await db.update(packagesTable)
-            .set({ priceUsd: newPriceUsd, isAvailable })
-            .where(eq(packagesTable.id, pkg.id));
+          await db.update(packagesTable).set({ priceUsd: newPriceUsd, isAvailable }).where(eq(packagesTable.id, pkg.id));
           updated++;
-          matchedThis = true;
           if (productName && !updatedNames.includes(productName)) updatedNames.push(productName);
-        } else {
-          // Silently update price if it was NULL (first-time sync, not a real change)
-          if (pkg.priceUsd === null) {
-            await db.update(packagesTable).set({ priceUsd: newPriceUsd }).where(eq(packagesTable.id, pkg.id));
-          }
-          matchedThis = true;
+        } else if (pkg.priceUsd === null) {
+          await db.update(packagesTable).set({ priceUsd: newPriceUsd }).where(eq(packagesTable.id, pkg.id));
         }
+        matchedThis = true;
       }
 
-      // 2) Update matching items by apiEndpoint (flat import mode — endpoint stored)
-      const itemsByEndpoint = await db.select({ id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr, pricePerUnit: itemsTable.pricePerUnit, isAvailable: itemsTable.isAvailable })
-        .from(itemsTable)
-        .where(eq(itemsTable.apiEndpoint, endpoint));
-      for (const item of itemsByEndpoint) {
+      // 2) Items by endpoint
+      const matchedItems = itemByEndpoint.get(endpoint) || [];
+      for (const item of matchedItems) {
         const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
         const availChanged = item.isAvailable !== isAvailable;
         if (priceChanged || availChanged) {
-          await db.update(itemsTable)
-            .set({ pricePerUnit: newPriceUsd, isAvailable })
-            .where(eq(itemsTable.id, item.id));
+          await db.update(itemsTable).set({ pricePerUnit: newPriceUsd, isAvailable }).where(eq(itemsTable.id, item.id));
           updated++;
-          matchedThis = true;
           const displayName = item.nameAr || item.nameEn || productName;
           if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
-        } else {
-          if (item.pricePerUnit === null) {
-            await db.update(itemsTable).set({ pricePerUnit: newPriceUsd }).where(eq(itemsTable.id, item.id));
-          }
-          matchedThis = true;
+        } else if (item.pricePerUnit === null) {
+          await db.update(itemsTable).set({ pricePerUnit: newPriceUsd }).where(eq(itemsTable.id, item.id));
         }
+        matchedThis = true;
       }
 
-      // 3) Fallback: match items by name (runs whenever endpoint didn't match anything)
-      //    No restriction on existing apiEndpoint — item may have a stale/changed endpoint
+      // 3) Name fallback — only when endpoint didn't match anything
       if (!matchedThis && productName) {
-        const words = productName.trim().split(/\s+/).filter(w => w.length > 2);
-        // Build OR conditions: exact name match OR contains any significant word
-        const nameConditions = [
-          ilike(itemsTable.nameEn, productName),
-          ilike(itemsTable.nameEn, `%${productName}%`),
-          ...words.map(w => ilike(itemsTable.nameEn, `%${w}%`)),
-        ];
-        const itemsByName = await db.select({
-          id: itemsTable.id, nameEn: itemsTable.nameEn, nameAr: itemsTable.nameAr,
-          pricePerUnit: itemsTable.pricePerUnit, isAvailable: itemsTable.isAvailable,
-          apiEndpoint: itemsTable.apiEndpoint,
-        })
-          .from(itemsTable)
-          .where(or(...nameConditions))
-          .limit(5); // safety cap to avoid matching too broadly
-        for (const item of itemsByName) {
+        const normName = productName.toLowerCase().trim().replace(/\s+/g, " ");
+        // Try exact normalized match first, then word-by-word
+        let nameMatches = itemByNormName.get(normName) || [];
+        if (!nameMatches.length) {
+          // Word-by-word: find items whose nameEn contains ALL significant words
+          const words = normName.split(" ").filter(w => w.length > 2);
+          nameMatches = allDbItems.filter(item => {
+            const en = (item.nameEn || "").toLowerCase();
+            return words.length > 0 && words.every(w => en.includes(w));
+          }).slice(0, 3);
+        }
+        for (const item of nameMatches) {
           const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
           const availChanged = item.isAvailable !== isAvailable;
           if (priceChanged || availChanged) {
-            await db.update(itemsTable)
-              .set({ pricePerUnit: newPriceUsd, isAvailable, apiEndpoint: endpoint })
-              .where(eq(itemsTable.id, item.id));
+            await db.update(itemsTable).set({ pricePerUnit: newPriceUsd, isAvailable, apiEndpoint: endpoint }).where(eq(itemsTable.id, item.id));
             updated++;
             const displayName = item.nameAr || item.nameEn || productName;
             if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
           } else {
-            // Update endpoint to latest (stale endpoint fix); silently set price if NULL
-            await db.update(itemsTable)
-              .set({ apiEndpoint: endpoint, ...(item.pricePerUnit === null ? { pricePerUnit: newPriceUsd } : {}) })
-              .where(eq(itemsTable.id, item.id));
+            await db.update(itemsTable).set({ apiEndpoint: endpoint, ...(item.pricePerUnit === null ? { pricePerUnit: newPriceUsd } : {}) }).where(eq(itemsTable.id, item.id));
           }
           matchedThis = true;
         }
       }
-      // Track unavailable products that couldn't be found in DB
+
       if (!matchedThis && !isAvailable) {
         unavailableNotInDb.push(productName || String(p.id));
       }
