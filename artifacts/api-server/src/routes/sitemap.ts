@@ -26,8 +26,6 @@ router.get("/sitemap.xml", async (_req: Request, res: Response): Promise<void> =
       url(`${BASE_URL}/`, "1.0", "daily"),
       url(`${BASE_URL}/payment-methods`, "0.8", "weekly"),
       url(`${BASE_URL}/about`, "0.6", "monthly"),
-      url(`${BASE_URL}/privacy`, "0.3", "monthly"),
-      url(`${BASE_URL}/terms`, "0.3", "monthly"),
     ];
 
     const sectionUrls = sections.map(s =>
