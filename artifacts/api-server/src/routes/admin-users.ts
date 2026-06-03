@@ -17,7 +17,7 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
       where = `WHERE LOWER(u.email) LIKE $1 OR u.account_number LIKE $1 OR LOWER(u.name) LIKE $1`;
     }
     const result = await pool.query(
-      `SELECT u.id, u.account_number, u.name, u.email, u.phone, u.balance, u.currency,
+      `SELECT u.id, u.account_number, u.name, u.email, u.phone, u.phone_code, u.balance, u.currency,
               u.level, u.is_verified, u.is_reseller, u.api_token, u.created_at,
               COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id=u.id AND type='purchase'), 0) AS total_purchases,
               COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id=u.id AND type='deposit'), 0) AS total_deposits
@@ -32,6 +32,7 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
       name: r.name,
       email: r.email,
       phone: r.phone,
+      phoneCode: r.phone_code || null,
       balance: parseFloat(r.balance),
       currency: r.currency,
       level: r.level,

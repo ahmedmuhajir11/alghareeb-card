@@ -17,6 +17,7 @@ type AdminUser = {
   name: string;
   email: string | null;
   phone: string | null;
+  phoneCode: string | null;
   balance: number;
   currency: string;
   level: string;
@@ -523,7 +524,7 @@ export default function UsersManager() {
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5">
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
                       {u.email && (
                         <span className="flex items-center gap-1 truncate">
                           <Mail className="w-3 h-3" />
@@ -534,6 +535,11 @@ export default function UsersManager() {
                         <Hash className="w-3 h-3" />
                         {u.accountNumber}
                       </span>
+                      {u.phone && (
+                        <span className="flex items-center gap-1 shrink-0 text-purple-300/80" dir="ltr">
+                          📞 {u.phoneCode ?? ""}{u.phone}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="text-left shrink-0 hidden sm:block">
