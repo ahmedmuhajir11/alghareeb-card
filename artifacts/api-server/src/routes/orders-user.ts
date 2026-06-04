@@ -23,7 +23,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 
     // Load canonical item + settings
     const itemRes = await client.query(
-      `SELECT i.id, i.name_ar, i.section_id, i.price_per_unit, i.currency_unit,
+      `SELECT i.id, i.name_ar, i.name_en, i.name_tr, i.section_id, i.price_per_unit, i.currency_unit,
               i.api_endpoint, i.api_key, i.api_agent_id,
               s.pricing_type AS section_pricing_type
        FROM items i LEFT JOIN sections s ON s.id = i.section_id
@@ -135,9 +135,9 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     }
 
     const orderRes = await client.query(
-      `INSERT INTO orders (user_id, item_name, package_name, package_id, target_id, amount, currency, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`,
-      [user.id, item.name_ar, packageName, packageId ? parseInt(packageId, 10) : null, targetId || null, cost, userCurrency]
+      `INSERT INTO orders (user_id, item_name, item_name_en, item_name_tr, package_name, package_id, target_id, amount, currency, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending') RETURNING *`,
+      [user.id, item.name_ar, item.name_en || null, item.name_tr || null, packageName, packageId ? parseInt(packageId, 10) : null, targetId || null, cost, userCurrency]
     );
     const order = orderRes.rows[0];
 
@@ -296,6 +296,8 @@ router.get("/orders", requireUser, async (req: Request, res: Response): Promise<
     res.json(result.rows.map(r => ({
       id: r.id,
       itemName: r.item_name,
+      itemNameEn: r.item_name_en || null,
+      itemNameTr: r.item_name_tr || null,
       packageName: r.package_name,
       targetId: r.target_id,
       amount: parseFloat(r.amount),

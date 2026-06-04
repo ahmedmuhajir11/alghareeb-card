@@ -174,6 +174,9 @@ async function run() {
       await c.query("INSERT INTO currencies (code,name_ar,name_en,usd_rate,is_active) VALUES ($1,$2,$3,$4,true) ON CONFLICT (code) DO NOTHING",[code,nameAr,nameEn,rate]);
     }
     console.log('✅ Currencies seeded');
+    // Multilingual item names in orders
+    await c.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS item_name_en VARCHAR(255)");
+    await c.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS item_name_tr VARCHAR(255)");
     console.log('✅ DB migrations done');
   } finally {
     c.release();

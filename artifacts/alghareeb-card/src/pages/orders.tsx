@@ -14,6 +14,8 @@ type OrderStatus = "pending" | "approved" | "completed" | "rejected" | "cancelle
 type Order = {
   id: number;
   itemName: string;
+  itemNameEn: string | null;
+  itemNameTr: string | null;
   packageName: string | null;
   targetId: string | null;
   amount: number;
@@ -139,7 +141,11 @@ export default function OrdersPage() {
                       <Hash className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-xs font-mono text-muted-foreground">#{o.id}</span>
                     </div>
-                    <h3 className="font-bold text-white truncate">{o.itemName}</h3>
+                    <h3 className="font-bold text-white truncate">
+                      {lang === 'tr' ? (o.itemNameTr || o.itemNameEn || o.itemName)
+                       : ['ar','fa','ku'].includes(lang) ? o.itemName
+                       : (o.itemNameEn || o.itemName)}
+                    </h3>
                     {o.packageName && (
                       <p className="text-sm text-purple-300/80 mt-0.5">{translatePkgName(o.packageName, t)}</p>
                     )}
