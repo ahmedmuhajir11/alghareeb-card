@@ -661,4 +661,20 @@ router.get("/admin/stats", requireAdmin, async (_req, res) => {
   }
 });
 
+// One-time migration endpoint: backfill item_name_en/tr for existing orders
+router.post("/migrate-item-names", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      UPDATE orders o
+      SET item_name_en = i.name_en,
+          item_name_tr = i.name_tr
+      FROM items i
+      WHERE i.name_ar = o.item_name
+    `);
+    res.json({ ok: true, updated: result.rowCount });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
