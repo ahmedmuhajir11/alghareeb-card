@@ -93,8 +93,8 @@ export default function SectionPage({ id }: { id: number }) {
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           "itemListElement": [
-            { "@type": "ListItem", "position": 1, "name": "Home | الرئيسية", "item": "https://alghareebcard.com/" },
-            { "@type": "ListItem", "position": 2, "name": section?.nameEn ? `${section.nameAr} - ${section.nameEn}` : (section?.nameAr ?? ""), "item": `https://alghareebcard.com/section/${id}` }
+            { "@type": "ListItem", "position": 1, "name": "الغريب كارد", "item": "https://alghareebcard.com/" },
+            { "@type": "ListItem", "position": 2, "name": section?.nameEn ? `${section.nameAr} - ${section.nameEn}` : (section?.nameAr || `قسم ${id}`), "item": `https://alghareebcard.com/section/${id}` }
           ]
         })}</script>
       </Helmet>

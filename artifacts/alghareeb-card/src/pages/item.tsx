@@ -204,9 +204,9 @@ export default function ItemPage({ id }: { id: number }) {
           "breadcrumb": {
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Home | الرئيسية", "item": "https://alghareebcard.com/" },
-              { "@type": "ListItem", "position": 2, "name": (item as any)?.sectionNameAr ?? "Sections", "item": `https://alghareebcard.com/section/${item?.sectionId ?? ''}` },
-              { "@type": "ListItem", "position": 3, "name": item.nameEn ? `${item.nameAr} - ${item.nameEn}` : item.nameAr, "item": `https://alghareebcard.com/item/${id}` }
+              { "@type": "ListItem", "position": 1, "name": "الغريب كارد", "item": "https://alghareebcard.com/" },
+              { "@type": "ListItem", "position": 2, "name": ((item as any)?.sectionNameAr || (item as any)?.sectionNameEn || "الأقسام"), "item": item?.sectionId ? `https://alghareebcard.com/section/${item.sectionId}` : "https://alghareebcard.com/" },
+              { "@type": "ListItem", "position": 3, "name": item.nameEn ? `${item.nameAr} - ${item.nameEn}` : (item.nameAr || `منتج ${id}`), "item": `https://alghareebcard.com/item/${id}` }
             ]
           }
         })}</script>
