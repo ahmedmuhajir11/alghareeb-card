@@ -177,6 +177,15 @@ async function run() {
     // Multilingual item names in orders
     await c.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS item_name_en VARCHAR(255)");
     await c.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS item_name_tr VARCHAR(255)");
+    // Backfill English/Turkish names for existing orders by matching item_name (Arabic) → items table
+    await c.query(\`
+      UPDATE orders o
+      SET item_name_en = i.name_en,
+          item_name_tr = i.name_tr
+      FROM items i
+      WHERE i.name_ar = o.item_name
+        AND (o.item_name_en IS NULL OR o.item_name_tr IS NULL)
+    \`);
     console.log('✅ DB migrations done');
   } finally {
     c.release();
