@@ -239,8 +239,8 @@ export default function ItemPage({ id }: { id: number }) {
         <div className="flex items-center gap-3 bg-red-950/60 border border-red-500/50 rounded-2xl p-3 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
           <span className="text-2xl">🚫</span>
           <div>
-            <p className="font-bold text-red-400 text-base">المنتج غير متاح بالوقت الحالي</p>
-            <p className="text-sm text-red-300/70">يرجى التواصل معنا أو المحاولة لاحقاً</p>
+            <p className="font-bold text-red-400 text-base">{t('item.unavailableMsg')}</p>
+            <p className="text-sm text-red-300/70">{t('item.unavailableContact')}</p>
           </div>
         </div>
       )}
@@ -315,7 +315,7 @@ export default function ItemPage({ id }: { id: number }) {
                     {pkgUnavailable && (
                       <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
                         <span className="bg-red-600/90 text-white text-xs font-black px-3 py-1 rounded-lg shadow-lg tracking-wide border border-red-400/30">
-                          غير متاح
+                          {t('section.unavailable')}
                         </span>
                       </div>
                     )}
@@ -361,7 +361,7 @@ export default function ItemPage({ id }: { id: number }) {
           disabled={submitting || isUnavailable}
         >
           <Send className="w-5 h-5" />
-          {submitting ? t('item.sending') : isUnavailable ? "المنتج غير متاح" : t('item.sendOrder')}
+          {submitting ? t('item.sending') : isUnavailable ? t('item.unavailableBtn') : t('item.sendOrder')}
         </Button>
         {user && (
           <p className="text-xs text-center text-muted-foreground mt-1">

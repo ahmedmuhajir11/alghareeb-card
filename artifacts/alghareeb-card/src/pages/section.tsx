@@ -151,7 +151,7 @@ export default function SectionPage({ id }: { id: number }) {
                     {unavailable && (
                       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
                         <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded shadow-lg whitespace-nowrap">
-                          غير متاح
+                          {t('section.unavailable')}
                         </span>
                       </div>
                     )}
@@ -169,8 +169,8 @@ export default function SectionPage({ id }: { id: number }) {
                   key={item.id}
                   onClick={() => toast({
                     variant: "destructive",
-                    title: "🚫 غير متاح بالوقت الحالي",
-                    description: "هذا المنتج غير متاح مؤقتاً، يرجى المحاولة لاحقاً",
+                    title: `🚫 ${t('section.unavailableTitle')}`,
+                    description: t('section.unavailableDesc'),
                   })}
                 >
                   {cardContent}

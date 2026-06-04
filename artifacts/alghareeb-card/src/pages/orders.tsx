@@ -22,6 +22,19 @@ type Order = {
   createdAt: string;
 };
 
+function translatePkgName(name: string | null, t: (k: any) => string): string | null {
+  if (!name) return null;
+  const match = name.match(/^(\d[\d,]*)\s+(.+)$/);
+  if (match) {
+    const qty = match[1];
+    const unit = match[2].trim();
+    const key = `unit.${unit}` as Parameters<typeof t>[0];
+    const translated = t(key) !== key ? t(key) : unit;
+    return `${qty} ${translated}`;
+  }
+  return name;
+}
+
 export default function OrdersPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const { t, lang } = useI18n();
@@ -128,7 +141,7 @@ export default function OrdersPage() {
                     </div>
                     <h3 className="font-bold text-white truncate">{o.itemName}</h3>
                     {o.packageName && (
-                      <p className="text-sm text-purple-300/80 mt-0.5">{o.packageName}</p>
+                      <p className="text-sm text-purple-300/80 mt-0.5">{translatePkgName(o.packageName, t)}</p>
                     )}
                     {o.targetId && (
                       <p className="text-xs text-muted-foreground mt-1">

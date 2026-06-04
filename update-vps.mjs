@@ -50,6 +50,8 @@
     'artifacts/alghareeb-card/src/pages/wallet.tsx',
     'artifacts/alghareeb-card/src/pages/kyc.tsx',
     'artifacts/alghareeb-card/src/pages/my-deposits.tsx',
+    'artifacts/alghareeb-card/src/pages/orders.tsx',
+    'artifacts/alghareeb-card/src/pages/profile-setup.tsx',
     'artifacts/alghareeb-card/src/lib/translations.ts',
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
     'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
