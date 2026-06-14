@@ -93,6 +93,10 @@ app.get("/robots.txt", (_req, res) => {
   res.send(ROBOTS);
 });
 
+app.get("/favicon.ico", (_req, res) => {
+  res.redirect(301, "/logo.png");
+});
+
 app.use("/api", router);
 
 if (process.env.NODE_ENV === "production") {
