@@ -52,6 +52,7 @@
     'artifacts/alghareeb-card/src/pages/my-deposits.tsx',
     'artifacts/alghareeb-card/src/pages/orders.tsx',
     'artifacts/alghareeb-card/src/pages/profile-setup.tsx',
+    'artifacts/alghareeb-card/src/pages/about.tsx',
     'artifacts/alghareeb-card/src/lib/translations.ts',
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
     'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
@@ -208,6 +209,16 @@ run().catch(e => { console.error('❌ DB migration error:', e.message); process.
   execSync('pnpm --filter @workspace/api-server run build', {
     cwd: BASE, stdio: 'inherit'
   });
+
+  // Copy logo.png as favicon.ico so browsers/crawlers get an image, not HTML
+  try {
+    const { copyFileSync } = await import('fs');
+    copyFileSync(
+      `${BASE}/artifacts/alghareeb-card/public/logo.png`,
+      `${BASE}/artifacts/alghareeb-card/public/favicon.ico`
+    );
+    console.log('✅ favicon.ico created from logo.png');
+  } catch (e) { console.warn('⚠️  favicon.ico copy failed:', e.message); }
 
   console.log('\n🔨 Building frontend...');
   execSync('BASE_PATH=/ pnpm --filter @workspace/alghareeb-card run build', {
