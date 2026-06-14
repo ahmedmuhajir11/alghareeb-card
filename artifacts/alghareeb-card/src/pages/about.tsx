@@ -14,7 +14,55 @@ export default function AboutPage() {
         <meta property="og:title" content="من نحن | الغريب كارد" />
         <meta property="og:description" content="تعرف على الغريب كارد، منصة شحن الألعاب والتطبيقات وتحويل الأموال." />
         <meta property="og:url" content="https://alghareebcard.com/about" />
+        <meta property="og:image" content="https://alghareebcard.com/logo.png" />
         <link rel="canonical" href="https://alghareebcard.com/about" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://alghareebcard.com/#organization",
+              "name": "AlGhareeb Card",
+              "alternateName": "الغريب كارد",
+              "url": "https://alghareebcard.com",
+              "logo": "https://alghareebcard.com/logo.png",
+              "image": "https://alghareebcard.com/logo.png",
+              "description": "Digital services platform for game top-ups, app charging, and money transfers. منصة خدمات رقمية لشحن الألعاب والتطبيقات وتحويل الأموال.",
+              "email": "support@alghareebcard.com",
+              "telephone": "+905378221375",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+905378221375",
+                "contactType": "customer service",
+                "availableLanguage": ["Arabic", "Turkish", "English"]
+              },
+              "founder": {
+                "@type": "Person",
+                "@id": "https://alghareebcard.com/#founder",
+                "name": "Ahmed Muhajiri",
+                "alternateName": "أحمد مهاجري",
+                "jobTitle": "Founder & CEO",
+                "worksFor": { "@id": "https://alghareebcard.com/#organization" },
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressCountry": "TR",
+                  "addressRegion": "Kocaeli"
+                },
+                "nationality": "Syrian"
+              },
+              "sameAs": ["https://wa.me/905378221375"]
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://alghareebcard.com/about",
+              "url": "https://alghareebcard.com/about",
+              "name": "من نحن | AlGhareeb Card",
+              "isPartOf": { "@id": "https://alghareebcard.com/#organization" },
+              "about": { "@id": "https://alghareebcard.com/#organization" },
+              "description": "Learn about AlGhareeb Card and its founder Ahmed Muhajiri. تعرف على الغريب كارد ومؤسسها أحمد مهاجري."
+            }
+          ]
+        })}</script>
       </Helmet>
 
       {/* Hero */}

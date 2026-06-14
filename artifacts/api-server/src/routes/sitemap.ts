@@ -53,6 +53,7 @@ router.get("/robots.txt", (_req: Request, res: Response): void => {
   res.setHeader("Content-Type", "text/plain");
   res.send(`User-agent: *
 Allow: /
+Allow: /api/sitemap.xml
 Disallow: /admin
 Disallow: /api/
 Disallow: /sign-in
@@ -63,7 +64,7 @@ Disallow: /orders
 Disallow: /wallet
 Disallow: /my-deposits
 
-Sitemap: ${BASE_URL}/sitemap.xml`);
+Sitemap: ${BASE_URL}/api/sitemap.xml`);
 });
 
 export default router;
