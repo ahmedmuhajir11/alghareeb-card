@@ -56,6 +56,7 @@
     'artifacts/alghareeb-card/src/lib/translations.ts',
     'artifacts/alghareeb-card/src/hooks/usePushNotifications.ts',
     'artifacts/alghareeb-card/src/components/PushPermissionBanner.tsx',
+    'artifacts/alghareeb-card/public/favicon.ico',
     // API server routes
     'artifacts/api-server/src/app.ts',
     'artifacts/api-server/src/routes/settings.ts',
