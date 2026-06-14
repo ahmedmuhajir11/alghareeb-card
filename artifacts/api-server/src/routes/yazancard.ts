@@ -363,8 +363,11 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
 
       // Handle all falsy availability forms: false, 0, "false", "0", "no"
       const rawAvail = p.available;
-      const isAvailable = rawAvail !== false && rawAvail !== 0 && rawAvail !== "false" && rawAvail !== "0" && rawAvail !== "no";
-      if (!isAvailable) unavailableFromProvider.push(productName || String(p.id));
+      const providerAvailable = rawAvail !== false && rawAvail !== 0 && rawAvail !== "false" && rawAvail !== "0" && rawAvail !== "no";
+      // PUBG Global is known to be incorrectly reported as unavailable by the provider API
+      const isPubg = /pubg|ببجي/i.test(productName);
+      const isAvailable = isPubg ? true : providerAvailable;
+      if (!providerAvailable) unavailableFromProvider.push(productName || String(p.id));
 
       let matchedThis = false;
 
