@@ -1,4 +1,5 @@
 User-agent: *
+Allow: /api/sitemap.xml
 Allow: /
 Disallow: /admin
 Disallow: /api/
@@ -10,4 +11,4 @@ Disallow: /orders
 Disallow: /wallet
 Disallow: /my-deposits
 
-Sitemap: https://alghareebcard.com/sitemap.xml
+Sitemap: https://alghareebcard.com/api/sitemap.xml
