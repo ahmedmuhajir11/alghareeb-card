@@ -81,7 +81,7 @@ const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://alghareebcard.com/section/5</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>`;
 
-const ROBOTS = `User-agent: *\nAllow: /api/sitemap.xml\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /profile-setup\nDisallow: /kyc\nDisallow: /orders\nDisallow: /wallet\nDisallow: /my-deposits\n\nSitemap: https://alghareebcard.com/api/sitemap.xml\n`;
+const ROBOTS = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /profile-setup\nDisallow: /kyc\nDisallow: /orders\nDisallow: /wallet\nDisallow: /my-deposits\n\nSitemap: https://alghareebcard.com/api/sitemap.xml\n`;
 
 app.get("/sitemap.xml", (_req, res) => {
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
