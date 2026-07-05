@@ -100,29 +100,35 @@ function MaintenanceGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const isAdminPath = location.startsWith("/admin");
 
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ["/api/settings/maintenance"],
     queryFn: async () => {
-      const r = await fetch("/api/settings");
+      const r = await fetch("/api/settings", { cache: "no-store" });
       if (!r.ok) return { maintenanceMode: false };
       return r.json();
     },
-    refetchInterval: 30000,
-    staleTime: 10000,
+    refetchInterval: 15000,
+    staleTime: 0,
+    gcTime: 0,
   });
 
-  const { data: adminData } = useQuery({
+  const { data: adminData, isLoading: adminLoading } = useQuery({
     queryKey: ["/api/admin/me-maintenance"],
     queryFn: async () => {
-      const r = await fetch("/api/admin/me");
+      const r = await fetch("/api/admin/me", { credentials: "include" });
       if (!r.ok) return { isAdmin: false };
       return { isAdmin: true };
     },
     retry: false,
-    staleTime: 60000,
+    staleTime: 30000,
   });
 
   const isAdminUser = adminData?.isAdmin === true;
+
+  // While loading, don't show the site (prevents flash of content)
+  if (!isAdminPath && (settingsLoading || adminLoading)) {
+    return null;
+  }
 
   if (!isAdminPath && !isAdminUser && settings?.maintenanceMode) {
     return <MaintenancePage />;

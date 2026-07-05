@@ -27,6 +27,8 @@ function normalizeMoneyTransferCurrencies(input: unknown): string | undefined {
 }
 
 router.get("/settings", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
   let [settings] = await db.select().from(settingsTable).limit(1);
   if (!settings) {
     const [created] = await db.insert(settingsTable).values({}).returning();
