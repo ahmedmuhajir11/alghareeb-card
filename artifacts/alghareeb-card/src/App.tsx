@@ -98,9 +98,9 @@ function Router() {
 
 function MaintenanceGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const isAdmin = location.startsWith("/admin");
+  const isAdminPath = location.startsWith("/admin");
 
-  const { data } = useQuery({
+  const { data: settings } = useQuery({
     queryKey: ["/api/settings/maintenance"],
     queryFn: async () => {
       const r = await fetch("/api/settings");
@@ -111,7 +111,20 @@ function MaintenanceGuard({ children }: { children: React.ReactNode }) {
     staleTime: 10000,
   });
 
-  if (!isAdmin && data?.maintenanceMode) {
+  const { data: adminData } = useQuery({
+    queryKey: ["/api/admin/me-maintenance"],
+    queryFn: async () => {
+      const r = await fetch("/api/admin/me");
+      if (!r.ok) return { isAdmin: false };
+      return { isAdmin: true };
+    },
+    retry: false,
+    staleTime: 60000,
+  });
+
+  const isAdminUser = adminData?.isAdmin === true;
+
+  if (!isAdminPath && !isAdminUser && settings?.maintenanceMode) {
     return <MaintenancePage />;
   }
 
