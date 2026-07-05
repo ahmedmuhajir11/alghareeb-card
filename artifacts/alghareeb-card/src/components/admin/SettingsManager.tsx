@@ -31,6 +31,8 @@ export default function SettingsManager() {
   const { toast } = useToast();
 
   const [tickerMode, setTickerMode] = useState<"marquee" | "notifications">("notifications");
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
   const [formData, setFormData] = useState({
     marqueeText: "", marqueeTextEn: "", marqueeTextTr: "",
     whatsappNumber: "", moneyTransferCurrencies: "",
@@ -53,6 +55,7 @@ export default function SettingsManager() {
 
   useEffect(() => {
     if (settings) {
+      setMaintenanceMode(!!(settings as any).maintenanceMode);
       setTickerMode(((settings as any).tickerMode || "notifications") as "marquee" | "notifications");
       setFormData({
         marqueeText: settings.marqueeText || "",
@@ -162,10 +165,64 @@ export default function SettingsManager() {
     });
   };
 
+  async function toggleMaintenance() {
+    setMaintenanceLoading(true);
+    try {
+      const next = !maintenanceMode;
+      const res = await adminFetch("/api/admin/maintenance", {
+        method: "PATCH",
+        body: JSON.stringify({ enabled: next }),
+      });
+      if (!res.ok) throw new Error();
+      setMaintenanceMode(next);
+      toast({
+        title: next ? "🔧 تم إيقاف الموقع" : "✅ تم تشغيل الموقع",
+        description: next
+          ? "الموقع في وضع الصيانة — تم إرسال إشعار للمستخدمين"
+          : "الموقع يعمل بشكل طبيعي الآن",
+      });
+    } catch {
+      toast({ variant: "destructive", title: "خطأ في تغيير وضع الصيانة" });
+    } finally {
+      setMaintenanceLoading(false);
+    }
+  }
+
   if (isLoading) return <Skeleton className="w-full h-64 rounded-xl" />;
 
   return (
     <div className="space-y-6">
+
+      {/* ─── Maintenance Mode ─── */}
+      <Card className={`neon-border ${maintenanceMode ? "border-red-500/60 bg-red-500/5" : "bg-card/50"}`}>
+        <CardContent className="pt-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                {maintenanceMode ? "🔴" : "🟢"}
+                {maintenanceMode ? "الموقع مُوقَف حالياً (وضع الصيانة)" : "الموقع يعمل بشكل طبيعي"}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {maintenanceMode
+                  ? "جميع الزوار يرون صفحة الصيانة. لوحة التحكم تعمل بشكل طبيعي."
+                  : "عند الإيقاف، تُعرض صفحة صيانة لجميع الزوار ويُرسل إشعار فوري."}
+              </p>
+            </div>
+            <button
+              onClick={toggleMaintenance}
+              disabled={maintenanceLoading}
+              className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+                maintenanceMode
+                  ? "bg-green-600 hover:bg-green-500 text-white"
+                  : "bg-red-600 hover:bg-red-500 text-white"
+              } disabled:opacity-50`}
+            >
+              {maintenanceLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {maintenanceMode ? "تشغيل الموقع" : "إيقاف الموقع"}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ─── Currency Availability Toggles ─── */}
       <Card className="neon-border bg-card/50">

@@ -7,6 +7,10 @@ import {
 } from "@workspace/api-zod";
 import { serializeRow } from "../lib/serialize";
 import { requireAdmin } from "../middleware/requireAdmin";
+import { sendPushNotification } from "./push";
+
+// Ensure maintenance_mode column exists
+pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLEAN NOT NULL DEFAULT FALSE`).catch(() => {});
 
 const router: IRouter = Router();
 
@@ -111,6 +115,39 @@ router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
     return;
   }
   res.json(putResult.data);
+});
+
+// PATCH /api/admin/maintenance — toggle maintenance mode
+router.patch("/admin/maintenance", requireAdmin, async (req, res): Promise<void> => {
+  const { enabled } = req.body as { enabled: boolean };
+  if (typeof enabled !== "boolean") {
+    res.status(400).json({ error: "enabled (boolean) مطلوب" });
+    return;
+  }
+
+  let [settings] = await db.select().from(settingsTable).limit(1);
+  if (!settings) {
+    const [created] = await db.insert(settingsTable).values({}).returning();
+    settings = created;
+  }
+
+  await pool.query("UPDATE settings SET maintenance_mode = $1 WHERE id = $2", [enabled, settings.id]);
+
+  if (enabled) {
+    sendPushNotification(
+      "🔧 الموقع في وضع الصيانة",
+      "تم إيقاف الموقع مؤقتًا لإجراء أعمال صيانة، وسيعود للعمل في أقرب وقت ممكن.",
+      "/"
+    ).catch(() => {});
+  } else {
+    sendPushNotification(
+      "✅ الموقع عاد للعمل",
+      "انتهت أعمال الصيانة، يمكنك الآن استخدام الموقع بشكل طبيعي.",
+      "/"
+    ).catch(() => {});
+  }
+
+  res.json({ ok: true, maintenanceMode: enabled });
 });
 
 export default router;

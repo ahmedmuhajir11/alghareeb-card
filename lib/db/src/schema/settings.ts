@@ -1,4 +1,4 @@
-import { pgTable, serial, text, doublePrecision, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, doublePrecision, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -24,6 +24,7 @@ export const settingsTable = pgTable("settings", {
   welcomeMessageEn: text("welcome_message_en").notNull().default("Important: Before sending any amount, always verify the current payment method details on the (Add Balance) page. Payment information may change at any time — never send to old saved details."),
   welcomeMessageTr: text("welcome_message_tr").notNull().default("Önemli: Herhangi bir tutar göndermeden önce, (Bakiye Ekle) sayfasındaki güncel ödeme yöntemi bilgilerini her zaman doğrulayın. Ödeme bilgileri her an değişebilir — eski kayıtlı bilgilere para göndermeyin."),
   tickerMode: text("ticker_mode").notNull().default("notifications"),
+  maintenanceMode: boolean("maintenance_mode").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 

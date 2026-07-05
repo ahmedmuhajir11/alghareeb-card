@@ -1,5 +1,6 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CurrencyProvider } from "@/lib/currency";
@@ -8,6 +9,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import PushPermissionBanner from "@/components/PushPermissionBanner";
 import ScrollToTop from "@/components/ScrollToTop";
 import LoadingScreen from "@/components/LoadingScreen";
+import MaintenancePage from "@/pages/maintenance";
 import { useState } from "react";
 import NotFound from "@/pages/not-found";
 
@@ -94,6 +96,28 @@ function Router() {
   );
 }
 
+function MaintenanceGuard({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  const isAdmin = location.startsWith("/admin");
+
+  const { data } = useQuery({
+    queryKey: ["/api/settings/maintenance"],
+    queryFn: async () => {
+      const r = await fetch("/api/settings");
+      if (!r.ok) return { maintenanceMode: false };
+      return r.json();
+    },
+    refetchInterval: 30000,
+    staleTime: 10000,
+  });
+
+  if (!isAdmin && data?.maintenanceMode) {
+    return <MaintenancePage />;
+  }
+
+  return <>{children}</>;
+}
+
 function App() {
   const [loading, setLoading] = useState(true);
 
@@ -107,7 +131,9 @@ function App() {
               <div style={{ opacity: loading ? 0 : 1, transition: "opacity 0.4s ease 0.1s" }}>
                 <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                   <ScrollToTop />
-                  <Router />
+                  <MaintenanceGuard>
+                    <Router />
+                  </MaintenanceGuard>
                   <PushPermissionBanner />
                 </WouterRouter>
                 <Toaster />
