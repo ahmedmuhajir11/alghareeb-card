@@ -28,5 +28,6 @@ export interface Settings {
   welcomeMessageEn: string;
   welcomeMessageTr: string;
   tickerMode?: string;
+  maintenanceMode?: boolean;
   updatedAt: string;
 }

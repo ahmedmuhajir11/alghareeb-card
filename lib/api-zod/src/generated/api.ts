@@ -39,6 +39,7 @@ export const GetSettingsResponse = zod.object({
   welcomeMessageEn: zod.string(),
   welcomeMessageTr: zod.string(),
   tickerMode: zod.string().optional(),
+  maintenanceMode: zod.boolean().optional(),
   updatedAt: zod.string(),
 });
 
@@ -66,6 +67,7 @@ export const UpdateSettingsBody = zod.object({
   welcomeMessageEn: zod.string().optional(),
   welcomeMessageTr: zod.string().optional(),
   tickerMode: zod.string().optional(),
+  maintenanceMode: zod.boolean().optional(),
 });
 
 export const UpdateSettingsResponse = zod.object({
@@ -90,6 +92,7 @@ export const UpdateSettingsResponse = zod.object({
   welcomeMessageEn: zod.string(),
   welcomeMessageTr: zod.string(),
   tickerMode: zod.string().optional(),
+  maintenanceMode: zod.boolean().optional(),
   updatedAt: zod.string(),
 });
 

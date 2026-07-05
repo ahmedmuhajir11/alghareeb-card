@@ -31,6 +31,7 @@ export interface Settings {
   welcomeMessageEn: string;
   welcomeMessageTr: string;
   tickerMode?: string;
+  maintenanceMode?: boolean;
   updatedAt: string;
 }
 
@@ -55,6 +56,7 @@ export interface UpdateSettingsBody {
   welcomeMessageEn?: string;
   welcomeMessageTr?: string;
   tickerMode?: string;
+  maintenanceMode?: boolean;
 }
 
 export interface Section {

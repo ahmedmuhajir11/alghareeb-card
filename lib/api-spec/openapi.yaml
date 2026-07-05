@@ -524,6 +524,8 @@ components:
           type: string
         tickerMode:
           type: string
+        maintenanceMode:
+          type: boolean
         updatedAt:
           type: string
       required:
@@ -592,6 +594,8 @@ components:
           type: string
         tickerMode:
           type: string
+        maintenanceMode:
+          type: boolean
 
     Section:
       type: object
