@@ -319,6 +319,8 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
     apiEndpoint: itemsTable.apiEndpoint,
     pricePerUnit: itemsTable.pricePerUnit,
     isAvailable: itemsTable.isAvailable,
+    minQuantity: itemsTable.minQuantity,
+    maxQuantity: itemsTable.maxQuantity,
   }).from(itemsTable);
 
   const allDbPkgs = await db.select({
@@ -326,6 +328,7 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
     apiEndpoint: sql<string>`${packagesTable}.api_endpoint`,
     priceUsd: packagesTable.priceUsd,
     isAvailable: packagesTable.isAvailable,
+    quantity: packagesTable.quantity,
   }).from(packagesTable).where(sql`${packagesTable}.api_endpoint IS NOT NULL AND ${packagesTable}.api_endpoint <> ''`);
 
   // Build fast lookup maps
@@ -369,6 +372,10 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       const isAvailable = isPubg ? true : providerAvailable;
       if (!providerAvailable) unavailableFromProvider.push(productName || String(p.id));
 
+      // Quantity values from provider
+      const newMinQty = p.qty_values?.min != null ? Number(p.qty_values.min) : null;
+      const newMaxQty = p.qty_values?.max != null ? Number(p.qty_values.max) : null;
+
       let matchedThis = false;
 
       // 1) Packages by endpoint
@@ -376,8 +383,11 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       for (const pkg of matchedPkgs) {
         const priceChanged = pkg.priceUsd !== null && Math.abs(pkg.priceUsd - newPriceUsd) > 0.0001;
         const availChanged = pkg.isAvailable !== isAvailable;
-        if (priceChanged || availChanged) {
-          await db.update(packagesTable).set({ priceUsd: newPriceUsd, isAvailable }).where(eq(packagesTable.id, pkg.id));
+        const qtyChanged = newMinQty !== null && pkg.quantity !== newMinQty;
+        if (priceChanged || availChanged || qtyChanged) {
+          const updateData: Record<string, unknown> = { priceUsd: newPriceUsd, isAvailable };
+          if (newMinQty !== null) updateData.quantity = newMinQty;
+          await db.update(packagesTable).set(updateData as any).where(eq(packagesTable.id, pkg.id));
           updated++;
           if (productName && !updatedNames.includes(productName)) updatedNames.push(productName);
         } else if (pkg.priceUsd === null) {
@@ -391,8 +401,13 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
       for (const item of matchedItems) {
         const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
         const availChanged = item.isAvailable !== isAvailable;
-        if (priceChanged || availChanged) {
-          await db.update(itemsTable).set({ pricePerUnit: newPriceUsd, isAvailable }).where(eq(itemsTable.id, item.id));
+        const minQtyChanged = newMinQty !== null && item.minQuantity !== newMinQty;
+        const maxQtyChanged = newMaxQty !== null && item.maxQuantity !== newMaxQty;
+        if (priceChanged || availChanged || minQtyChanged || maxQtyChanged) {
+          const updateData: Record<string, unknown> = { pricePerUnit: newPriceUsd, isAvailable };
+          if (newMinQty !== null) updateData.minQuantity = newMinQty;
+          if (newMaxQty !== null) updateData.maxQuantity = newMaxQty;
+          await db.update(itemsTable).set(updateData as any).where(eq(itemsTable.id, item.id));
           updated++;
           const displayName = item.nameAr || item.nameEn || productName;
           if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
@@ -402,16 +417,20 @@ router.post("/admin/provider/sync-prices", requireAdmin, async (req: Request, re
         matchedThis = true;
       }
 
-      // 3) Name fallback — exact normalized name match, price update ONLY (no availability change)
+      // 3) Name fallback — exact normalized name match, price + qty update (no availability change)
       //    Availability is only synced when matched by apiEndpoint (reliable link)
       if (!matchedThis && productName) {
         const normName = productName.toLowerCase().trim().replace(/\s+/g, " ");
         const nameMatches = itemByNormName.get(normName) || [];
         for (const item of nameMatches) {
           const priceChanged = item.pricePerUnit !== null && Math.abs(item.pricePerUnit - newPriceUsd) > 0.0001;
-          if (priceChanged) {
-            // Update price only — availability is NOT changed via name matching
-            await db.update(itemsTable).set({ pricePerUnit: newPriceUsd, apiEndpoint: endpoint }).where(eq(itemsTable.id, item.id));
+          const minQtyChanged = newMinQty !== null && item.minQuantity !== newMinQty;
+          const maxQtyChanged = newMaxQty !== null && item.maxQuantity !== newMaxQty;
+          if (priceChanged || minQtyChanged || maxQtyChanged) {
+            const updateData: Record<string, unknown> = { pricePerUnit: newPriceUsd, apiEndpoint: endpoint };
+            if (newMinQty !== null) updateData.minQuantity = newMinQty;
+            if (newMaxQty !== null) updateData.maxQuantity = newMaxQty;
+            await db.update(itemsTable).set(updateData as any).where(eq(itemsTable.id, item.id));
             updated++;
             const displayName = item.nameAr || item.nameEn || productName;
             if (!updatedNames.includes(displayName)) updatedNames.push(displayName);
