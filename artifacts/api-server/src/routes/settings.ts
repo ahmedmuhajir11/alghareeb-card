@@ -119,7 +119,7 @@ router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
   res.json(putResult.data);
 });
 
-// PATCH /api/admin/maintenance — toggle maintenance mode
+// PATCH /api/admin/maintenance — toggle maintenance mode (uses raw SQL only, no drizzle)
 router.patch("/admin/maintenance", requireAdmin, async (req, res): Promise<void> => {
   const { enabled } = req.body as { enabled: boolean };
   if (typeof enabled !== "boolean") {
@@ -127,29 +127,41 @@ router.patch("/admin/maintenance", requireAdmin, async (req, res): Promise<void>
     return;
   }
 
-  let [settings] = await db.select().from(settingsTable).limit(1);
-  if (!settings) {
-    const [created] = await db.insert(settingsTable).values({}).returning();
-    settings = created;
+  try {
+    // Ensure column exists (idempotent)
+    await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLEAN NOT NULL DEFAULT FALSE`);
+
+    // Get or create settings row
+    const { rows } = await pool.query("SELECT id FROM settings LIMIT 1");
+    let settingsId: number;
+    if (rows.length === 0) {
+      const ins = await pool.query("INSERT INTO settings DEFAULT VALUES RETURNING id");
+      settingsId = ins.rows[0].id;
+    } else {
+      settingsId = rows[0].id;
+    }
+
+    // Update maintenance mode
+    await pool.query("UPDATE settings SET maintenance_mode = $1 WHERE id = $2", [enabled, settingsId]);
+
+    if (enabled) {
+      sendPushNotification(
+        "🔧 الموقع في وضع الصيانة",
+        "تم إيقاف الموقع مؤقتًا لإجراء أعمال صيانة، وسيعود للعمل في أقرب وقت ممكن.",
+        "/"
+      ).catch(() => {});
+    } else {
+      sendPushNotification(
+        "✅ الموقع عاد للعمل",
+        "انتهت أعمال الصيانة، يمكنك الآن استخدام الموقع بشكل طبيعي.",
+        "/"
+      ).catch(() => {});
+    }
+
+    res.json({ ok: true, maintenanceMode: enabled });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || "خطأ داخلي" });
   }
-
-  await pool.query("UPDATE settings SET maintenance_mode = $1 WHERE id = $2", [enabled, settings.id]);
-
-  if (enabled) {
-    sendPushNotification(
-      "🔧 الموقع في وضع الصيانة",
-      "تم إيقاف الموقع مؤقتًا لإجراء أعمال صيانة، وسيعود للعمل في أقرب وقت ممكن.",
-      "/"
-    ).catch(() => {});
-  } else {
-    sendPushNotification(
-      "✅ الموقع عاد للعمل",
-      "انتهت أعمال الصيانة، يمكنك الآن استخدام الموقع بشكل طبيعي.",
-      "/"
-    ).catch(() => {});
-  }
-
-  res.json({ ok: true, maintenanceMode: enabled });
 });
 
 export default router;
