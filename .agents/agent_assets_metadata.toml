@@ -24,3 +24,9 @@ id = "ce7WK9CkKxHmn2ccoBKfU"
 uri = "file://all_apps.csv"
 type = "table"
 title = "قائمة جميع التطبيقات (174 تطبيق)"
+
+[[outputs]]
+id = "ZqY9aIE7dq5fNOo-O0Zgr"
+uri = "file://artifacts/alghareeb-card/dist/public/opengraph.jpg"
+type = "image"
+title = "صورة OG — الغريب كارد (1200×630)"
