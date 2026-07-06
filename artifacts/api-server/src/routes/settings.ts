@@ -14,6 +14,26 @@ pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLE
 
 const router: IRouter = Router();
 
+// GET /api/mc — super-simple raw-SQL maintenance check (used by index.html inline script)
+// Admins (session with adminId) always get { on: false } so they see the site normally
+router.get("/mc", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  try {
+    // Admins bypass maintenance
+    const sess = req.session as any;
+    if (sess?.adminId) {
+      res.json({ on: false });
+      return;
+    }
+    await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLEAN NOT NULL DEFAULT FALSE`);
+    const { rows } = await pool.query("SELECT maintenance_mode FROM settings LIMIT 1");
+    const on = rows.length > 0 ? rows[0].maintenance_mode === true : false;
+    res.json({ on });
+  } catch {
+    res.json({ on: false });
+  }
+});
+
 function normalizeMoneyTransferCurrencies(input: unknown): string | undefined {
   if (typeof input !== "string") return undefined;
   const list = input
