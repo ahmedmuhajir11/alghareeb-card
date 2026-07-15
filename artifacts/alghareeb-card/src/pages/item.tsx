@@ -349,9 +349,8 @@ export default function ItemPage({ id }: { id: number }) {
             placeholder={item.sectionId === 5 ? t('item.phonePh') : t('item.idPh')}
             className="h-10 text-base bg-background/50 border-primary/20 focus-visible:border-primary text-center"
             value={userId}
-            onChange={e => setUserId(e.target.value.replace(/[^0-9]/g, ""))}
-            inputMode="numeric"
-            pattern="[0-9]*"
+            onChange={e => setUserId(e.target.value)}
+            inputMode="text"
             dir="ltr"
           />
         </div>
