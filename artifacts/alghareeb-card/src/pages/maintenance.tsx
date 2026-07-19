@@ -1,10 +1,15 @@
-import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Link } from "wouter";
+import { Loader2, ChevronDown } from "lucide-react";
 
 export default function MaintenancePage() {
+  const [showAdminLink, setShowAdminLink] = useState(false);
+  const isApp = typeof navigator !== "undefined" && navigator.userAgent.includes("AlGhareebApp");
+
   return (
     <div
       dir="rtl"
-      className="min-h-screen flex flex-col items-center justify-center bg-background px-4"
+      className="min-h-screen flex flex-col items-center justify-center bg-background px-4 relative"
       style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #0d0a1a 100%)" }}
     >
       <div className="flex flex-col items-center gap-8 text-center max-w-sm">
@@ -32,6 +37,27 @@ export default function MaintenancePage() {
           <span className="text-sm font-medium">جاري التحميل...</span>
         </div>
       </div>
+
+      {isApp && (
+        <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-2">
+          {!showAdminLink ? (
+            <button
+              onClick={() => setShowAdminLink(true)}
+              className="text-xs text-muted-foreground/30 hover:text-muted-foreground/60 flex items-center gap-1 transition-all duration-200"
+            >
+              عرض المزيد <ChevronDown className="w-3 h-3" />
+            </button>
+          ) : (
+            <Link
+              href="/admin/login"
+              className="text-xs text-primary/80 hover:text-primary underline font-medium transition-all duration-200"
+            >
+              تسجيل دخول الإدارة
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+

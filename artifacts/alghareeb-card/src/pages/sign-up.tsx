@@ -19,6 +19,8 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showAdminLink, setShowAdminLink] = useState(false);
+  const isApp = typeof navigator !== "undefined" && navigator.userAgent.includes("AlGhareebApp");
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -112,6 +114,27 @@ export default function SignUpPage() {
           {t('signUp.haveAccount')}{" "}
           <Link href="/sign-in" className="text-primary hover:underline font-semibold">{t('signUp.loginLink')}</Link>
         </p>
+
+        {isApp && (
+          <div className="pt-2 text-center border-t border-purple-500/10">
+            {!showAdminLink ? (
+              <button
+                type="button"
+                onClick={() => setShowAdminLink(true)}
+                className="text-xs text-muted-foreground/30 hover:text-muted-foreground/60 transition-all duration-200"
+              >
+                عرض المزيد
+              </button>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="text-xs text-primary/80 hover:text-primary underline transition-all duration-200"
+              >
+                تسجيل دخول الإدارة
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
