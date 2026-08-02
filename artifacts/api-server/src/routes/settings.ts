@@ -14,17 +14,24 @@ pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLE
 
 const router: IRouter = Router();
 
+// GET /api/settings/maintenance-status — dedicated ultra-fast maintenance check
+router.get("/settings/maintenance-status", async (_req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  try {
+    await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLEAN NOT NULL DEFAULT FALSE`);
+    const { rows } = await pool.query("SELECT maintenance_mode FROM settings LIMIT 1");
+    const enabled = rows.length > 0 ? rows[0].maintenance_mode === true : false;
+    res.json({ maintenanceMode: enabled });
+  } catch {
+    res.json({ maintenanceMode: false });
+  }
+});
+
 // GET /api/mc — super-simple raw-SQL maintenance check (used by index.html inline script)
-// Admins (session with adminId) always get { on: false } so they see the site normally
 router.get("/mc", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
-    // Admins bypass maintenance
-    const sess = req.session as any;
-    if (sess?.adminId) {
-      res.json({ on: false });
-      return;
-    }
     await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLEAN NOT NULL DEFAULT FALSE`);
     const { rows } = await pool.query("SELECT maintenance_mode FROM settings LIMIT 1");
     const on = rows.length > 0 ? rows[0].maintenance_mode === true : false;
@@ -88,12 +95,21 @@ router.get("/settings", async (req, res): Promise<void> => {
     if (row[f] == null) row[f] = "";
   }
   if (row["updatedAt"] == null) row["updatedAt"] = new Date().toISOString();
+  if (row["maintenanceMode"] === undefined) {
+    try {
+      const { rows } = await pool.query("SELECT maintenance_mode FROM settings LIMIT 1");
+      if (rows.length > 0) {
+        row["maintenanceMode"] = rows[0].maintenance_mode === true;
+      }
+    } catch {}
+  }
+  const isMaintenanceOn = row["maintenanceMode"] === true || (row as any).maintenance_mode === true;
   const result = GetSettingsResponse.safeParse(row);
   if (!result.success) {
-    res.json({ ...row, id: Number(row["id"] ?? 1) });
+    res.json({ ...row, id: Number(row["id"] ?? 1), maintenanceMode: isMaintenanceOn });
     return;
   }
-  res.json(result.data);
+  res.json({ ...result.data, maintenanceMode: isMaintenanceOn });
 });
 
 router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
@@ -151,18 +167,14 @@ router.patch("/admin/maintenance", requireAdmin, async (req, res): Promise<void>
     // Ensure column exists (idempotent)
     await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS maintenance_mode BOOLEAN NOT NULL DEFAULT FALSE`);
 
-    // Get or create settings row
+    // Ensure at least one settings row exists
     const { rows } = await pool.query("SELECT id FROM settings LIMIT 1");
-    let settingsId: number;
     if (rows.length === 0) {
-      const ins = await pool.query("INSERT INTO settings DEFAULT VALUES RETURNING id");
-      settingsId = ins.rows[0].id;
-    } else {
-      settingsId = rows[0].id;
+      await pool.query("INSERT INTO settings DEFAULT VALUES");
     }
 
-    // Update maintenance mode
-    await pool.query("UPDATE settings SET maintenance_mode = $1 WHERE id = $2", [enabled, settingsId]);
+    // Update maintenance mode for all rows in settings table
+    await pool.query("UPDATE settings SET maintenance_mode = $1", [enabled]);
 
     if (enabled) {
       sendPushNotification(

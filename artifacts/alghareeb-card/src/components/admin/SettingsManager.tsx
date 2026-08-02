@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetSettings, useUpdateSettings } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,11 +14,14 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 async function adminFetch(path: string, opts?: RequestInit) {
   const token = document.cookie.match(/admin_token=([^;]+)/)?.[1];
+  const ak = typeof window !== "undefined" ? sessionStorage.getItem("_ak") : null;
   return fetch(`${API_BASE}${path}`, {
     ...opts,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(ak ? { "x-admin-key": ak } : {}),
+      ...(opts?.headers ? (opts.headers as Record<string, string>) : {}),
     },
     credentials: "include",
   });
@@ -26,6 +30,7 @@ async function adminFetch(path: string, opts?: RequestInit) {
 interface Currency { id: number; code: string; nameAr: string; nameEn: string; usdRate: number; depositRate: number | null; isActive: boolean; }
 
 export default function SettingsManager() {
+  const queryClient = useQueryClient();
   const { data: settings, isLoading } = useGetSettings();
   const updateSettings = useUpdateSettings();
   const { toast } = useToast();
@@ -175,6 +180,9 @@ export default function SettingsManager() {
       });
       if (!res.ok) throw new Error();
       setMaintenanceMode(next);
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/maintenance-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/maintenance"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
       toast({
         title: next ? "🔧 تم إيقاف الموقع" : "✅ تم تشغيل الموقع",
         description: next
