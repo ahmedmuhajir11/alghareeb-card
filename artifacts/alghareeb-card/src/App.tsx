@@ -10,6 +10,7 @@ import PushPermissionBanner from "@/components/PushPermissionBanner";
 import ScrollToTop from "@/components/ScrollToTop";
 import LoadingScreen from "@/components/LoadingScreen";
 import MaintenancePage from "@/pages/maintenance";
+import { MAINTENANCE_KEY } from "@/lib/maintenance";
 import { useState } from "react";
 import NotFound from "@/pages/not-found";
 
@@ -96,15 +97,22 @@ function Router() {
   );
 }
 
+
 function MaintenanceGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const isAdminPath = location.startsWith("/admin");
 
+  // Read initial value from localStorage immediately (no loading flicker)
+  const [localMaintenance, setLocalMaintenance] = React.useState<boolean>(
+    () => typeof localStorage !== "undefined" && localStorage.getItem(MAINTENANCE_KEY) === "true"
+  );
+
+  // Also poll the API to stay in sync (and for other devices)
   const { data: settings } = useQuery({
     queryKey: ["/api/settings/maintenance-status"],
     queryFn: async () => {
       const r = await fetch("/api/settings/maintenance-status", { cache: "no-store" });
-      if (!r.ok) return { maintenanceMode: false };
+      if (!r.ok) return { maintenanceMode: localMaintenance };
       return r.json();
     },
     refetchInterval: 3000,
@@ -112,12 +120,35 @@ function MaintenanceGuard({ children }: { children: React.ReactNode }) {
     gcTime: 0,
   });
 
-  if (!isAdminPath && settings?.maintenanceMode === true) {
+  // Listen for localStorage changes (from admin panel in same browser)
+  React.useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === MAINTENANCE_KEY) {
+        setLocalMaintenance(e.newValue === "true");
+      }
+    };
+    // Also poll localStorage in case the event doesn't fire (same tab)
+    const interval = setInterval(() => {
+      const val = localStorage.getItem(MAINTENANCE_KEY) === "true";
+      setLocalMaintenance(val);
+    }, 1000);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Maintenance is ON if either localStorage OR API says so
+  const isMaintenance = localMaintenance || settings?.maintenanceMode === true;
+
+  if (!isAdminPath && isMaintenance) {
     return <MaintenancePage />;
   }
 
   return <>{children}</>;
 }
+
 
 function App() {
   const [loading, setLoading] = useState(true);

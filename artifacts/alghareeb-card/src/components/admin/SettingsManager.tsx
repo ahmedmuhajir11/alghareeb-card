@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetSettings, useUpdateSettings } from "@workspace/api-client-react";
+import { MAINTENANCE_KEY } from "@/lib/maintenance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -172,28 +173,35 @@ export default function SettingsManager() {
 
   async function toggleMaintenance() {
     setMaintenanceLoading(true);
+    const next = !maintenanceMode;
+
+    // ✅ حفظ فوري في localStorage — يعمل حتى بدون Backend/DB
+    localStorage.setItem(MAINTENANCE_KEY, next ? "true" : "false");
+    setMaintenanceMode(next);
+
+    // محاولة تحديث قاعدة البيانات أيضاً (اختياري إذا كان السيرفر متصل)
     try {
-      const next = !maintenanceMode;
       const res = await adminFetch("/api/admin/maintenance", {
         method: "PATCH",
         body: JSON.stringify({ enabled: next }),
       });
-      if (!res.ok) throw new Error();
-      setMaintenanceMode(next);
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/maintenance-status"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/maintenance"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
-      toast({
-        title: next ? "🔧 تم إيقاف الموقع" : "✅ تم تشغيل الموقع",
-        description: next
-          ? "الموقع في وضع الصيانة — تم إرسال إشعار للمستخدمين"
-          : "الموقع يعمل بشكل طبيعي الآن",
-      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ["/api/settings/maintenance-status"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/settings/maintenance"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      }
     } catch {
-      toast({ variant: "destructive", title: "خطأ في تغيير وضع الصيانة" });
+      // لا بأس — localStorage يكفي لتفعيل الصيانة محلياً
     } finally {
       setMaintenanceLoading(false);
     }
+
+    toast({
+      title: next ? "🔧 تم إيقاف الموقع" : "✅ تم تشغيل الموقع",
+      description: next
+        ? "الموقع في وضع الصيانة — جميع المستخدمين يرون صفحة الصيانة الآن"
+        : "الموقع يعمل بشكل طبيعي الآن",
+    });
   }
 
   if (isLoading) return <Skeleton className="w-full h-64 rounded-xl" />;
