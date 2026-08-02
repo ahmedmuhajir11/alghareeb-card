@@ -10,9 +10,10 @@ import PushPermissionBanner from "@/components/PushPermissionBanner";
 import ScrollToTop from "@/components/ScrollToTop";
 import LoadingScreen from "@/components/LoadingScreen";
 import MaintenancePage from "@/pages/maintenance";
-import { MAINTENANCE_KEY } from "@/lib/maintenance";
 import { useState } from "react";
 import NotFound from "@/pages/not-found";
+
+const MAINTENANCE_KEY = "__maintenance_mode__";
 
 import Home from "@/pages/home";
 import SectionPage from "@/pages/section";

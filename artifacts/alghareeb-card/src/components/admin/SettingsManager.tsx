@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetSettings, useUpdateSettings } from "@workspace/api-client-react";
-import { MAINTENANCE_KEY } from "@/lib/maintenance";
+
+const MAINTENANCE_KEY = "__maintenance_mode__";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
