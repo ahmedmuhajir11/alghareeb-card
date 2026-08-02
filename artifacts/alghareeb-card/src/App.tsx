@@ -140,8 +140,20 @@ function MaintenanceGuard({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Maintenance is ON if either localStorage OR API says so
-  const isMaintenance = localMaintenance || settings?.maintenanceMode === true;
+  // Sync API response with state & localStorage so maintenance turns OFF cleanly
+  React.useEffect(() => {
+    if (settings && typeof settings.maintenanceMode === "boolean") {
+      setLocalMaintenance(settings.maintenanceMode);
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(MAINTENANCE_KEY, settings.maintenanceMode ? "true" : "false");
+      }
+    }
+  }, [settings]);
+
+  // API response is authoritative when available; fallback to local state
+  const isMaintenance = typeof settings?.maintenanceMode === "boolean"
+    ? settings.maintenanceMode
+    : localMaintenance;
 
   if (!isAdminPath && isMaintenance) {
     return <MaintenancePage />;
