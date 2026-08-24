@@ -346,11 +346,14 @@ export default function ItemPage({ id }: { id: number }) {
             {item.sectionId === 5 ? t('item.phoneLabel') : t('item.idLabel')}
           </label>
           <Input
+            type="text"
+            inputMode="text"
+            autoCapitalize="none"
+            autoCorrect="off"
             placeholder={item.sectionId === 5 ? t('item.phonePh') : t('item.idPh')}
             className="h-10 text-base bg-background/50 border-primary/20 focus-visible:border-primary text-center"
             value={userId}
             onChange={e => setUserId(e.target.value)}
-            inputMode="text"
             dir="ltr"
           />
         </div>
