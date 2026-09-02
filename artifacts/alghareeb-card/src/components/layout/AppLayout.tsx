@@ -289,12 +289,11 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
               </Link>
             );
           })}
+          {/* Theme Toggle Button inside Navigation Links */}
+          <div className="pt-2 pb-1">
+            <ThemeToggleButton />
+          </div>
         </nav>
-
-        {/* Theme Toggle Button */}
-        <div className="px-3 py-1 flex-shrink-0">
-          <ThemeToggleButton />
-        </div>
 
         {/* Social / Contact + Logout */}
         <div className="px-3 py-2 border-t border-primary/20 flex-shrink-0">
