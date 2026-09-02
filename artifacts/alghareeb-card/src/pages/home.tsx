@@ -183,6 +183,7 @@ function getSectionLabel(nameAr: string, t: (k: string) => string): string {
   if (nameAr.includes("حوالة") || nameAr.includes("حوالات")) return t('home.sendTransfer');
   if (nameAr.includes("راتب") || nameAr.includes("رواتب")) return t('home.requestSalary');
   if (nameAr.includes("إيداع") || nameAr.includes("ايداع") || nameAr.includes("الدفع")) return t('home.chargeBalance');
+  if (nameAr.includes("تصميم") || nameAr.includes("برمجة")) return "طلب خدمة";
   return t('home.shopNow');
 }
 

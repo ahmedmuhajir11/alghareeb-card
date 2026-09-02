@@ -6,10 +6,47 @@ export async function ensureCriticalSections() {
     { id: 1, nameAr: "شحن الألعاب", nameEn: "Game Top-Up", sortOrder: 1, pricingType: "packages" },
     { id: 2, nameAr: "شحن التطبيقات", nameEn: "App Top-Up", sortOrder: 2, pricingType: "per_quantity" },
     { id: 3, nameAr: "الحوالات المالية", nameEn: "Money Transfers", sortOrder: 3, pricingType: "per_quantity" },
-    { id: 4, nameAr: "سحب رواتب المضيفين", nameEn: "Host Salary Withdrawal", sortOrder: 4, pricingType: "per_quantity" },
-    { id: 5, nameAr: "تعبئة الرصيد", nameEn: "Credit Recharge", sortOrder: 5, pricingType: "packages" },
-    { id: 6, nameAr: "طرق الدفع والإيداع", nameEn: "Payment Methods", sortOrder: 6, pricingType: "per_quantity" },
+    { id: 4, nameAr: "سحب رواتب المضيفين", nameEn: "Host Salary Withdrawal", sortOrder: 6, pricingType: "per_quantity" },
+    { id: 5, nameAr: "تعبئة الرصيد", nameEn: "Credit Recharge", sortOrder: 7, pricingType: "packages" },
+    { id: 6, nameAr: "طرق الدفع والإيداع", nameEn: "Payment Methods", sortOrder: 8, pricingType: "per_quantity" },
+    { id: 7, nameAr: "تصميم وبرمجة تطبيقات الجوال", nameEn: "Mobile Apps Design & Dev", nameTr: "Mobil Uygulama Geliştirme", sortOrder: 4, pricingType: "packages", logoUrl: "/section-apps-dev.jpg" },
+    { id: 8, nameAr: "تصميم وبرمجة مواقع الويب", nameEn: "Websites Design & Dev", nameTr: "Web Sitesi Geliştirme", sortOrder: 5, pricingType: "packages", logoUrl: "/section-web-dev.jpg" },
   ]).onConflictDoNothing();
+
+  // Update existing sections in database to ensure proper names and card images
+  try {
+    const { pool } = await import("@workspace/db");
+    
+    // 1. Update the empty duplicate section (or section 7) to Mobile Apps
+    await pool.query(`
+      UPDATE sections 
+      SET name_ar = 'تصميم وبرمجة تطبيقات الجوال',
+          name_en = 'Mobile Apps Design & Dev',
+          name_tr = 'Mobil Uygulama Geliştirme',
+          logo_url = '/section-apps-dev.jpg',
+          sort_order = 4
+      WHERE id = 7 OR (name_ar = 'شحن التطبيقات' AND id NOT IN (1, 2, 3, 4, 5, 6)) OR name_ar = 'التصميم والبرمجة';
+    `);
+
+    // 2. Ensure Websites section exists or update section 8
+    await pool.query(`
+      INSERT INTO sections (id, name_ar, name_en, name_tr, logo_url, pricing_type, sort_order)
+      VALUES (8, 'تصميم وبرمجة مواقع الويب', 'Websites Design & Dev', 'Web Sitesi Geliştirme', '/section-web-dev.jpg', 'packages', 5)
+      ON CONFLICT (id) DO UPDATE 
+      SET name_ar = 'تصميم وبرمجة مواقع الويب',
+          name_en = 'Websites Design & Dev',
+          name_tr = 'Web Sitesi Geliştirme',
+          logo_url = '/section-web-dev.jpg',
+          sort_order = 5;
+    `);
+
+    // 3. Ensure other sort orders
+    await pool.query(`UPDATE sections SET sort_order = 6 WHERE id = 4;`);
+    await pool.query(`UPDATE sections SET sort_order = 7 WHERE id = 5;`);
+    await pool.query(`UPDATE sections SET sort_order = 8 WHERE id = 6;`);
+  } catch (e) {
+    // ignore
+  }
 }
 
 export async function seedIfEmpty() {
