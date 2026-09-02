@@ -1,20 +1,117 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface LoadingScreenProps {
   onDone: () => void;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+// Helper to preload and decode an image into the browser cache
+function preloadImage(url: string | null | undefined): Promise<void> {
+  if (!url || !url.trim()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      if (img.decode) {
+        img.decode().then(() => resolve()).catch(() => resolve());
+      } else {
+        resolve();
+      }
+    };
+    img.onerror = () => resolve();
+    img.src = url;
+  });
+}
+
 export default function LoadingScreen({ onDone }: LoadingScreenProps) {
   const [fadeOut, setFadeOut] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const timer = setTimeout(() => setFadeOut(true), 1800);
-    return () => clearTimeout(timer);
-  }, []);
+    let isMounted = true;
+
+    async function preloadAll() {
+      try {
+        // 1. Fetch sections & slider in parallel
+        const [sectionsRes, sliderRes] = await Promise.all([
+          fetch(`${API_BASE}/api/sections`).catch(() => null),
+          fetch(`${API_BASE}/api/slider-images`).catch(() => null),
+        ]);
+
+        const sections = sectionsRes && sectionsRes.ok ? await sectionsRes.json() : [];
+        const sliderImages = sliderRes && sliderRes.ok ? await sliderRes.json() : [];
+
+        // Cache in React Query for instant access in components
+        if (Array.isArray(sections) && sections.length > 0) {
+          queryClient.setQueryData(["/api/sections"], sections);
+        }
+        if (Array.isArray(sliderImages) && sliderImages.length > 0) {
+          queryClient.setQueryData(["/api/slider-images"], sliderImages);
+        }
+
+        // 2. Collect image URLs to preload
+        const imagePromises: Promise<void>[] = [];
+
+        // Preload section logos
+        if (Array.isArray(sections)) {
+          sections.forEach((s: any) => {
+            if (s.logoUrl) imagePromises.push(preloadImage(s.logoUrl));
+          });
+        }
+
+        // Preload slider banners
+        if (Array.isArray(sliderImages)) {
+          sliderImages.forEach((img: any) => {
+            if (img.imageUrl) imagePromises.push(preloadImage(img.imageUrl));
+          });
+        }
+
+        // 3. Fetch items for all sections in parallel and preload all service logos
+        if (Array.isArray(sections) && sections.length > 0) {
+          const itemFetches = sections.map(async (section: any) => {
+            try {
+              const res = await fetch(`${API_BASE}/api/sections/${section.id}/items`);
+              if (res.ok) {
+                const items = await res.json();
+                if (Array.isArray(items)) {
+                  queryClient.setQueryData([`/api/sections/${section.id}/items`], items);
+                  items.forEach((item: any) => {
+                    if (item.logoUrl) {
+                      imagePromises.push(preloadImage(item.logoUrl));
+                    }
+                  });
+                }
+              }
+            } catch (_) {}
+          });
+
+          await Promise.all(itemFetches);
+        }
+
+        // Wait for images to preload
+        await Promise.all(imagePromises);
+      } catch (e) {
+        console.error("Preload error:", e);
+      }
+    }
+
+    preloadAll();
+
+    // Smooth splash duration: gives time for assets to preload and logo animation to play nicely
+    const timer = setTimeout(() => {
+      if (isMounted) setFadeOut(true);
+    }, 1800);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [queryClient]);
 
   useEffect(() => {
     if (!fadeOut) return;
-    const timer = setTimeout(() => onDone(), 600);
+    const timer = setTimeout(() => onDone(), 500);
     return () => clearTimeout(timer);
   }, [fadeOut, onDone]);
 
@@ -22,13 +119,12 @@ export default function LoadingScreen({ onDone }: LoadingScreenProps) {
     <div
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#080810]"
       style={{
-        transition: "opacity 0.6s ease",
+        transition: "opacity 0.5s ease",
         opacity: fadeOut ? 0 : 1,
         pointerEvents: fadeOut ? "none" : "auto",
       }}
     >
       <div className="relative flex flex-col items-center gap-8 select-none">
-
         <div
           className="absolute inset-0 rounded-full blur-3xl"
           style={{
@@ -69,7 +165,7 @@ export default function LoadingScreen({ onDone }: LoadingScreenProps) {
           </div>
 
           <div className="flex gap-1.5">
-            {[0, 1, 2].map(i => (
+            {[0, 1, 2].map((i) => (
               <div
                 key={i}
                 className="w-1.5 h-1.5 rounded-full bg-purple-400"

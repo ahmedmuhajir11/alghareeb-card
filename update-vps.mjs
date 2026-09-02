@@ -32,6 +32,7 @@
     'lib/api-client-react/src/generated/api.schemas.ts',
     'lib/api-client-react/src/generated/api.ts',
     // Frontend components
+    'artifacts/alghareeb-card/src/lib/auth.tsx',
     'artifacts/alghareeb-card/src/lib/currency.tsx',
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/SettingsManager.tsx',
@@ -42,6 +43,8 @@
     'artifacts/alghareeb-card/src/components/admin/PaymentMethodsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/SliderManager.tsx',
     'artifacts/alghareeb-card/src/components/WelcomeModal.tsx',
+    'artifacts/alghareeb-card/src/components/LoadingScreen.tsx',
+    'artifacts/alghareeb-card/src/App.tsx',
     'artifacts/alghareeb-card/src/pages/home.tsx',
     'artifacts/alghareeb-card/src/pages/item.tsx',
     'artifacts/alghareeb-card/src/pages/section.tsx',

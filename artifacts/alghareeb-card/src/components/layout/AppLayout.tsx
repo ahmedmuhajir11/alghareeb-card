@@ -2,12 +2,73 @@ import { Link, useLocation } from "wouter";
 import { useGetSettings } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANG_META, type LangCode } from "@/lib/i18n";
-import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown, BadgeCheck, Code2 } from "lucide-react";
+import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, Shield, ShoppingBag, Trophy, ReceiptText, Phone, Mail, Users, FileText, Globe, ChevronDown, BadgeCheck, Code2, RefreshCw, Sun, Moon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+function ThemeToggleButton() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+
+    if ((window as any).FlutterThemeToggle) {
+      (window as any).FlutterThemeToggle.postMessage("t");
+    } else {
+      if (nextDark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      localStorage.setItem("vite-ui-theme", nextDark ? "dark" : "light");
+      localStorage.setItem("theme", nextDark ? "dark" : "light");
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: "vite-ui-theme",
+        newValue: nextDark ? "dark" : "light",
+      }));
+    }
+  };
+
+  return (
+    <button
+      id="ag-tb"
+      onClick={toggleTheme}
+      dir="rtl"
+      type="button"
+      className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl bg-[#7c3aed] text-white shadow-md shadow-purple-900/30 hover:bg-[#6d28d9] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+    >
+      <div className="text-right leading-tight">
+        <span className="block text-white text-xs font-bold">
+          {isDark ? "الثيم: داكن" : "الثيم: فاتح"}
+        </span>
+        <span className="block text-white/70 text-[10px]">
+          {isDark ? "اضغط للتحويل إلى فاتح" : "اضغط للتحويل إلى داكن"}
+        </span>
+      </div>
+      <span className="flex-shrink-0 mr-2 flex items-center justify-center">
+        {isDark ? <Moon className="w-4 h-4 text-white" /> : <Sun className="w-4 h-4 text-white" />}
+      </span>
+    </button>
+  );
+}
 
 function MarqueeText({ text }: { text: string }) {
   const { lang } = useI18n();
@@ -115,6 +176,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
       />
 
       <div
+        id="ag-sidebar"
         className={`fixed top-0 right-0 h-full w-[75%] max-w-sm z-50 flex flex-col bg-[#0d0d1a] border-l border-primary/20 shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
         dir="rtl"
       >
@@ -229,6 +291,11 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
           })}
         </nav>
 
+        {/* Theme Toggle Button */}
+        <div className="px-3 py-1 flex-shrink-0">
+          <ThemeToggleButton />
+        </div>
+
         {/* Social / Contact + Logout */}
         <div className="px-3 py-2 border-t border-primary/20 flex-shrink-0">
           <p className="text-[10px] text-muted-foreground font-semibold px-1 mb-1 tracking-wider">{t('sidebar.contactUs')}</p>
@@ -271,7 +338,8 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: settings } = useGetSettings();
-  const { user, isSignedIn } = useAuth();
+  const { user, isSignedIn, refetch: refetchAuth } = useAuth();
+  const queryClient = useQueryClient();
   const { t, lang } = useI18n();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const { data: allMessages = [] } = useTickerMessages();
@@ -279,6 +347,63 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Pull to refresh
+  const [pullY, setPullY] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const isPulling = useRef(false);
+
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.scrollY <= 4) {
+        touchStartY.current = e.touches[0].clientY;
+        isPulling.current = true;
+      } else {
+        isPulling.current = false;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPulling.current || window.scrollY > 4) return;
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - touchStartY.current;
+      if (diff > 0) {
+        const pull = Math.min(diff * 0.4, 80);
+        setPullY(pull);
+      }
+    };
+
+    const handleTouchEnd = async () => {
+      if (pullY > 45 && !isRefreshing) {
+        setIsRefreshing(true);
+        setPullY(55);
+        try {
+          await Promise.all([
+            refetchAuth(),
+            queryClient.invalidateQueries(),
+          ]);
+        } catch (_) {}
+        setTimeout(() => {
+          setIsRefreshing(false);
+          setPullY(0);
+        }, 500);
+      } else {
+        setPullY(0);
+      }
+      isPulling.current = false;
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [pullY, isRefreshing, refetchAuth, queryClient]);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/health`, { method: "GET", cache: "no-store" }).catch(() => {});
@@ -338,6 +463,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
+      {/* Pull To Refresh Indicator */}
+      {(pullY > 0 || isRefreshing) && (
+        <div
+          className="fixed top-2 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center p-2.5 rounded-full bg-card/95 border border-primary/40 shadow-[0_4px_20px_rgba(139,92,246,0.4)] backdrop-blur pointer-events-none"
+          style={{
+            transform: `translate(-50%, ${pullY}px) scale(${Math.min(Math.max(pullY / 40, 0.6), 1)})`,
+            opacity: Math.min(pullY / 25, 1),
+            transition: isRefreshing || pullY === 0 ? "all 0.3s ease" : "none",
+          }}
+        >
+          <RefreshCw
+            className={`w-5 h-5 text-primary ${isRefreshing ? "animate-spin text-purple-400" : ""}`}
+            style={{ transform: isRefreshing ? undefined : `rotate(${pullY * 4}deg)` }}
+          />
+        </div>
+      )}
+
       <WelcomeModal />
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

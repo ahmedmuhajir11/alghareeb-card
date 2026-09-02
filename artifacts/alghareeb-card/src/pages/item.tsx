@@ -255,13 +255,16 @@ export default function ItemPage({ id }: { id: number }) {
             <div className="space-y-1">
               <label className="text-sm font-medium">{t('item.quantityOf')} {unitLabel}</label>
               <Input
-                type="number"
-                min="1"
-                step="1"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder={`${minQuantity > 1 ? minQuantity : 1000} ${unitLabel}`}
                 className={`h-10 text-base bg-background/50 focus-visible:border-primary text-center ${isBelowMin ? "border-red-500" : "border-primary/20"}`}
                 value={quantity}
-                onChange={e => setQuantity(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value.replace(/[^0-9]/g, '');
+                  setQuantity(val);
+                }}
                 dir="ltr"
               />
               {(minQuantity > 1 || maxQuantity) && !isBelowMin && (

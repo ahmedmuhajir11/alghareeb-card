@@ -43,27 +43,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchMe = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" });
-      const data = await res.json();
-      setUser(data.user ?? null);
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user ?? null);
+      } else if (res.status === 401) {
+        setUser(null);
+      }
     } catch {
-      setUser(null);
+      // Keep previous user on network glitch to prevent flicker
     } finally {
       setIsLoaded(true);
     }
   }, []);
 
   useEffect(() => {
+    // Expose global refresh function
+    (window as any).refreshUserData = fetchMe;
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchMe();
+      }
+    };
+    const onRefreshEvent = () => {
+      fetchMe();
+    };
+
+    window.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onVisibility);
+    window.addEventListener("app:refresh", onRefreshEvent);
+
+    // Auto-poll every 5 seconds when visible to keep balance up to date instantly
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchMe();
+      }
+    }, 5000);
+
+    return () => {
+      window.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onVisibility);
+      window.removeEventListener("app:refresh", onRefreshEvent);
+      clearInterval(interval);
+    };
+  }, [fetchMe]);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oauthToken = params.get("oauth_token");
 
     if (oauthToken) {
-      // Remove token from URL without reload
       params.delete("oauth_token");
       const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
       window.history.replaceState({}, "", newUrl);
 
-      // Same-domain deployment: the session cookie set during OAuth callback
-      // should already authenticate this request. Try the session first.
       fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
         .then((r) => r.json())
         .then((data) => {
@@ -72,7 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoaded(true);
             return;
           }
-          // Fallback: exchange JWT token for a session (cross-domain case)
           return fetch(`${API_BASE}/api/auth/exchange-token`, {
             method: "POST",
             credentials: "include",
