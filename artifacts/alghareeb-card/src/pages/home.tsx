@@ -183,15 +183,21 @@ function getSectionLabel(nameAr: string, t: (k: string) => string): string {
   if (nameAr.includes("حوالة") || nameAr.includes("حوالات")) return t('home.sendTransfer');
   if (nameAr.includes("راتب") || nameAr.includes("رواتب")) return t('home.requestSalary');
   if (nameAr.includes("إيداع") || nameAr.includes("ايداع") || nameAr.includes("الدفع")) return t('home.chargeBalance');
-  if (nameAr.includes("تصميم") || nameAr.includes("برمجة")) return "طلب خدمة";
+  if (!nameAr.includes("شحن") && (nameAr.includes("تصميم") || nameAr.includes("برمجة") || nameAr.includes("تطوير"))) return "طلب خدمة";
   return t('home.shopNow');
 }
 
 function getSectionHref(section: { id: number; nameAr: string }): string {
-  if (section.id === 8 || (section.nameAr.includes("مواقع") && (section.nameAr.includes("تصميم") || section.nameAr.includes("تطوير") || section.nameAr.includes("برمجة")))) {
+  // Never redirect app top-up or any recharge section!
+  if (section.id === 2 || section.nameAr.includes("شحن")) {
+    return `/section/${section.id}`;
+  }
+  // Websites development
+  if (section.nameAr.includes("مواقع") && (section.nameAr.includes("تصميم") || section.nameAr.includes("تطوير") || section.nameAr.includes("برمجة"))) {
     return "/dev/websites";
   }
-  if (section.id === 7 || (section.nameAr.includes("تطبيقات") && (section.nameAr.includes("تصميم") || section.nameAr.includes("تطوير") || section.nameAr.includes("برمجة")))) {
+  // Mobile apps development (excluding any charging section)
+  if (!section.nameAr.includes("شحن") && section.nameAr.includes("تطبيقات") && (section.nameAr.includes("تصميم") || section.nameAr.includes("تطوير") || section.nameAr.includes("برمجة"))) {
     return "/dev/mobile-apps";
   }
   return `/section/${section.id}`;
@@ -203,6 +209,15 @@ export default function Home() {
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const sectionName = (s: { nameAr: string; nameEn: string; nameTr?: string | null }) =>
     isRtlLang ? s.nameAr : (lang === 'tr' ? (s.nameTr || s.nameEn || s.nameAr) : (s.nameEn || s.nameAr));
+
+  const getSectionLogo = (section: { id: number; nameAr: string; logoUrl?: string | null }) => {
+    if (section.logoUrl && section.logoUrl !== '/section-apps-dev.jpg') return section.logoUrl;
+    if (section.id === 2 || section.nameAr.includes("شحن التطبيقات")) return "/section-apps-topup.jpg";
+    return section.logoUrl;
+  };
+
+  const hasWebDevSection = sections?.some(s => s.nameAr.includes("مواقع") && (s.nameAr.includes("تصميم") || s.nameAr.includes("تطوير") || s.nameAr.includes("برمجة")));
+  const hasMobileDevSection = sections?.some(s => !s.nameAr.includes("شحن") && s.nameAr.includes("تطبيقات") && (s.nameAr.includes("تصميم") || s.nameAr.includes("تطوير") || s.nameAr.includes("برمجة")));
 
   return (
     <div>
@@ -220,45 +235,107 @@ export default function Home() {
       <div className="mb-8">
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-44 md:h-52 rounded-xl" />)}
           </div>
-        ) : sections?.length === 0 ? (
+        ) : (!sections || sections.length === 0) && !hasWebDevSection && !hasMobileDevSection ? (
           <div className="text-center py-12 text-muted-foreground bg-card/50 rounded-xl border border-border/50">
             {t('home.noSections')}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {sections?.map(section => (
-              <Link key={section.id} href={getSectionHref(section)}>
+            {/* All regular store sections (Game top-up, App top-up, Transfers, Salaries, etc.) */}
+            {sections?.map(section => {
+              const logo = getSectionLogo(section);
+              return (
+                <Link key={section.id} href={getSectionHref(section)}>
+                  <Card className="neon-border cursor-pointer bg-card/50 hover:border-[hsl(var(--gold)/0.6)] transition-all duration-300 h-full overflow-hidden group">
+                    <CardContent className="p-0 h-44 md:h-52 relative flex flex-col">
+                      <div className="relative flex-1 overflow-hidden">
+                        {logo ? (
+                          <img
+                            src={logo}
+                            alt={section.nameAr}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                            <span className="text-4xl font-bold text-primary group-hover:scale-110 transition-transform duration-300 inline-block">{section.nameAr.charAt(0)}</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
+                        <div className="absolute bottom-0 inset-x-0 p-2 text-center">
+                          <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">{sectionName(section)}</h3>
+                        </div>
+                      </div>
+                      <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
+                        <span className="flex items-center gap-1">
+                          <span>{getSectionLabel(section.nameAr, t)}</span>
+                          <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+
+            {/* Standalone Dev Service Card 1: Websites Design & Development */}
+            {!hasWebDevSection && (
+              <Link href="/dev/websites">
                 <Card className="neon-border cursor-pointer bg-card/50 hover:border-[hsl(var(--gold)/0.6)] transition-all duration-300 h-full overflow-hidden group">
                   <CardContent className="p-0 h-44 md:h-52 relative flex flex-col">
                     <div className="relative flex-1 overflow-hidden">
-                      {section.logoUrl ? (
-                        <img
-                          src={section.logoUrl}
-                          alt={section.nameAr}
-                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                          <span className="text-4xl font-bold text-primary group-hover:scale-110 transition-transform duration-300 inline-block">{section.nameAr.charAt(0)}</span>
-                        </div>
-                      )}
+                      <img
+                        src="/dev-web-hero.jpg"
+                        alt={lang === 'en' ? 'Websites Development' : 'تطوير وبرمجة المواقع'}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                       <div className="absolute bottom-0 inset-x-0 p-2 text-center">
-                        <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">{sectionName(section)}</h3>
+                        <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
+                          {lang === 'en' ? 'Websites Development' : 'تطوير وبرمجة المواقع'}
+                        </h3>
                       </div>
                     </div>
                     <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
                       <span className="flex items-center gap-1">
-                        <span>{getSectionLabel(section.nameAr, t)}</span>
+                        <span>{lang === 'en' ? 'Order Service' : 'طلب خدمة'}</span>
                         <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
                       </span>
                     </div>
                   </CardContent>
                 </Card>
               </Link>
-            ))}
+            )}
+
+            {/* Standalone Dev Service Card 2: Mobile Apps Design & Development */}
+            {!hasMobileDevSection && (
+              <Link href="/dev/mobile-apps">
+                <Card className="neon-border cursor-pointer bg-card/50 hover:border-[hsl(var(--gold)/0.6)] transition-all duration-300 h-full overflow-hidden group">
+                  <CardContent className="p-0 h-44 md:h-52 relative flex flex-col">
+                    <div className="relative flex-1 overflow-hidden">
+                      <img
+                        src="/dev-mobile-hero.jpg"
+                        alt={lang === 'en' ? 'Mobile Apps Development' : 'تطوير وتطبيقات الجوال'}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
+                      <div className="absolute bottom-0 inset-x-0 p-2 text-center">
+                        <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
+                          {lang === 'en' ? 'Mobile Apps Development' : 'تطوير وتطبيقات الجوال'}
+                        </h3>
+                      </div>
+                    </div>
+                    <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
+                      <span className="flex items-center gap-1">
+                        <span>{lang === 'en' ? 'Order Service' : 'طلب خدمة'}</span>
+                        <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            )}
           </div>
         )}
       </div>
