@@ -33,6 +33,10 @@ import SignUpPage from "@/pages/sign-up";
 import ProfileSetupPage from "@/pages/profile-setup";
 import KycPage from "@/pages/kyc";
 import ResellerApiPage from "@/pages/reseller-api";
+import WebsitesServicePage from "@/pages/dev/WebsitesServicePage";
+import MobileAppsServicePage from "@/pages/dev/MobileAppsServicePage";
+import WebsiteRequestForm from "@/pages/dev/WebsiteRequestForm";
+import MobileAppRequestForm from "@/pages/dev/MobileAppRequestForm";
 import AppLayout from "@/components/layout/AppLayout";
 import AdminLayout from "@/components/layout/AdminLayout";
 
@@ -80,6 +84,19 @@ function Router() {
       </Route>
       <Route path="/kyc">
         <KycPage />
+      </Route>
+
+      <Route path="/dev/websites">
+        <AppLayout><WebsitesServicePage /></AppLayout>
+      </Route>
+      <Route path="/dev/websites/request">
+        <AppLayout><WebsiteRequestForm /></AppLayout>
+      </Route>
+      <Route path="/dev/mobile-apps">
+        <AppLayout><MobileAppsServicePage /></AppLayout>
+      </Route>
+      <Route path="/dev/mobile-apps/request">
+        <AppLayout><MobileAppRequestForm /></AppLayout>
       </Route>
 
       <Route path="/section/:id">

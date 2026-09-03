@@ -44,6 +44,41 @@ export async function ensureCriticalSections() {
     await pool.query(`UPDATE sections SET sort_order = 6 WHERE id = 4;`);
     await pool.query(`UPDATE sections SET sort_order = 7 WHERE id = 5;`);
     await pool.query(`UPDATE sections SET sort_order = 8 WHERE id = 6;`);
+
+    // 4. Ensure initial dev_settings
+    await pool.query(`
+      INSERT INTO dev_settings (id, whatsapp_number, websites_enabled, mobile_apps_enabled, websites_hero_title, websites_hero_image, mobile_apps_hero_title, mobile_apps_hero_image)
+      VALUES (1, '00905378221375', true, true, 'تطوير وبرمجة المواقع', '/dev-web-hero.jpg', 'تطوير وبرمجة تطبيقات الجوال', '/dev-mobile-hero.jpg')
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
+    // 5. Seed default website service cards if empty
+    const wcCount = await pool.query(`SELECT COUNT(*)::int as c FROM dev_service_cards WHERE service_type = 'websites'`);
+    if (wcCount.rows[0].c === 0) {
+      await pool.query(`
+        INSERT INTO dev_service_cards (service_type, name_ar, name_en, description_ar, image_url, sort_order) VALUES
+        ('websites', 'تصميم المتاجر الإلكترونية', 'E-commerce Stores', 'متاجر متكاملة مع بوابات دفع، إدارة مخزون، وسلة تسوق احترافية وسريعة.', '/dev-web-hero.jpg', 1),
+        ('websites', 'مواقع الشركات والمؤسسات', 'Corporate Websites', 'مواقع تعريفية فاخرة تعكس الهوية المؤسسية باحترافية وتجذب العملاء.', '/dev-web-hero.jpg', 2),
+        ('websites', 'مواقع المطاعم والكافيهات', 'Restaurant & Cafe Websites', 'منيو رقمي، طلبات أونلاين، حجز طاولات مع لوحة تحكم سهلة.', '/dev-web-hero.jpg', 3),
+        ('websites', 'منصات الحجز والخدمات', 'Booking & Services Platforms', 'أنظمة حجز مواعيد وإدارة حجوزات للمراكز الطبية والخدمية.', '/dev-web-hero.jpg', 4),
+        ('websites', 'مواقع العقارات والسيارات', 'Real Estate & Car Portals', 'عرض العقارات والسيارات مع فلاتر بحث متقدمة وتواصل سريع.', '/dev-web-hero.jpg', 5),
+        ('websites', 'أنظمة ومواقع مخصصة', 'Custom Web Applications', 'حلول برمجية مخصصة بالكامل تلبي متطلبات عملك الخاصة بدقة.', '/dev-web-hero.jpg', 6);
+      `);
+    }
+
+    // 6. Seed default mobile app service cards if empty
+    const mcCount = await pool.query(`SELECT COUNT(*)::int as c FROM dev_service_cards WHERE service_type = 'mobile_apps'`);
+    if (mcCount.rows[0].c === 0) {
+      await pool.query(`
+        INSERT INTO dev_service_cards (service_type, name_ar, name_en, description_ar, image_url, sort_order) VALUES
+        ('mobile_apps', 'تطبيقات المتاجر الإلكترونية', 'Shopping Apps', 'تطبيقات تسوق سريعة وممتعة لـ Android و iOS مع بوابات دفع وإشعارات.', '/dev-mobile-hero.jpg', 1),
+        ('mobile_apps', 'تطبيقات التوصيل والمطاعم', 'Delivery Apps', 'تتبع حي للطلبات، خرائط، وتوجيه المندوبين مع تجربة مستخدم سلسة.', '/dev-mobile-hero.jpg', 2),
+        ('mobile_apps', 'تطبيقات الخدمات والحجوزات', 'Service & Booking Apps', 'حجز مواعيد وطلب خدمات منزلية وتقنية مباشرة بضغطة زر.', '/dev-mobile-hero.jpg', 3),
+        ('mobile_apps', 'تطبيقات الشركات والأعمال', 'Business Apps', 'تطبيقات لإدارة الأعمال والموظفين والعملاء بكفاءة وأمان.', '/dev-mobile-hero.jpg', 4),
+        ('mobile_apps', 'تطبيقات العقارات والإعلانات', 'Classifieds & Real Estate', 'منصات إعلانية وتطبيقات بيع وشراء مع إشعارات فورية.', '/dev-mobile-hero.jpg', 5),
+        ('mobile_apps', 'تطبيقات مخصصة وفكرة فريدة', 'Custom Mobile Apps', 'نحول فكرتك المبتكرة إلى تطبيق حقيقي ينافس بقوة في المتاجر.', '/dev-mobile-hero.jpg', 6);
+      `);
+    }
   } catch (e) {
     // ignore
   }

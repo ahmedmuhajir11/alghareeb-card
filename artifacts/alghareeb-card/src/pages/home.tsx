@@ -187,6 +187,16 @@ function getSectionLabel(nameAr: string, t: (k: string) => string): string {
   return t('home.shopNow');
 }
 
+function getSectionHref(section: { id: number; nameAr: string }): string {
+  if (section.id === 8 || (section.nameAr.includes("مواقع") && (section.nameAr.includes("تصميم") || section.nameAr.includes("تطوير") || section.nameAr.includes("برمجة")))) {
+    return "/dev/websites";
+  }
+  if (section.id === 7 || (section.nameAr.includes("تطبيقات") && (section.nameAr.includes("تصميم") || section.nameAr.includes("تطوير") || section.nameAr.includes("برمجة")))) {
+    return "/dev/mobile-apps";
+  }
+  return `/section/${section.id}`;
+}
+
 export default function Home() {
   const { data: sections, isLoading } = useListSections();
   const { t, lang } = useI18n();
@@ -219,7 +229,7 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {sections?.map(section => (
-              <Link key={section.id} href={`/section/${section.id}`}>
+              <Link key={section.id} href={getSectionHref(section)}>
                 <Card className="neon-border cursor-pointer bg-card/50 hover:border-[hsl(var(--gold)/0.6)] transition-all duration-300 h-full overflow-hidden group">
                   <CardContent className="p-0 h-44 md:h-52 relative flex flex-col">
                     <div className="relative flex-1 overflow-hidden">

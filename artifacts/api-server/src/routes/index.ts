@@ -25,6 +25,7 @@ import mockChargingRouter from "./mock-charging";
 import userItemPricesRouter from "./user-item-prices";
 import yazancardRouter from "./yazancard";
 import resellerRouter from "./reseller";
+import devServicesRouter from "./dev-services";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(identityRouter);
 router.use(userItemPricesRouter);
 router.use(yazancardRouter);
 router.use(resellerRouter);
+router.use(devServicesRouter);
 
 export default router;
