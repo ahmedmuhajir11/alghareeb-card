@@ -50,7 +50,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
   let updatedCount = 0;
 
   try {
-    // Find all pending orders created in the last 7 days that have a provider order ID or API note
+    // Find all pending orders created in the last 7 days
     const pendingOrdersRes = await pool.query(
       `SELECT o.*,
               i.api_endpoint AS item_ep, i.api_key AS item_key,
@@ -59,7 +59,6 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
        LEFT JOIN items i ON i.name_ar = o.item_name
        LEFT JOIN packages p ON p.label = o.package_name AND p.item_id = i.id
        WHERE o.status = 'pending'
-         AND o.notes LIKE '%معرف العملية:%'
          AND o.created_at >= NOW() - INTERVAL '7 days'
        ORDER BY o.id ASC`
     );
@@ -69,8 +68,23 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
       return { checked: 0, updated: 0, results: [] };
     }
 
+    // Pre-fetch fallback API credentials from any YazanCard item
+    let defaultEndpoint = "https://api.yazancard.com/client/api";
+    let defaultKey = (process.env.YAZANCARD_TOKEN || "").trim();
+    try {
+      const fbRes = await pool.query(
+        `SELECT api_key, api_endpoint FROM items WHERE api_endpoint LIKE '%yazancard%' AND api_key IS NOT NULL AND api_key <> '' LIMIT 1`
+      );
+      if (fbRes.rows.length > 0) {
+        if (fbRes.rows[0].api_endpoint) defaultEndpoint = fbRes.rows[0].api_endpoint.replace(/\/newOrder\/.*$/, "").replace(/\/+$/, "");
+        if (fbRes.rows[0].api_key && !defaultKey) defaultKey = fbRes.rows[0].api_key.trim();
+      }
+    } catch {}
+
     for (const order of orders) {
-      const match = String(order.notes || "").match(/معرف العملية:\s*([^\s\[]+)/);
+      const notes = String(order.notes || "");
+      // Extract provider order ID: matches "معرف العملية: ID_..." OR "ID_..." directly
+      const match = notes.match(/معرف العملية:\s*([^\s\[]+)/) || notes.match(/(ID_[a-zA-Z0-9_]+)/);
       const providerOrderId = match ? match[1].trim() : null;
 
       if (!providerOrderId || providerOrderId === "N/A") {
@@ -78,24 +92,24 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
       }
 
       // Resolve endpoint and key
-      const apiEndpoint: string = order.pkg_ep || order.item_ep || "";
-      const apiKey: string = (order.pkg_key || order.item_key || process.env.YAZANCARD_TOKEN || "").trim();
+      const apiEndpoint: string = order.pkg_ep || order.item_ep || defaultEndpoint;
+      const apiKey: string = (order.pkg_key || order.item_key || defaultKey).trim();
 
-      const isYazan = apiEndpoint.includes("yazancard.com") || apiEndpoint.includes("/client/api/") || Boolean(process.env.YAZANCARD_TOKEN);
-
-      if (!isYazan || !apiKey) {
+      if (!apiKey) {
+        console.warn(`[YazanSync] No API key found for order #${order.id}`);
         continue;
       }
 
-      let baseUrl = "https://api.yazancard.com/client/api";
+      let baseUrl = defaultEndpoint;
       if (apiEndpoint) {
         baseUrl = apiEndpoint.replace(/\/newOrder\/.*$/, "").replace(/\/+$/, "");
         if (!baseUrl.startsWith("http")) baseUrl = `https://${baseUrl}`;
       }
 
       try {
+        console.log(`[YazanSync] Checking order #${order.id} (providerId: ${providerOrderId}) at ${baseUrl}/check`);
         const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(providerOrderId)}`;
-        const apiRes = await fetch(checkUrl, {
+        let apiRes = await fetch(checkUrl, {
           headers: {
             "api-token": apiKey,
             "Api-Token": apiKey,
@@ -103,20 +117,39 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           signal: AbortSignal.timeout(12000),
         });
 
-        if (!apiRes.ok) {
-          continue;
+        let rawText = await apiRes.text().catch(() => "");
+        let apiData: any = {};
+        try { apiData = JSON.parse(rawText); } catch { apiData = {}; }
+
+        // If not recognized or error, try with JSON array format: orders=["ID_..."]
+        if (!apiData?.status || apiData?.status === "ERROR") {
+          const checkUrl2 = `${baseUrl}/check?orders=${encodeURIComponent(JSON.stringify([providerOrderId]))}`;
+          const res2 = await fetch(checkUrl2, {
+            headers: { "api-token": apiKey, "Api-Token": apiKey },
+            signal: AbortSignal.timeout(10000),
+          });
+          if (res2.ok) {
+            const raw2 = await res2.text().catch(() => "");
+            try {
+              const d2 = JSON.parse(raw2);
+              if (d2 && d2.status === "OK") {
+                apiData = d2;
+                rawText = raw2;
+              }
+            } catch {}
+          }
         }
 
-        const rawText = await apiRes.text().catch(() => "");
-        let apiData: any = {};
-        try { apiData = JSON.parse(rawText); } catch { continue; }
+        console.log(`[YazanSync] Response for order #${order.id}:`, rawText.slice(0, 300));
 
         const parsed = parseCheckStatus(apiData, providerOrderId);
         if (!parsed) {
+          console.log(`[YazanSync] Could not parse status for #${order.id}:`, rawText.slice(0, 200));
           continue;
         }
 
         const { status: rawStatus, note } = parsed;
+        console.log(`[YazanSync] Parsed #${order.id}: status="${rawStatus}", note="${note}"`);
 
         const isSuccess =
           rawStatus === "accept" ||
@@ -159,8 +192,8 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
             await client.query("BEGIN");
             const oCheck = await client.query("SELECT status FROM orders WHERE id=$1 FOR UPDATE", [order.id]);
             if (oCheck.rows.length > 0 && oCheck.rows[0].status === "pending") {
+              const reasonText = note || rawStatus || "مرفوض من المزود";
               // Update order to rejected
-              const reasonText = note || rawStatus;
               await client.query(
                 `UPDATE orders SET status='rejected', notes = notes || $1, updated_at=NOW() WHERE id=$2`,
                 [` | تم الرفض من المزود تلقائياً ❌ (${reasonText})`, order.id]
@@ -199,6 +232,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
 
               updatedCount++;
               results.push({ orderId: order.id, providerOrderId, status: "rejected", reasonText });
+              console.log(`✅ [YazanSync] Order #${order.id} successfully rejected & refunded (${reasonText})!`);
             } else {
               await client.query("ROLLBACK");
             }
@@ -210,7 +244,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           }
         }
       } catch (err: any) {
-        // Individual order check error (timeout etc) — skip and continue
+        console.error(`[YazanSync] Error checking order #${order.id}:`, err?.message);
       }
     }
   } catch (globalErr: any) {
@@ -229,12 +263,12 @@ export function startYazanSyncWorker(intervalMs: number = 20000): void {
   if (syncInterval) return;
   console.log(`🚀 YazanCard Auto-Sync Worker started (every ${intervalMs / 1000}s)`);
 
-  // Initial run after 5 seconds
+  // Initial run after 3 seconds
   setTimeout(() => {
-    syncPendingYazanOrders().catch(() => {});
-  }, 5000);
+    syncPendingYazanOrders().catch((e) => console.error("Initial YazanSync failed:", e));
+  }, 3000);
 
   syncInterval = setInterval(() => {
-    syncPendingYazanOrders().catch(() => {});
+    syncPendingYazanOrders().catch((e) => console.error("Periodic YazanSync failed:", e));
   }, intervalMs);
 }
