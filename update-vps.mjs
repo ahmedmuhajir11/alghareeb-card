@@ -153,7 +153,33 @@
     }
   }
 
-  const YAZANCARD_TOKEN = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
+  // Resolve YAZANCARD_TOKEN from process.env, PM2, or .env files
+  let yazanToken = process.env.YAZANCARD_TOKEN;
+  if (!yazanToken) {
+    try {
+      const raw = execSync('pm2 jlist', { encoding: 'utf8' });
+      const match = raw.match(/"YAZANCARD_TOKEN"\s*:\s*"([^"]+)"/);
+      if (match) yazanToken = match[1];
+    } catch {}
+  }
+  if (!yazanToken) {
+    const envPaths = [`${BASE}/.env`, `${BASE}/artifacts/api-server/.env`];
+    for (const ep of envPaths) {
+      try {
+        const { readFileSync } = await import('fs');
+        const lines = readFileSync(ep, 'utf8').split('\n');
+        for (const line of lines) {
+          if (line.startsWith('YAZANCARD_TOKEN=')) {
+            yazanToken = line.slice(16).trim().replace(/^["']|["']$/g, '');
+            break;
+          }
+        }
+        if (yazanToken) break;
+      } catch {}
+    }
+  }
+
+  const YAZANCARD_TOKEN = yazanToken || '';
 
   if (!dbUrl) {
     console.log('ℹ️  DATABASE_URL not found in shell/PM2/.env — skipping migrations.');
@@ -164,14 +190,44 @@
 'use strict';
 const { Pool } = require('pg');
 const pool = new Pool({ connectionString: ${JSON.stringify(dbUrl)} });
-const YZT = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
+const YZT = ${JSON.stringify(YAZANCARD_TOKEN)};
 async function run() {
   const c = await pool.connect();
   try {
-    await c.query(
-      "UPDATE items SET api_endpoint=$1, api_key=$2 WHERE name_en ILIKE '%party star%'",
-      ['https://api.yazancard.com/client/api/newOrder/145/params', YZT]
-    );
+    // Only update api_key if YZT is a real token, NEVER write placeholder!
+    if (YZT && !YZT.includes('PLACEHOLDER')) {
+      await c.query(
+        "UPDATE items SET api_endpoint=$1, api_key=$2 WHERE name_en ILIKE '%party star%'",
+        ['https://api.yazancard.com/client/api/newOrder/145/params', YZT]
+      );
+      await c.query(
+        "UPDATE packages SET api_key=$1 WHERE api_key ILIKE '%PLACEHOLDER%'",
+        [YZT]
+      );
+      await c.query(
+        "UPDATE items SET api_key=$1 WHERE api_key ILIKE '%PLACEHOLDER%'",
+        [YZT]
+      );
+    } else {
+      await c.query(
+        "UPDATE items SET api_endpoint=$1 WHERE name_en ILIKE '%party star%'",
+        ['https://api.yazancard.com/client/api/newOrder/145/params']
+      );
+      // Auto-heal any placeholder api_key from packages or items
+      await c.query(\`
+        UPDATE items 
+        SET api_key = (
+          SELECT api_key FROM packages 
+          WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+          LIMIT 1
+        )
+        WHERE (api_key IS NULL OR api_key = '' OR api_key ILIKE '%PLACEHOLDER%')
+          AND EXISTS (
+            SELECT 1 FROM packages 
+            WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+          )
+      \`);
+    }
     // Reseller API columns
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_reseller BOOLEAN NOT NULL DEFAULT false");
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS api_token TEXT");

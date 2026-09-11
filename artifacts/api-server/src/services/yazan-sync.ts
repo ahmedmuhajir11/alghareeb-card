@@ -145,11 +145,32 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
 
       // Resolve endpoint and key
       const apiEndpoint: string = order.pkg_ep || order.item_ep || "";
-      const apiKey: string = (order.pkg_key || order.item_key || process.env.YAZANCARD_TOKEN || "").trim();
+      let apiKey = (order.pkg_key || order.item_key || "").trim();
 
-      const isYazan = apiEndpoint.includes("yazancard.com") || apiEndpoint.includes("/client/api/") || Boolean(process.env.YAZANCARD_TOKEN);
+      // If missing or contains placeholder, pull from process.env.YAZANCARD_TOKEN
+      if (!apiKey || apiKey.includes("PLACEHOLDER")) {
+        apiKey = (process.env.YAZANCARD_TOKEN || "").trim();
+      }
 
-      if (!isYazan || !apiKey) {
+      // If still missing, query DB for any existing valid non-placeholder token
+      if (!apiKey || apiKey.includes("PLACEHOLDER")) {
+        try {
+          const validKeyRes = await pool.query(
+            `SELECT api_key FROM packages WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+             UNION ALL
+             SELECT api_key FROM items WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+             LIMIT 1`
+          );
+          if (validKeyRes.rows.length > 0 && validKeyRes.rows[0].api_key) {
+            apiKey = validKeyRes.rows[0].api_key.trim();
+          }
+        } catch {}
+      }
+
+      const isYazan = apiEndpoint.includes("yazancard.com") || apiEndpoint.includes("/client/api/") || Boolean(apiKey);
+
+      if (!isYazan || !apiKey || apiKey.includes("PLACEHOLDER")) {
+        console.warn(`[YazanSync] No valid API token available for order #${order.id} (key: "${apiKey}")`);
         continue;
       }
 
@@ -160,12 +181,13 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
       }
 
       try {
-        console.log(`[YazanSync] Querying /check for order #${order.id} (provider ID: ${providerOrderId})...`);
-        const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(providerOrderId)}`;
+        console.log(`[YazanSync] Querying /check for order #${order.id} (provider ID: ${providerOrderId}, token: ${apiKey.slice(0, 4)}...)...`);
+        const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(providerOrderId)}&api-token=${encodeURIComponent(apiKey)}`;
         const apiRes = await fetch(checkUrl, {
           headers: {
             "api-token": apiKey,
             "Api-Token": apiKey,
+            Authorization: `Bearer ${apiKey}`,
           },
           signal: AbortSignal.timeout(12000),
         });
