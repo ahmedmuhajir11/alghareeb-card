@@ -341,7 +341,7 @@ router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): P
   }
 });
 
-// Approve or reject an order (admin). On reject: refund the user's balance.
+// Approve or reject an order (admin). On reject: refund balance ONLY if it was previously deducted.
 router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const id = parseInt(req.params.id);
   const { action, customMessage } = req.body ?? {};
@@ -352,7 +352,7 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 
   const client = await pool.connect();
-  let notifyOrder: { userId: number; itemName: string; packageName: string | null; amount: number; currency: string } | null = null;
+  let notifyOrder: { userId: number; itemName: string; packageName: string | null; amount: number; currency: string; wasDeducted: boolean } | null = null;
   try {
     await client.query("BEGIN");
     const ordRes = await client.query("SELECT * FROM orders WHERE id=$1 FOR UPDATE", [id]);
@@ -368,24 +368,65 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
       return;
     }
 
-    const newStatus = action === "approve" ? "approved" : "rejected";
-    await client.query(
-      `UPDATE orders SET status=$1, updated_at=NOW() WHERE id=$2`,
-      [newStatus, id]
-    );
+    const amount = parseFloat(order.amount);
 
-    if (action === "reject") {
-      const amount = parseFloat(order.amount);
-      // Refund to user's balance
+    // Check if balance was already deducted for this order (e.g. old orders or past deduction)
+    const txRes = await client.query(
+      `SELECT id FROM wallet_transactions WHERE user_id = $1 AND type = 'purchase' AND ref_id = $2 LIMIT 1`,
+      [order.user_id, id]
+    );
+    const wasDeducted = txRes.rows.length > 0;
+
+    if (action === "approve") {
+      // If balance was not deducted yet (new pending orders), deduct it now
+      if (!wasDeducted) {
+        const uRes = await client.query("SELECT balance FROM users WHERE id=$1 FOR UPDATE", [order.user_id]);
+        if (uRes.rows.length === 0) {
+          await client.query("ROLLBACK");
+          res.status(404).json({ error: "المستخدم غير موجود" });
+          return;
+        }
+        const currentBalance = parseFloat(uRes.rows[0].balance);
+        if (currentBalance < amount) {
+          await client.query("ROLLBACK");
+          res.status(400).json({
+            error: `رصيد العميل غير كافٍ لتنفيذ الطلب (الرصيد: ${currentBalance} ${order.currency} - المطلوب: ${amount} ${order.currency})`
+          });
+          return;
+        }
+
+        await client.query(
+          `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
+          [amount, order.user_id]
+        );
+        await client.query(
+          `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
+          [order.user_id, amount, `شراء ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+        );
+      }
+
       await client.query(
-        `UPDATE users SET balance = balance + $1, updated_at=NOW() WHERE id=$2`,
-        [amount, order.user_id]
+        `UPDATE orders SET status='approved', updated_at=NOW() WHERE id=$1`,
+        [id]
       );
-      // Audit log: refund transaction
+    } else {
+      // action === "reject"
       await client.query(
-        `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'refund', $2, $3, $4)`,
-        [order.user_id, amount, `استرجاع رصيد - رفض طلب ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+        `UPDATE orders SET status='rejected', updated_at=NOW() WHERE id=$1`,
+        [id]
       );
+
+      // ONLY refund if balance was actually deducted previously (old orders)
+      if (wasDeducted) {
+        await client.query(
+          `UPDATE users SET balance = balance + $1, updated_at=NOW() WHERE id=$2`,
+          [amount, order.user_id]
+        );
+        await client.query(
+          `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'refund', $2, $3, $4)`,
+          [order.user_id, amount, `استرجاع رصيد - رفض طلب ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+        );
+      }
     }
 
     await client.query("COMMIT");
@@ -393,10 +434,11 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
       userId: order.user_id,
       itemName: order.item_name,
       packageName: order.package_name,
-      amount: parseFloat(order.amount),
+      amount,
       currency: order.currency,
+      wasDeducted,
     };
-    res.json({ success: true, status: newStatus });
+    res.json({ success: true, status: action === "approve" ? "approved" : "rejected" });
   } catch (err: any) {
     await client.query("ROLLBACK").catch(() => {});
     res.status(500).json({ error: "خطأ في المعالجة: " + err.message });
@@ -406,12 +448,14 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 
   if (notifyOrder) {
-    const { userId, itemName, packageName, amount, currency } = notifyOrder;
+    const { userId, itemName, packageName, amount, currency, wasDeducted } = notifyOrder;
     const itemLabel = packageName ? `${itemName} - ${packageName}` : itemName;
     const title = action === "approve" ? "✅ تم تنفيذ طلب الشحن" : "❌ تم رفض طلب الشحن";
     const defaultBody = action === "approve"
       ? `تم تنفيذ طلبك: ${itemLabel}. شكراً لاستخدامك بطاقة الغريب.`
-      : `تم رفض طلب ${itemLabel} وإرجاع ${amount} ${currency} إلى رصيدك.`;
+      : (wasDeducted
+          ? `تم رفض طلب ${itemLabel} وإرجاع ${amount} ${currency} إلى رصيدك.`
+          : `تم رفض طلب ${itemLabel}. لم يتم خصم أي رصيد من حسابك.`);
     const body = (customMessage && String(customMessage).trim()) || defaultBody;
     sendPushToUser(userId, title, body, "/orders").catch(() => {});
   }
@@ -594,24 +638,65 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
         });
       }
 
-      apiData = await apiRes.json().catch(() => ({})) as Record<string, unknown>;
+      const rawText = await apiRes.text().catch(() => "");
+      try { apiData = JSON.parse(rawText); } catch { /* HTML or non-JSON */ }
       httpOk = apiRes.ok;
 
+      // YazanCard response shape: { status: "OK", data: { status: "accept"|"wait", order_id: "..." } }
+      const isYazanResp = typeof apiData?.["status"] === "string";
+      const yzStatus = isYazanResp ? String(apiData["status"]) : "";
+      const yzDataStatus = (apiData?.["data"] as any)?.["status"] ?? "";
+      const yazanAccepted = yzStatus === "OK" && yzDataStatus === "accept";
+      const yazanWait = yzStatus === "OK" && yzDataStatus === "wait";
+
       const explicitFailure =
-        apiData?.["success"] === false || apiData?.["status"] === "FAILED" ||
-        apiData?.["status"] === "failed" || apiData?.["status"] === "error" ||
+        apiData?.["success"] === false ||
+        yzStatus === "ERROR" || yzStatus === "FAILED" || yzStatus === "error" ||
+        apiData?.["status"] === "failed" ||
         apiData?.["code"] === 0;
 
-      if (httpOk && !explicitFailure) {
-        const txId = String(apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? "N/A");
+      const genericSuccess = httpOk && !isYazanResp && !explicitFailure;
+
+      if (yazanAccepted || genericSuccess) {
+        const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
+        const txId = String(yzOrderId ?? apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? "N/A");
+
+        // Deduct balance if not already deducted (for new pending orders)
+        const txRes = await pool.query(
+          `SELECT id FROM wallet_transactions WHERE user_id = $1 AND type = 'purchase' AND ref_id = $2 LIMIT 1`,
+          [order.user_id, id]
+        );
+        if (txRes.rows.length === 0) {
+          const cost = parseFloat(order.amount);
+          await pool.query(
+            `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
+            [cost, order.user_id]
+          );
+          await pool.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
+            [order.user_id, cost, `شراء ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+          );
+        }
+
         await pool.query(
           `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
-          [`تم الشحن تلقائياً - معرف العملية: ${txId}`, id]
+          [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}`, id]
         );
         sendPushToUser(order.user_id, "✅ تم الشحن التلقائي", `تم تنفيذ طلبك: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, "/orders").catch(() => {});
         res.json({ success: true, status: "completed", apiResponse: apiData });
+      } else if (yazanWait) {
+        const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
+        const txId = String(yzOrderId ?? "N/A");
+        await pool.query(
+          `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
+          [`بانتظار تأكيد YazanCard ⏳ - معرف العملية: ${txId}`, id]
+        );
+        res.json({ success: true, status: "pending", apiResponse: apiData });
       } else {
-        errMsg = String(apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ?? "خطأ غير معروف");
+        errMsg = String(
+          apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ??
+          (rawText.includes("<!DOCTYPE") ? "IP محظور أو خطأ في الخادم" : "خطأ غير معروف")
+        );
         await pool.query(
           `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
           [`فشل الشحن التلقائي: ${errMsg} - سيتم المعالجة يدوياً`, id]
