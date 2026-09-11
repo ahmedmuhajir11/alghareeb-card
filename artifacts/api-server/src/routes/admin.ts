@@ -802,4 +802,15 @@ router.post("/migrate-item-names", requireAdmin, async (_req: Request, res: Resp
   }
 });
 
+// ── Manual trigger to sync all pending YazanCard orders ──────────────────────
+router.all("/admin/sync-yazan-orders", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const { syncPendingYazanOrders } = await import("../services/yazan-sync");
+    const result = await syncPendingYazanOrders();
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
