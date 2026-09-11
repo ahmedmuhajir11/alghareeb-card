@@ -14,18 +14,22 @@ if (!dbUrl) {
 const pool = new Pool({ connectionString: dbUrl });
 
 async function main() {
-  console.log('🔍 Checking latest 5 orders...');
+  console.log('🔍 Checking Order #2930 and #2936...');
   const res = await pool.query(
-    'SELECT id, user_id, item_name, amount, status, notes, updated_at FROM orders ORDER BY id DESC LIMIT 5'
+    'SELECT id, user_id, item_name, amount, status, notes, updated_at FROM orders WHERE id IN (2930, 2936)'
   );
   console.table(res.rows);
 
-  // Also check if any refund transactions were made recently
-  console.log('\n💰 Checking latest 5 wallet transactions...');
+  // Check wallet transactions for user 28
+  console.log('\n💰 Checking refund transactions for user 28...');
   const txRes = await pool.query(
-    "SELECT id, user_id, type, amount, description, ref_id, created_at FROM wallet_transactions ORDER BY id DESC LIMIT 5"
+    "SELECT id, user_id, type, amount, description, ref_id, created_at FROM wallet_transactions WHERE user_id = 28 AND type = 'refund' ORDER BY id DESC LIMIT 5"
   );
   console.table(txRes.rows);
+
+  // Check current balance of user 28
+  const uRes = await pool.query("SELECT id, username, balance FROM users WHERE id = 28");
+  console.log('\n👤 User 28 Balance:', uRes.rows[0]);
 
   await pool.end();
 }
