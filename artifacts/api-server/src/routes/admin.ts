@@ -93,11 +93,32 @@ router.get("/admin/me", async (req: Request, res: Response): Promise<void> => {
   res.json(AdminMeResponse.parse({ isAdmin }));
 });
 
-// List all deposit requests (admin)
+// List deposit requests (admin) — paginated
 router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const status = (req.query.status as string) || "all";
+  const page = Math.max(1, parseInt((req.query.page as string) || "1", 10) || 1);
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
   try {
-    let q = `SELECT d.*,
+    // WHERE clause
+    const whereParams: any[] = [];
+    let whereClause = "";
+    if (status !== "all") {
+      whereParams.push(status);
+      whereClause = ` WHERE d.status = $${whereParams.length}`;
+    }
+
+    // Total count query
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM deposit_requests d${whereClause}`,
+      whereParams
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // Data query with LIMIT / OFFSET
+    const dataParams = [...whereParams, pageSize, offset];
+    const q = `SELECT d.*,
               u.name as user_name, u.email as user_email, u.account_number as user_account,
               u.currency as user_currency,
               wt.amount as credited_amount,
@@ -107,15 +128,12 @@ router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response):
              LEFT JOIN users u ON u.id = d.user_id
              LEFT JOIN wallet_transactions wt ON wt.ref_id = d.id AND wt.type = 'deposit'
              LEFT JOIN currencies uc ON uc.code = u.currency
-             LEFT JOIN currencies dc ON dc.code = d.currency`;
-    const params: any[] = [];
-    if (status !== "all") {
-      params.push(status);
-      q += ` WHERE d.status = $${params.length}`;
-    }
-    q += " ORDER BY d.created_at DESC";
-    const result = await pool.query(q, params);
-    res.json(result.rows.map(r => {
+             LEFT JOIN currencies dc ON dc.code = d.currency
+             ${whereClause}
+             ORDER BY d.created_at DESC
+             LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`;
+    const result = await pool.query(q, dataParams);
+    const rows = result.rows.map(r => {
       // Actual credited amount (approved deposits)
       let creditedAmount: number | null = r.credited_amount != null ? parseFloat(r.credited_amount) : null;
       // Estimated credited amount for pending/rejected deposits
@@ -155,7 +173,8 @@ router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response):
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       };
-    }));
+    });
+    res.json({ data: rows, total, page, pageSize, totalPages });
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في جلب الطلبات: " + err.message });
   }
@@ -264,23 +283,41 @@ router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Resp
   }
 });
 
-// List all charge/order requests (admin)
+// List charge/order requests (admin) — paginated
 router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const status = (req.query.status as string) || "all";
+  const page = Math.max(1, parseInt((req.query.page as string) || "1", 10) || 1);
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
   try {
-    let q = `SELECT o.*, u.name as user_name, u.email as user_email, u.account_number as user_account,
+    // WHERE clause
+    const whereParams: any[] = [];
+    let whereClause = "";
+    if (status !== "all") {
+      whereParams.push(status);
+      whereClause = ` WHERE o.status = $${whereParams.length}`;
+    }
+
+    // Total count query
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM orders o${whereClause}`,
+      whereParams
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // Data query with LIMIT / OFFSET
+    const dataParams = [...whereParams, pageSize, offset];
+    const q = `SELECT o.*, u.name as user_name, u.email as user_email, u.account_number as user_account,
                     p.label as p_label, p.quantity as p_quantity
              FROM orders o
              LEFT JOIN users u ON u.id = o.user_id
-             LEFT JOIN packages p ON p.id = o.package_id`;
-    const params: any[] = [];
-    if (status !== "all") {
-      params.push(status);
-      q += ` WHERE o.status = $${params.length}`;
-    }
-    q += " ORDER BY o.created_at DESC";
-    const result = await pool.query(q, params);
-    res.json(result.rows.map(r => ({
+             LEFT JOIN packages p ON p.id = o.package_id
+             ${whereClause}
+             ORDER BY o.created_at DESC
+             LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`;
+    const result = await pool.query(q, dataParams);
+    const rows = result.rows.map(r => ({
       id: r.id,
       userId: r.user_id,
       userName: r.user_name,
@@ -297,7 +334,8 @@ router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): P
       notes: r.notes || null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
-    })));
+    }));
+    res.json({ data: rows, total, page, pageSize, totalPages });
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في جلب الطلبات: " + err.message });
   }
@@ -453,7 +491,8 @@ router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res:
   const chargeUrl = new URL(apiEndpoint.replace(/\/params\/?$/, "") + "/params");
   chargeUrl.searchParams.set("qty", "1");
   chargeUrl.searchParams.set("order_uuid", crypto.randomUUID());
-  if (r.target_id) chargeUrl.searchParams.set("player_id", String(r.target_id));
+  // Map player_id → playerId (YazanCard field name). Send once only.
+  if (r.target_id) chargeUrl.searchParams.set("playerId", String(r.target_id));
 
   let rawText = "";
   let httpStatus = 0;
@@ -535,7 +574,8 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
         const chargeUrl = new URL(chargeEndpoint);
         chargeUrl.searchParams.set("qty", "1");
         chargeUrl.searchParams.set("order_uuid", crypto.randomUUID());
-        if (order.target_id) chargeUrl.searchParams.set("player_id", String(order.target_id));
+        // Map player_id → playerId (YazanCard field name). Send once only.
+        if (order.target_id) chargeUrl.searchParams.set("playerId", String(order.target_id));
         apiRes = await fetch(chargeUrl.toString(), {
           method: "GET",
           headers: { "Api-Token": apiKey, "api-token": apiKey },

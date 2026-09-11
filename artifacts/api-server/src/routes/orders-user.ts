@@ -114,7 +114,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     const isHighUnit = ["SYP", "DZD", "IQD"].includes(userCurrency);
     const cost = +(priceUsd * rate).toFixed(isHighUnit ? 0 : userCurrency === "OMR" ? 3 : 2);
 
-    // Lock balance + check
+    // Lock balance + check (balance is NOT deducted here — only verified as sufficient)
     const u = await client.query("SELECT balance FROM users WHERE id=$1 FOR UPDATE", [user.id]);
     if (u.rows.length === 0) {
       await client.query("ROLLBACK");
@@ -134,6 +134,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       return;
     }
 
+    // Create order in pending state — balance is NOT deducted until provider confirms
     const orderRes = await client.query(
       `INSERT INTO orders (user_id, item_name, item_name_en, item_name_tr, package_name, package_id, target_id, amount, currency, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending') RETURNING *`,
@@ -141,16 +142,8 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     );
     const order = orderRes.rows[0];
 
-    await client.query(
-      `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
-      [cost, user.id]
-    );
-
-    await client.query(
-      `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
-      [user.id, cost, `شراء ${item.name_ar}${packageName ? " - " + packageName : ""}`, order.id]
-    );
-
+    // COMMIT here — order is saved, balance untouched
+    // Balance deduction and wallet_transaction happen ONLY after provider accept confirmation
     await client.query("COMMIT");
 
     // Auto-charge via API if configured
@@ -177,9 +170,9 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           const url = new URL(chargeEndpoint);
           url.searchParams.set("qty", String(apiQty));
           url.searchParams.set("order_uuid", orderUuid);
+          // Map player_id → playerId (YazanCard field name). Send once only.
           if (targetId) {
             url.searchParams.set("playerId", String(targetId));
-            url.searchParams.set("player_id", String(targetId));
           }
           apiRes = await fetch(url.toString(), {
             method: "GET",
@@ -209,21 +202,23 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         let apiData: Record<string, unknown> = {};
         try { apiData = JSON.parse(rawText); } catch { /* HTML or non-JSON */ }
 
-        // YazanCard success: { status: "OK", data: { status: "accept"|"wait", order_id: "..." } }
+        // YazanCard response shape: { status: "OK", data: { status: "accept"|"wait", order_id: "..." } }
         const isYazanResp = typeof apiData?.["status"] === "string";
         const yzStatus = isYazanResp ? String(apiData["status"]) : "";
         const yzDataStatus = (apiData?.["data"] as any)?.["status"] ?? "";
-        const yazanSuccess = yzStatus === "OK" && (yzDataStatus === "accept" || yzDataStatus === "wait");
+        const yazanAccepted = yzStatus === "OK" && yzDataStatus === "accept";
+        const yazanWait = yzStatus === "OK" && yzDataStatus === "wait";
 
-        // Generic success check
+        // Generic success check (non-YazanCard APIs)
         const explicitFailure =
           apiData?.["success"] === false ||
           yzStatus === "ERROR" || yzStatus === "FAILED" || yzStatus === "error" ||
           apiData?.["status"] === "failed" ||
           apiData?.["code"] === 0;
-        const succeeded = apiRes.ok && (yazanSuccess || (!isYazanResp && !explicitFailure));
+        const genericSuccess = apiRes.ok && !isYazanResp && !explicitFailure;
 
-        if (succeeded) {
+        if (yazanAccepted || genericSuccess) {
+          // Provider accepted → deduct balance NOW and record purchase
           finalStatus = "completed";
           autoCharged = true;
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
@@ -232,7 +227,26 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
             `UPDATE orders SET status='completed', notes=$1 WHERE id=$2`,
             [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}`, order.id]
           );
+          // Deduct balance and record purchase — happens only on confirmed accept
+          await pool.query(
+            `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
+            [cost, user.id]
+          );
+          await pool.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
+            [user.id, cost, `شراء ${item.name_ar}${packageName ? " - " + packageName : ""}`, order.id]
+          );
+        } else if (yazanWait) {
+          // YazanCard wait → order stays pending, no balance deduction
+          finalStatus = "pending";
+          const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
+          const txId = String(yzOrderId ?? "N/A");
+          await pool.query(
+            `UPDATE orders SET notes=$1 WHERE id=$2`,
+            [`بانتظار تأكيد YazanCard ⏳ - معرف العملية: ${txId}`, order.id]
+          );
         } else {
+          // Explicit rejection (ERROR/FAILED) → no balance deduction, order stays pending
           finalStatus = "pending";
           const errMsg = String(
             apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ??
@@ -245,10 +259,11 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           );
         }
       } catch (apiErr: any) {
+        // Timeout or connection error → result unknown, no balance deduction, order stays pending
         finalStatus = "pending";
         await pool.query(
           `UPDATE orders SET notes=$1 WHERE id=$2`,
-          [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"}`, order.id]
+          [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"} — الطلب معلق بانتظار المراجعة اليدوية`, order.id]
         ).catch(() => {});
       }
     }
@@ -273,7 +288,8 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         status: finalStatus,
         createdAt: order.created_at,
       },
-      newBalance: currentBalance - cost,
+      // newBalance reflects actual deduction: only reduced if autoCharged (accept confirmed)
+      newBalance: autoCharged ? currentBalance - cost : currentBalance,
     });
   } catch (err: any) {
     await client.query("ROLLBACK").catch(() => {});
