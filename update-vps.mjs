@@ -84,6 +84,7 @@
     'artifacts/alghareeb-card/src/App.tsx',
     'artifacts/alghareeb-card/src/pages/reseller-api.tsx',
     'artifacts/alghareeb-card/src/components/admin/UsersManager.tsx',
+    'update-vps.mjs',
   ];
 
   function download(filePath) {
@@ -122,15 +123,44 @@
 
   // ── DB migrations ──────────────────────────────────────────────
   console.log('\n🗄️  Running DB migrations...');
-  // ⚠️ Set before running: export YAZANCARD_TOKEN=your_token_here
+  
+  // Resolve DATABASE_URL from process.env, PM2, or .env files
+  let dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    try {
+      const raw = execSync('pm2 jlist', { encoding: 'utf8' });
+      const match = raw.match(/"DATABASE_URL"\s*:\s*"([^"]+)"/);
+      if (match) dbUrl = match[1];
+    } catch {}
+  }
+  if (!dbUrl) {
+    const envPaths = [`${BASE}/.env`, `${BASE}/artifacts/api-server/.env`];
+    for (const ep of envPaths) {
+      try {
+        const { readFileSync } = await import('fs');
+        const lines = readFileSync(ep, 'utf8').split('\n');
+        for (const line of lines) {
+          if (line.startsWith('DATABASE_URL=')) {
+            dbUrl = line.slice(13).trim().replace(/^["']|["']$/g, '');
+            break;
+          }
+        }
+        if (dbUrl) break;
+      } catch {}
+    }
+  }
+
   const YAZANCARD_TOKEN = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
 
-  // Write migration script inside lib/db where pg is a direct dependency
-  const migratePath = `${BASE}/lib/db/tmp-migrate.cjs`;
-  writeFileSync(migratePath, `
+  if (!dbUrl) {
+    console.log('ℹ️  DATABASE_URL not found in shell/PM2/.env — skipping migrations.');
+  } else {
+    // Write migration script inside lib/db where pg is a direct dependency
+    const migratePath = `${BASE}/lib/db/tmp-migrate.cjs`;
+    writeFileSync(migratePath, `
 'use strict';
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: ${JSON.stringify(dbUrl)} });
 const YZT = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
 async function run() {
   const c = await pool.connect();
@@ -207,7 +237,8 @@ run().catch(e => { console.error('❌ DB migration error:', e.message); process.
   } catch (dbErr) {
     console.warn('⚠️  DB migration skipped (can be done manually via admin panel):', dbErr.message);
   }
-  try { unlinkSync(migratePath); } catch {}
+    try { unlinkSync(migratePath); } catch {}
+  }
 
   console.log('\n🔨 Building API server...');
   execSync('pnpm --filter @workspace/api-server run build', {
