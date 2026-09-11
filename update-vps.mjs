@@ -73,6 +73,7 @@
     'artifacts/api-server/src/routes/yazancard.ts',
     'artifacts/api-server/src/routes/currencies.ts',
     'artifacts/api-server/src/routes/deposits.ts',
+    'artifacts/api-server/src/routes/webhooks.ts',
     // Admin dashboard + YazanCard importer
     'artifacts/alghareeb-card/src/components/admin/YazanCardImporter.tsx',
     'artifacts/alghareeb-card/src/pages/admin/dashboard.tsx',

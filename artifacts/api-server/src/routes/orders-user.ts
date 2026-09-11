@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import { requireUser } from "../middleware/requireUser";
-import { sendPushToAdmins } from "./push";
+import { sendPushToAdmins, sendPushToUser } from "./push";
 
 const router: IRouter = Router();
 
@@ -114,7 +114,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     const isHighUnit = ["SYP", "DZD", "IQD"].includes(userCurrency);
     const cost = +(priceUsd * rate).toFixed(isHighUnit ? 0 : userCurrency === "OMR" ? 3 : 2);
 
-    // Lock balance + check (balance is NOT deducted here — only verified as sufficient)
+    // Lock balance + check
     const u = await client.query("SELECT balance FROM users WHERE id=$1 FOR UPDATE", [user.id]);
     if (u.rows.length === 0) {
       await client.query("ROLLBACK");
@@ -134,7 +134,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       return;
     }
 
-    // Create order in pending state — balance is NOT deducted until provider confirms
+    // Create order in pending state
     const orderRes = await client.query(
       `INSERT INTO orders (user_id, item_name, item_name_en, item_name_tr, package_name, package_id, target_id, amount, currency, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending') RETURNING *`,
@@ -142,8 +142,16 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     );
     const order = orderRes.rows[0];
 
-    // COMMIT here — order is saved, balance untouched
-    // Balance deduction and wallet_transaction happen ONLY after provider accept confirmation
+    // Hold/Deduct balance immediately upon creating order (prevents double-spending)
+    await client.query(
+      `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
+      [cost, user.id]
+    );
+    await client.query(
+      `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
+      [user.id, cost, `شراء ${item.name_ar}${packageName ? " - " + packageName : ""}`, order.id]
+    );
+
     await client.query("COMMIT");
 
     // Auto-charge via API if configured
@@ -151,6 +159,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     let autoCharged = false;
     const apiEndpoint = item.api_endpoint as string | null;
     const apiKey = item.api_key as string | null;
+    const orderUuid = crypto.randomUUID();
 
     if (apiEndpoint && apiKey) {
       try {
@@ -166,7 +175,6 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           const apiQty = isPerQuantity
             ? parseFloat(quantity)
             : (item._pkgQuantity && item._pkgQuantity > 1 ? item._pkgQuantity : 1);
-          const orderUuid = crypto.randomUUID();
           const url = new URL(chargeEndpoint);
           url.searchParams.set("qty", String(apiQty));
           url.searchParams.set("order_uuid", orderUuid);
@@ -187,6 +195,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
             body: JSON.stringify({
               api_key: apiKey,
               order_id: order.id,
+              order_uuid: orderUuid,
               item_name: item.name_ar,
               package_name: packageName,
               target_id: targetId || null,
@@ -218,62 +227,79 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         const genericSuccess = apiRes.ok && !isYazanResp && !explicitFailure;
 
         if (yazanAccepted || genericSuccess) {
-          // Provider accepted → deduct balance NOW and record purchase
+          // Provider accepted → order completed (balance was already held)
           finalStatus = "completed";
           autoCharged = true;
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
           const txId = String(yzOrderId ?? apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? apiData?.["id"] ?? "N/A");
           await pool.query(
-            `UPDATE orders SET status='completed', notes=$1 WHERE id=$2`,
-            [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}`, order.id]
-          );
-          // Deduct balance and record purchase — happens only on confirmed accept
-          await pool.query(
-            `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
-            [cost, user.id]
-          );
-          await pool.query(
-            `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
-            [user.id, cost, `شراء ${item.name_ar}${packageName ? " - " + packageName : ""}`, order.id]
+            `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
+            [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
           );
         } else if (yazanWait) {
-          // YazanCard wait → order stays pending, no balance deduction
+          // YazanCard wait → order stays pending, balance remains held
           finalStatus = "pending";
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
           const txId = String(yzOrderId ?? "N/A");
           await pool.query(
-            `UPDATE orders SET notes=$1 WHERE id=$2`,
-            [`بانتظار تأكيد YazanCard ⏳ - معرف العملية: ${txId}`, order.id]
+            `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
+            [`بانتظار تأكيد YazanCard ⏳ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
           );
         } else {
-          // Explicit rejection (ERROR/FAILED) → no balance deduction, order stays pending
-          finalStatus = "pending";
+          // Explicit rejection/failure → mark rejected AND AUTO-REFUND to wallet
+          finalStatus = "rejected";
           const errMsg = String(
             apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ??
-            (rawText.includes("<!DOCTYPE") ? "IP محظور أو خطأ في الخادم" : "خطأ غير معروف")
+            (rawText.includes("<!DOCTYPE") ? "IP محظور أو خطأ في الخادم" : "رفض من المزود")
           );
-          const rawResp = rawText.slice(0, 200);
+          const rawResp = rawText.slice(0, 150);
           await pool.query(
-            `UPDATE orders SET notes=$1 WHERE id=$2`,
-            [`فشل الشحن التلقائي: ${errMsg} | رد: ${rawResp}`, order.id]
+            `UPDATE orders SET status='rejected', notes=$1, updated_at=NOW() WHERE id=$2`,
+            [`فشل الشحن وتم استرجاع الرصيد تلقائياً: ${errMsg} | رد: ${rawResp} [uuid:${orderUuid}]`, order.id]
+          );
+
+          // Return held money to user wallet
+          await pool.query(
+            `UPDATE users SET balance = balance + $1, updated_at=NOW() WHERE id=$2`,
+            [cost, user.id]
+          );
+          await pool.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'refund', $2, $3, $4)`,
+            [user.id, cost, `استرجاع رصيد تلقائي - فشل شحن ${item.name_ar}: ${errMsg}`, order.id]
           );
         }
       } catch (apiErr: any) {
-        // Timeout or connection error → result unknown, no balance deduction, order stays pending
+        // Timeout or connection error → keep pending with held balance for safety
         finalStatus = "pending";
         await pool.query(
-          `UPDATE orders SET notes=$1 WHERE id=$2`,
-          [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"} — الطلب معلق بانتظار المراجعة اليدوية`, order.id]
+          `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
+          [`فشل الاتصال بـ API: ${apiErr?.message ?? "timeout"} — معلق بانتظار المراجعة أو الفحص [uuid:${orderUuid}]`, order.id]
         ).catch(() => {});
       }
+    }
+
+    // Push notification to user if auto-refunded
+    if (finalStatus === "rejected") {
+      sendPushToUser(
+        user.id,
+        "❌ فشل الشحن وتم استرجاع الرصيد",
+        `تعذر تنفيذ طلب ${item.name_ar} وتمت إعادة ${cost} ${userCurrency} إلى محفظتك تلقائياً.`,
+        "/orders"
+      ).catch(() => {});
     }
 
     // Notify admins of the new order (fire-and-forget)
     const userLabel = user.name || user.email || `#${user.accountNumber ?? user.id}`;
     const orderLabel = `${item.name_ar}${packageName ? " - " + packageName : ""}`;
-    const adminTitle = autoCharged ? "✅ شحن تلقائي ناجح" : "🛒 طلب شحن جديد";
+    const adminTitle = autoCharged
+      ? "✅ شحن تلقائي ناجح"
+      : finalStatus === "rejected"
+      ? "❌ طلب مرفوض (تم استرجاع الرصيد آلياً)"
+      : "🛒 طلب شحن جديد";
     const adminBody = `${userLabel} - ${orderLabel} بقيمة ${cost} ${userCurrency}${targetId ? ` · ID: ${targetId}` : ""}${autoCharged ? " · تم تلقائياً" : ""}`;
     sendPushToAdmins(adminTitle, adminBody, "/admin").catch(() => {});
+
+    const userBalanceAfter = finalStatus === "rejected" ? currentBalance : (currentBalance - cost);
 
     res.json({
       success: true,
@@ -288,8 +314,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
         status: finalStatus,
         createdAt: order.created_at,
       },
-      // newBalance reflects actual deduction: only reduced if autoCharged (accept confirmed)
-      newBalance: autoCharged ? currentBalance - cost : currentBalance,
+      newBalance: userBalanceAfter,
     });
   } catch (err: any) {
     await client.query("ROLLBACK").catch(() => {});
