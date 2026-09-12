@@ -360,6 +360,7 @@ router.get("/orders", requireUser, async (req: Request, res: Response): Promise<
       amount: parseFloat(r.amount),
       currency: r.currency,
       status: r.status,
+      notes: r.notes || null,
       createdAt: r.created_at,
     })));
   } catch {

@@ -34,6 +34,7 @@
     // Frontend components
     'artifacts/alghareeb-card/src/lib/auth.tsx',
     'artifacts/alghareeb-card/src/lib/currency.tsx',
+    'artifacts/alghareeb-card/src/lib/order-utils.ts',
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/SettingsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/TickerManager.tsx',
