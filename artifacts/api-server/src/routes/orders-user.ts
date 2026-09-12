@@ -256,13 +256,21 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
                 if (!baseUrl.startsWith("http")) baseUrl = `https://${baseUrl}`;
               }
               const cleanTxId = txId.replace(/^ID_/i, "");
-              const queryIds = txId.startsWith("ID_") ? `${txId},${cleanTxId}` : txId;
-              const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(queryIds)}&api-token=${encodeURIComponent(cleanKey)}`;
+              const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(txId)}`;
 
-              const chkRes = await fetch(checkUrl, {
-                headers: { "api-token": cleanKey, "Api-Token": cleanKey },
+              let chkRes = await fetch(checkUrl, {
+                headers: { "api-token": cleanKey },
                 signal: AbortSignal.timeout(6000),
               });
+
+              // Fallback without ID_ prefix if needed
+              if (!chkRes.ok && cleanTxId && cleanTxId !== txId) {
+                const altRes = await fetch(`${baseUrl}/check?orders=${encodeURIComponent(cleanTxId)}`, {
+                  headers: { "api-token": cleanKey },
+                  signal: AbortSignal.timeout(6000),
+                });
+                if (altRes.ok) chkRes = altRes;
+              }
 
               if (chkRes.ok) {
                 const chkText = await chkRes.text().catch(() => "");

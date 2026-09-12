@@ -264,32 +264,40 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           `, token: ${apiKey.slice(0, 4)}...)`
         );
         let activeKey = apiKey;
-        let checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(queryParam)}&api-token=${encodeURIComponent(activeKey)}`;
-        let apiRes = await fetch(checkUrl, {
-          headers: {
-            "api-token": activeKey,
-            "Api-Token": activeKey,
-          },
-          signal: AbortSignal.timeout(12000),
-        });
+        const cleanLookup = queryParam.replace(/^ID_/i, "").trim();
 
-        // If 401 Unauthorized, retry with process.env.YAZANCARD_TOKEN if available and different
-        const envToken = (process.env.YAZANCARD_TOKEN || "").trim();
-        if (apiRes.status === 401 && envToken && envToken !== activeKey && !envToken.includes("PLACEHOLDER")) {
-          console.log(`[YazanSync] Order #${order.id}: HTTP 401 with stored key, retrying with server YAZANCARD_TOKEN...`);
-          activeKey = envToken;
-          checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(queryParam)}&api-token=${encodeURIComponent(activeKey)}`;
-          apiRes = await fetch(checkUrl, {
-            headers: {
-              "api-token": activeKey,
-              "Api-Token": activeKey,
-            },
-            signal: AbortSignal.timeout(12000),
+        // Helper to do a single clean check request (NEVER pass duplicate case-insensitive headers!)
+        const doCheckFetch = async (targetId: string, inQuery: boolean) => {
+          const u = inQuery
+            ? `${baseUrl}/check?orders=${encodeURIComponent(targetId)}&api-token=${encodeURIComponent(activeKey)}`
+            : `${baseUrl}/check?orders=${encodeURIComponent(targetId)}`;
+          return fetch(u, {
+            headers: { "api-token": activeKey },
+            signal: AbortSignal.timeout(10000),
           });
+        };
+
+        // Try 1: with header only and original ID
+        let apiRes = await doCheckFetch(queryParam, false);
+
+        // Try 2: if 401, try with token in query param too
+        if (apiRes.status === 401) {
+          apiRes = await doCheckFetch(queryParam, true);
+        }
+
+        // Try 3: if still 401/404 and has ID_ prefix, try clean ID (without ID_)
+        if (!apiRes.ok && cleanLookup && cleanLookup !== queryParam) {
+          const resClean = await doCheckFetch(cleanLookup, false);
+          if (resClean.ok) {
+            apiRes = resClean;
+          } else {
+            const resCleanQuery = await doCheckFetch(cleanLookup, true);
+            if (resCleanQuery.ok) apiRes = resCleanQuery;
+          }
         }
 
         if (!apiRes.ok) {
-          console.warn(`[YazanSync] /check HTTP ${apiRes.status} for order #${order.id} (url: ${checkUrl.replace(activeKey, activeKey.slice(0, 4) + '...')})`);
+          console.warn(`[YazanSync] /check HTTP ${apiRes.status} for order #${order.id} (target: ${queryParam})`);
           continue;
         }
 

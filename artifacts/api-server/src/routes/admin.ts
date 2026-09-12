@@ -546,9 +546,7 @@ router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res:
     const apiRes = await fetch(chargeUrl.toString(), {
       method: "GET",
       headers: {
-        "Api-Token": cleanKey,
         "api-token": cleanKey,
-        "Authorization": `Bearer ${cleanKey}`,
       },
       signal: AbortSignal.timeout(15000),
     });
@@ -622,7 +620,7 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
         if (order.target_id) chargeUrl.searchParams.set("playerId", String(order.target_id));
         apiRes = await fetch(chargeUrl.toString(), {
           method: "GET",
-          headers: { "Api-Token": apiKey, "api-token": apiKey },
+          headers: { "api-token": apiKey },
           signal: AbortSignal.timeout(20000),
         });
       } else {
