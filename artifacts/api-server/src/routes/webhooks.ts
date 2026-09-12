@@ -26,7 +26,12 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
 
   const client = await pool.connect();
   try {
-    // 1. Locate the order
+    // ⚠️ BEGIN MUST come before FOR UPDATE — PostgreSQL requires an explicit
+    // transaction for row-level locking. This also prevents double-refund race
+    // conditions when two webhooks arrive simultaneously for the same order.
+    await client.query("BEGIN");
+
+    // 1. Locate the order (with row lock to serialize concurrent callbacks)
     let order: any = null;
 
     if (orderUuid) {
@@ -55,6 +60,7 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
     }
 
     if (!order) {
+      await client.query("ROLLBACK");
       console.warn("⚠️ Webhook: Order not found for payload:", payload);
       res.status(404).json({ error: "الطلب غير موجود في النظام", received: payload });
       return;
@@ -62,6 +68,7 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
 
     // If order is already completed or rejected, do not double-process
     if (order.status !== "pending") {
+      await client.query("ROLLBACK");
       res.json({
         success: true,
         message: `الطلب رقم ${order.id} تمت معالجته مسبقاً بحالة (${order.status})`,
@@ -82,11 +89,13 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
 
     const isFailure =
       rawStatus === "failed" ||
+      rawStatus === "fail" ||
       rawStatus === "reject" ||
       rawStatus === "rejected" ||
       rawStatus === "error" ||
       rawStatus === "cancelled" ||
-      rawStatus === "canceled";
+      rawStatus === "canceled" ||
+      rawStatus === "cancel";
 
     if (isSuccess) {
       await client.query(
@@ -113,43 +122,72 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
     }
 
     if (isFailure) {
-      // Auto-Refund: check if not already refunded
+      // ── AUTO-REFUND: idempotency check prevents double-refund if webhook fires twice ──
+      // The order row is locked via FOR UPDATE above, so concurrent webhooks are serialized.
       const refTx = await client.query(
         "SELECT id FROM wallet_transactions WHERE user_id=$1 AND type='refund' AND ref_id=$2 LIMIT 1",
         [order.user_id, order.id]
       );
 
+      let refunded = false;
       if (refTx.rows.length === 0) {
+        // 1. Return held balance to customer wallet
         await client.query(
           `UPDATE users SET balance = balance + $1, updated_at=NOW() WHERE id=$2`,
           [cost, order.user_id]
         );
+        // 2. Record refund transaction for audit trail
         await client.query(
-          `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'refund', $2, $3, $4)`,
-          [order.user_id, cost, `استرجاع رصيد تلقائي (Callback) - رفض طلب ${order.item_name}: ${reason}`, order.id]
+          `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id)
+           VALUES ($1, 'refund', $2, $3, $4)`,
+          [
+            order.user_id,
+            cost,
+            `استرجاع رصيد تلقائي (Callback) - رفض طلب ${order.item_name}: ${reason}`,
+            order.id,
+          ]
         );
+        refunded = true;
+        console.log(`✅ Refund issued: order #${order.id}, amount=${cost} ${order.currency}, user=${order.user_id}`);
+      } else {
+        console.log(`ℹ️ Refund already processed for order #${order.id} — skipping duplicate webhook`);
       }
 
+      // 3. Update order status to FAILED/rejected with reason
       await client.query(
-        `UPDATE orders SET status='rejected', notes = COALESCE(notes, '') || $1, updated_at=NOW() WHERE id=$2`,
-        [` | مرفوض عبر Callback ❌: ${reason}`, order.id]
+        `UPDATE orders SET status='rejected',
+          notes = COALESCE(notes, '') || $1,
+          updated_at = NOW()
+         WHERE id = $2`,
+        [
+          ` | مرفوض عبر Callback ❌: ${reason}${refunded ? ` | تم استرجاع ${cost} ${order.currency}` : " | الرصيد مُسترجع مسبقاً"}`,
+          order.id,
+        ]
       );
       await client.query("COMMIT");
 
-      sendPushToUser(
-        order.user_id,
-        "❌ تم رفض طلب الشحن واسترجاع الرصيد",
-        `تم رفض طلب ${order.item_name} وتمت إعادة ${cost} ${order.currency} إلى محفظتك تلقائياً.`,
-        "/orders"
-      ).catch(() => {});
+      // Push notifications (fire-and-forget)
+      if (refunded) {
+        sendPushToUser(
+          order.user_id,
+          "❌ فشل الشحن وتم استرجاع الرصيد",
+          `تعذر تنفيذ طلب ${order.item_name} وتمت إعادة ${cost} ${order.currency} إلى محفظتك تلقائياً.`,
+          "/orders"
+        ).catch(() => {});
 
-      sendPushToAdmins(
-        "❌ رفض طلب شحن تلقائياً (Callback)",
-        `تم رفض الطلب #${order.id} من المزود (${reason}) وتم استرجاع الرصيد للعميل آلياً.`,
-        "/admin"
-      ).catch(() => {});
+        sendPushToAdmins(
+          "❌ رفض طلب شحن تلقائياً (Callback)",
+          `تم رفض الطلب #${order.id} من المزود (${reason}) وتم استرجاع ${cost} ${order.currency} للعميل آلياً.`,
+          "/admin"
+        ).catch(() => {});
+      }
 
-      res.json({ success: true, message: "Order rejected and balance auto-refunded", orderId: order.id });
+      res.json({
+        success: true,
+        message: refunded ? "Order rejected and balance auto-refunded" : "Order already refunded — duplicate webhook ignored",
+        orderId: order.id,
+        refunded,
+      });
       return;
     }
 

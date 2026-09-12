@@ -9,29 +9,60 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
 
   let orderInfo: any = null;
 
+  // Case A: checkData.data is an array
   if (Array.isArray(checkData.data)) {
     orderInfo = checkData.data.find((o: any) => {
-      const oid = String(o.order_id || o.id || "");
+      const oid = String(o?.order_id || o?.id || o?.order_uuid || o?.uuid || "");
       return oid && (oid.includes(providerOrderId) || providerOrderId.includes(oid));
     }) || checkData.data[0];
-  } else if (checkData.data && typeof checkData.data === "object") {
-    if (checkData.data[providerOrderId]) {
+  }
+  // Case B: checkData.data is a single order object or keyed by order_id
+  else if (checkData.data && typeof checkData.data === "object") {
+    if (
+      typeof checkData.data.status === "string" ||
+      typeof checkData.data.state === "string" ||
+      typeof checkData.data.order_status === "string"
+    ) {
+      orderInfo = checkData.data;
+    } else if (checkData.data[providerOrderId] && typeof checkData.data[providerOrderId] === "object") {
       orderInfo = checkData.data[providerOrderId];
     } else {
       const keys = Object.keys(checkData.data);
-      if (keys.length > 0) orderInfo = checkData.data[keys[0]];
+      if (keys.length > 0 && typeof checkData.data[keys[0]] === "object") {
+        orderInfo = checkData.data[keys[0]];
+      } else {
+        orderInfo = checkData.data;
+      }
     }
-  } else if (checkData.orders) {
+  }
+  // Case C: checkData.orders
+  else if (checkData.orders) {
     if (Array.isArray(checkData.orders)) {
-      orderInfo = checkData.orders[0];
+      orderInfo = checkData.orders.find((o: any) => {
+        const oid = String(o?.order_id || o?.id || o?.order_uuid || o?.uuid || "");
+        return oid && (oid.includes(providerOrderId) || providerOrderId.includes(oid));
+      }) || checkData.orders[0];
     } else if (typeof checkData.orders === "object") {
-      orderInfo = checkData.orders[providerOrderId] || Object.values(checkData.orders)[0];
+      if (
+        typeof checkData.orders.status === "string" ||
+        typeof checkData.orders.state === "string" ||
+        typeof checkData.orders.order_status === "string"
+      ) {
+        orderInfo = checkData.orders;
+      } else if (checkData.orders[providerOrderId] && typeof checkData.orders[providerOrderId] === "object") {
+        orderInfo = checkData.orders[providerOrderId];
+      } else {
+        const firstVal = Object.values(checkData.orders)[0];
+        orderInfo = typeof firstVal === "object" ? firstVal : checkData.orders;
+      }
     }
-  } else if (checkData.status) {
+  }
+  // Case D: checkData itself has the status
+  else if (checkData.status && typeof checkData.status === "string" && checkData.status !== "OK") {
     orderInfo = checkData;
   }
 
-  if (!orderInfo) return null;
+  if (!orderInfo || typeof orderInfo !== "object") return null;
 
   const rawStatus = String(
     orderInfo.status || orderInfo.state || orderInfo.order_status || ""
@@ -40,6 +71,27 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
   const note = String(orderInfo.note || orderInfo.msg || orderInfo.message || orderInfo.error || "");
 
   return { status: rawStatus, note };
+}
+
+/**
+ * Extracts the order_uuid embedded by orders-user.ts in the notes field.
+ * Format: "... [uuid:SOME-UUID-VALUE]"
+ */
+function extractUuid(notes: string): string | null {
+  const m = notes.match(/\[uuid:([^\]]+)\]/);
+  return m ? m[1].trim() : null;
+}
+
+/**
+ * Extracts the YazanCard provider order ID from notes.
+ * Returns null if value is N/A, undefined, or missing.
+ */
+function extractProviderOrderId(notes: string): string | null {
+  const match = notes.match(/معرف العملية:\s*([^\s|\[]+)/);
+  if (!match) return null;
+  const val = match[1].trim();
+  if (!val || val === "N/A" || val === "undefined" || val === "null") return null;
+  return val;
 }
 
 /**
@@ -133,26 +185,30 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
         continue;
       }
 
-      // Case 2: Order is waiting for YazanCard confirmation — query /client/api/check
-      const match = notesStr.match(/(?:معرف العملية:\s*|ID_)([a-zA-Z0-9_]+)/i);
-      const providerOrderId = match
-        ? (match[0].startsWith("معرف العملية:") ? match[1].trim() : match[0].trim())
-        : null;
+      // ── Case 2: Order is waiting for YazanCard — query /client/api/check ──────
+      //
+      // FIX: When YazanCard responds with status=wait but sends order_id=null,
+      // the notes contain "معرف العملية: N/A [uuid:SOME-UUID]".
+      // We now fall back to the uuid for the /check lookup, which solves the
+      // "orders stuck on pending forever" bug.
+      const providerOrderId = extractProviderOrderId(notesStr);
+      const orderUuid       = extractUuid(notesStr);
 
-      if (!providerOrderId || providerOrderId === "N/A") {
+      // The lookup key for /check: prefer numeric provider ID, fall back to uuid
+      const lookupId = providerOrderId || orderUuid;
+
+      if (!lookupId) {
+        console.log(`[YazanSync] Order #${order.id}: no provider order ID or uuid in notes — skipping`);
         continue;
       }
 
-      // Resolve endpoint and key
+      // Resolve API credentials
       const apiEndpoint: string = order.pkg_ep || order.item_ep || "";
       let apiKey = (order.pkg_key || order.item_key || "").trim();
 
-      // If missing or contains placeholder, pull from process.env.YAZANCARD_TOKEN
       if (!apiKey || apiKey.includes("PLACEHOLDER")) {
         apiKey = (process.env.YAZANCARD_TOKEN || "").trim();
       }
-
-      // If still missing, query DB for any existing valid non-placeholder token
       if (!apiKey || apiKey.includes("PLACEHOLDER")) {
         try {
           const validKeyRes = await pool.query(
@@ -167,10 +223,8 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
         } catch {}
       }
 
-      const isYazan = apiEndpoint.includes("yazancard.com") || apiEndpoint.includes("/client/api/") || Boolean(apiKey);
-
-      if (!isYazan || !apiKey || apiKey.includes("PLACEHOLDER")) {
-        console.warn(`[YazanSync] No valid API token available for order #${order.id} (key: "${apiKey}")`);
+      if (!apiKey || apiKey.includes("PLACEHOLDER")) {
+        console.warn(`[YazanSync] No valid API token available for order #${order.id}`);
         continue;
       }
 
@@ -181,8 +235,13 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
       }
 
       try {
-        console.log(`[YazanSync] Querying /check for order #${order.id} (provider ID: ${providerOrderId}, token: ${apiKey.slice(0, 4)}...)...`);
-        const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(providerOrderId)}&api-token=${encodeURIComponent(apiKey)}`;
+        console.log(
+          `[YazanSync] /check → order #${order.id}` +
+          ` (lookup: "${lookupId}"` +
+          `${providerOrderId ? "" : " [uuid fallback]"}` +
+          `, token: ${apiKey.slice(0, 4)}...)`
+        );
+        const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(lookupId)}&api-token=${encodeURIComponent(apiKey)}`;
         const apiRes = await fetch(checkUrl, {
           headers: {
             "api-token": apiKey,
@@ -201,10 +260,11 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
         let apiData: any = {};
         try { apiData = JSON.parse(rawText); } catch { continue; }
 
-        console.log(`[YazanSync] Response for order #${order.id}:`, rawText.slice(0, 200));
+        console.log(`[YazanSync] /check response for order #${order.id}:`, rawText.slice(0, 300));
 
-        const parsed = parseCheckStatus(apiData, providerOrderId);
+        const parsed = parseCheckStatus(apiData, lookupId);
         if (!parsed) {
+          console.log(`[YazanSync] Could not parse status for order #${order.id} — leaving pending`);
           continue;
         }
 
@@ -212,6 +272,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
 
         const isSuccess =
           rawStatus === "accept" ||
+          rawStatus === "accepted" ||
           rawStatus === "completed" ||
           rawStatus === "success" ||
           rawStatus === "approved" ||
@@ -220,11 +281,15 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           rawStatus === "مقبول";
 
         const isFailure =
+          rawStatus === "refuse" ||
           rawStatus === "refused" ||
           rawStatus === "rejected" ||
+          rawStatus === "reject" ||
           rawStatus === "failed" ||
+          rawStatus === "fail" ||
           rawStatus === "canceled" ||
           rawStatus === "cancelled" ||
+          rawStatus === "cancel" ||
           rawStatus === "error" ||
           rawStatus === "مرفوض" ||
           rawStatus === "ملغى" ||
@@ -234,7 +299,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
 
         if (isSuccess) {
           await pool.query(
-            `UPDATE orders SET status='completed', notes = notes || ' | تأكيد عبر المزامنة الآلية ✅', updated_at=NOW() WHERE id=$1 AND status='pending'`,
+            `UPDATE orders SET status='completed', notes = COALESCE(notes,'') || ' | تأكيد عبر المزامنة الآلية ✅', updated_at=NOW() WHERE id=$1 AND status='pending'`,
             [order.id]
           );
           sendPushToUser(
@@ -243,8 +308,13 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
             `تم شحن ${order.item_name} بنجاح. شكراً لك!`,
             "/orders"
           ).catch(() => {});
+          sendPushToAdmins(
+            "✅ اكتمال شحن تلقائي (Polling)",
+            `تم تأكيد الطلب #${order.id} بنجاح عبر المزامنة الدورية.`,
+            "/admin"
+          ).catch(() => {});
           updatedCount++;
-          results.push({ orderId: order.id, providerOrderId, status: "completed", note });
+          results.push({ orderId: order.id, lookupId, status: "completed", note });
         } else if (isFailure) {
           const client = await pool.connect();
           try {
@@ -253,7 +323,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
             if (oCheck.rows.length > 0 && oCheck.rows[0].status === "pending") {
               const reasonText = note || rawStatus;
               await client.query(
-                `UPDATE orders SET status='rejected', notes = notes || $1, updated_at=NOW() WHERE id=$2`,
+                `UPDATE orders SET status='rejected', notes = COALESCE(notes,'') || $1, updated_at=NOW() WHERE id=$2`,
                 [` | تم الرفض من المزود تلقائياً ❌ (${reasonText})`, order.id]
               );
 
@@ -289,7 +359,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
               ).catch(() => {});
 
               updatedCount++;
-              results.push({ orderId: order.id, providerOrderId, status: "rejected", reasonText });
+              results.push({ orderId: order.id, lookupId, status: "rejected", reasonText });
             } else {
               await client.query("ROLLBACK");
             }
@@ -320,12 +390,23 @@ export function startYazanSyncWorker(intervalMs: number = 20000): void {
   if (syncInterval) return;
   console.log(`🚀 YazanCard Auto-Sync Worker started (every ${intervalMs / 1000}s)`);
 
-  // Initial run after 3 seconds
+  // Initial run after 5 seconds (give the server time to fully start)
   setTimeout(() => {
-    syncPendingYazanOrders().catch(() => {});
-  }, 3000);
+    syncPendingYazanOrders().catch((e) => console.error("[YazanSync] initial run error:", e));
+  }, 5000);
 
   syncInterval = setInterval(() => {
-    syncPendingYazanOrders().catch(() => {});
+    syncPendingYazanOrders().catch((e) => console.error("[YazanSync] interval run error:", e));
   }, intervalMs);
+}
+
+/**
+ * Stops the background sync worker (useful for graceful shutdown / tests)
+ */
+export function stopYazanSyncWorker(): void {
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+    console.log("🛑 YazanCard Auto-Sync Worker stopped");
+  }
 }

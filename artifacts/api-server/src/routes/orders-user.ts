@@ -182,6 +182,15 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           if (targetId) {
             url.searchParams.set("playerId", String(targetId));
           }
+
+          // Pass webhook callback URL so YazanCard notifies our server immediately upon completion/rejection
+          const host = req.get("host") || "";
+          const proto = req.protocol || "https";
+          const apiOrigin = (process.env.PUBLIC_API_URL || process.env.BASE_URL || `${proto}://${host}` || "https://alghareebcard.com").replace(/\/+$/, "");
+          const callbackUrl = `${apiOrigin}/api/webhooks/yazancard`;
+          url.searchParams.set("callback_url", callbackUrl);
+          url.searchParams.set("callback", callbackUrl);
+
           apiRes = await fetch(url.toString(), {
             method: "GET",
             headers: { "api-token": cleanKey },
@@ -278,12 +287,19 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       }
     }
 
-    // Push notification to user if auto-refunded
+    // Push notification to user on outcome
     if (finalStatus === "rejected") {
       sendPushToUser(
         user.id,
         "❌ فشل الشحن وتم استرجاع الرصيد",
         `تعذر تنفيذ طلب ${item.name_ar} وتمت إعادة ${cost} ${userCurrency} إلى محفظتك تلقائياً.`,
+        "/orders"
+      ).catch(() => {});
+    } else if (finalStatus === "completed") {
+      sendPushToUser(
+        user.id,
+        "✅ تم تنفيذ طلب الشحن بنجاح",
+        `تم شحن ${item.name_ar}${packageName ? " - " + packageName : ""} بنجاح. شكراً لك!`,
         "/orders"
       ).catch(() => {});
     }
