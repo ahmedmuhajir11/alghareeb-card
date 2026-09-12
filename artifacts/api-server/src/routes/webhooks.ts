@@ -15,8 +15,37 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
     (payload.data && payload.data.status) || ""
   ).toLowerCase().trim();
 
-  const providerOrderId = payload.order_id || payload.orderId || payload.id || (payload.data && payload.data.order_id);
-  const orderUuid = payload.order_uuid || payload.orderUuid || payload.uuid;
+  let providerOrderId =
+    payload.order_id ||
+    payload.orderId ||
+    payload.id ||
+    (payload.data && (payload.data.order_id || payload.data.id || payload.data.transaction_id)) ||
+    payload.transaction_id ||
+    payload.tx_id;
+
+  const orderUuid =
+    payload.order_uuid ||
+    payload.orderUuid ||
+    payload.uuid ||
+    (payload.data && (payload.data.order_uuid || payload.data.uuid));
+
+  if (!providerOrderId && payload.orders) {
+    if (Array.isArray(payload.orders) && payload.orders.length > 0) {
+      providerOrderId = payload.orders[0]?.order_id || payload.orders[0]?.id;
+    } else if (typeof payload.orders === "object") {
+      const firstKey = Object.keys(payload.orders)[0];
+      providerOrderId = firstKey;
+    }
+  }
+
+  const receiptLink =
+    payload.receipt ||
+    payload.image ||
+    payload.img ||
+    payload.file ||
+    payload.url ||
+    (payload.data && (payload.data.receipt || payload.data.image || payload.data.img || payload.data.file || payload.data.url));
+
   const reason = String(payload.msg || payload.message || payload.reason || payload.error || "تحديث من المزود");
 
   if (!orderUuid && !providerOrderId) {
@@ -43,20 +72,20 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
     }
 
     if (!order && providerOrderId) {
-      // Check if providerOrderId matches our order ID directly
-      const numId = parseInt(String(providerOrderId), 10);
-      if (!isNaN(numId)) {
-        const r = await client.query("SELECT * FROM orders WHERE id = $1 LIMIT 1 FOR UPDATE", [numId]);
-        if (r.rows.length > 0) order = r.rows[0];
-      }
-      // Or check if providerOrderId is recorded in notes
-      if (!order) {
-        const r = await client.query(
-          "SELECT * FROM orders WHERE notes LIKE $1 ORDER BY id DESC LIMIT 1 FOR UPDATE",
-          [`%معرف العملية: ${providerOrderId}%`]
-        );
-        if (r.rows.length > 0) order = r.rows[0];
-      }
+      const pid = String(providerOrderId).trim();
+      const cleanPid = pid.replace(/^ID_/i, "").trim();
+
+      // Match order by notes containing pid, ID_cleanPid, cleanPid, or matching order.id
+      const r = await client.query(
+        `SELECT * FROM orders
+         WHERE notes LIKE $1
+            OR notes LIKE $2
+            OR notes LIKE $3
+            OR id::text = $4
+         ORDER BY id DESC LIMIT 1 FOR UPDATE`,
+        [`%${pid}%`, `%ID_${cleanPid}%`, `%${cleanPid}%`, pid]
+      );
+      if (r.rows.length > 0) order = r.rows[0];
     }
 
     if (!order) {
@@ -82,25 +111,42 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
     // 2. Handle Statuses:
     const isSuccess =
       rawStatus === "accept" ||
+      rawStatus === "accepted" ||
       rawStatus === "success" ||
       rawStatus === "completed" ||
       rawStatus === "approved" ||
-      rawStatus === "ok";
+      rawStatus === "ok" ||
+      rawStatus === "done" ||
+      rawStatus === "مقبول" ||
+      rawStatus === "مكتمل" ||
+      payload.success === true ||
+      payload.status === 1 ||
+      payload.status === "1" ||
+      payload.code === 1 ||
+      payload.code === "1" ||
+      payload.result === "success" ||
+      payload.result === "ok";
 
     const isFailure =
       rawStatus === "failed" ||
       rawStatus === "fail" ||
       rawStatus === "reject" ||
       rawStatus === "rejected" ||
+      rawStatus === "refuse" ||
+      rawStatus === "refused" ||
       rawStatus === "error" ||
       rawStatus === "cancelled" ||
       rawStatus === "canceled" ||
-      rawStatus === "cancel";
+      rawStatus === "cancel" ||
+      rawStatus === "مرفوض" ||
+      rawStatus === "ملغى" ||
+      payload.success === false;
 
     if (isSuccess) {
+      const receiptSuffix = receiptLink ? ` | ${receiptLink}` : "";
       await client.query(
-        `UPDATE orders SET status='completed', notes = COALESCE(notes, '') || ' | تأكيد عبر Callback ✅', updated_at=NOW() WHERE id=$1`,
-        [order.id]
+        `UPDATE orders SET status='completed', notes = COALESCE(notes, '') || $1, updated_at=NOW() WHERE id=$2`,
+        [` | تأكيد عبر Callback ✅${receiptSuffix}`, order.id]
       );
       await client.query("COMMIT");
 
@@ -210,5 +256,8 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
 
 router.all("/webhooks/yazancard", handleYazanCallback);
 router.all("/yazan-callback", handleYazanCallback);
+router.all("/callback", handleYazanCallback);
+router.all("/api/callback", handleYazanCallback);
+router.all("/client/callback", handleYazanCallback);
 
 export default router;

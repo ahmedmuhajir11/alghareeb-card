@@ -25,9 +25,15 @@ export function cleanPlayerId(rawTargetId: string | null | undefined): string {
   // Strip common Arabic prefixes like "معرف:", "معرف العملية:", "ID:"
   val = val.replace(/^(معرف(\s*العملية|\s*اللاعب|\s*العميل)?|player\s*id|id)\s*[:：\-]\s*/gi, "").trim();
 
-  // If multiline, take the first valid line
-  const lines = val.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
-  return lines[0] || val;
+  // Strip any line breaks, carriage returns, or tabs
+  val = val.replace(/[\r\n\t]+/g, "").trim();
+
+  // If numeric ID has spaces (e.g. "82230979 7"), join them together
+  if (/^[\d\s]+$/.test(val)) {
+    val = val.replace(/\s+/g, "");
+  }
+
+  return val;
 }
 
 /**

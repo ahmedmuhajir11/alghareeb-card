@@ -4,16 +4,21 @@ import { sendPushToUser, sendPushToAdmins } from "../routes/push";
 /**
  * Parses any response structure from YazanCard / Syria4Game /check endpoint
  */
-function parseCheckStatus(checkData: any, providerOrderId: string): { status: string; note: string } | null {
+function parseCheckStatus(checkData: any, providerOrderId: string): { status: string; note: string; receiptUrl?: string } | null {
   if (!checkData) return null;
 
   let orderInfo: any = null;
+  const cleanPid = providerOrderId.replace(/^ID_/i, "").trim();
 
   // Case A: checkData.data is an array
   if (Array.isArray(checkData.data)) {
     orderInfo = checkData.data.find((o: any) => {
       const oid = String(o?.order_id || o?.id || o?.order_uuid || o?.uuid || "");
-      return oid && (oid.includes(providerOrderId) || providerOrderId.includes(oid));
+      const cleanOid = oid.replace(/^ID_/i, "").trim();
+      return (
+        (oid && (oid.includes(providerOrderId) || providerOrderId.includes(oid))) ||
+        (cleanOid && cleanPid && (cleanOid === cleanPid || cleanOid.includes(cleanPid) || cleanPid.includes(cleanOid)))
+      );
     }) || checkData.data[0];
   }
   // Case B: checkData.data is a single order object or keyed by order_id
@@ -26,6 +31,10 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
       orderInfo = checkData.data;
     } else if (checkData.data[providerOrderId] && typeof checkData.data[providerOrderId] === "object") {
       orderInfo = checkData.data[providerOrderId];
+    } else if (checkData.data[cleanPid] && typeof checkData.data[cleanPid] === "object") {
+      orderInfo = checkData.data[cleanPid];
+    } else if (checkData.data[`ID_${cleanPid}`] && typeof checkData.data[`ID_${cleanPid}`] === "object") {
+      orderInfo = checkData.data[`ID_${cleanPid}`];
     } else {
       const keys = Object.keys(checkData.data);
       if (keys.length > 0 && typeof checkData.data[keys[0]] === "object") {
@@ -40,7 +49,11 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
     if (Array.isArray(checkData.orders)) {
       orderInfo = checkData.orders.find((o: any) => {
         const oid = String(o?.order_id || o?.id || o?.order_uuid || o?.uuid || "");
-        return oid && (oid.includes(providerOrderId) || providerOrderId.includes(oid));
+        const cleanOid = oid.replace(/^ID_/i, "").trim();
+        return (
+          (oid && (oid.includes(providerOrderId) || providerOrderId.includes(oid))) ||
+          (cleanOid && cleanPid && (cleanOid === cleanPid || cleanOid.includes(cleanPid) || cleanPid.includes(cleanOid)))
+        );
       }) || checkData.orders[0];
     } else if (typeof checkData.orders === "object") {
       if (
@@ -51,6 +64,10 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
         orderInfo = checkData.orders;
       } else if (checkData.orders[providerOrderId] && typeof checkData.orders[providerOrderId] === "object") {
         orderInfo = checkData.orders[providerOrderId];
+      } else if (checkData.orders[cleanPid] && typeof checkData.orders[cleanPid] === "object") {
+        orderInfo = checkData.orders[cleanPid];
+      } else if (checkData.orders[`ID_${cleanPid}`] && typeof checkData.orders[`ID_${cleanPid}`] === "object") {
+        orderInfo = checkData.orders[`ID_${cleanPid}`];
       } else {
         const firstVal = Object.values(checkData.orders)[0];
         orderInfo = typeof firstVal === "object" ? firstVal : checkData.orders;
@@ -65,12 +82,13 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
   if (!orderInfo || typeof orderInfo !== "object") return null;
 
   const rawStatus = String(
-    orderInfo.status || orderInfo.state || orderInfo.order_status || ""
+    orderInfo.status || orderInfo.state || orderInfo.order_status || orderInfo.result || ""
   ).toLowerCase().trim();
 
-  const note = String(orderInfo.note || orderInfo.msg || orderInfo.message || orderInfo.error || "");
+  const note = String(orderInfo.note || orderInfo.msg || orderInfo.message || orderInfo.error || orderInfo.details || "");
+  const receiptUrl = orderInfo.receipt || orderInfo.image || orderInfo.img || orderInfo.url || undefined;
 
-  return { status: rawStatus, note };
+  return { status: rawStatus, note, receiptUrl };
 }
 
 /**
@@ -108,8 +126,8 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
               i.api_endpoint AS item_ep, i.api_key AS item_key,
               p.api_endpoint AS pkg_ep, p.api_key AS pkg_key
        FROM orders o
-       LEFT JOIN items i ON i.name_ar = o.item_name
-       LEFT JOIN packages p ON p.label = o.package_name AND p.item_id = i.id
+       LEFT JOIN items i ON (i.name_ar = o.item_name OR i.name_en = o.item_name)
+       LEFT JOIN packages p ON (p.label = o.package_name AND (p.item_id = i.id OR i.id IS NULL))
        WHERE o.status = 'pending'
          AND o.created_at >= NOW() - INTERVAL '7 days'
        ORDER BY o.id DESC`
@@ -202,6 +220,10 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
         continue;
       }
 
+      // If lookupId has ID_ prefix, prepare clean version and query both
+      const cleanLookup = lookupId.replace(/^ID_/i, "").trim();
+      const queryParam = lookupId.startsWith("ID_") ? `${lookupId},${cleanLookup}` : lookupId;
+
       // Resolve API credentials
       const apiEndpoint: string = order.pkg_ep || order.item_ep || "";
       let apiKey = (order.pkg_key || order.item_key || "").trim();
@@ -237,12 +259,12 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
       try {
         console.log(
           `[YazanSync] /check → order #${order.id}` +
-          ` (lookup: "${lookupId}"` +
+          ` (lookup: "${queryParam}"` +
           `${providerOrderId ? "" : " [uuid fallback]"}` +
           `, token: ${apiKey.slice(0, 4)}...)`
         );
         let activeKey = apiKey;
-        let checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(lookupId)}&api-token=${encodeURIComponent(activeKey)}`;
+        let checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(queryParam)}&api-token=${encodeURIComponent(activeKey)}`;
         let apiRes = await fetch(checkUrl, {
           headers: {
             "api-token": activeKey,
@@ -256,7 +278,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
         if (apiRes.status === 401 && envToken && envToken !== activeKey && !envToken.includes("PLACEHOLDER")) {
           console.log(`[YazanSync] Order #${order.id}: HTTP 401 with stored key, retrying with server YAZANCARD_TOKEN...`);
           activeKey = envToken;
-          checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(lookupId)}&api-token=${encodeURIComponent(activeKey)}`;
+          checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(queryParam)}&api-token=${encodeURIComponent(activeKey)}`;
           apiRes = await fetch(checkUrl, {
             headers: {
               "api-token": activeKey,
@@ -292,8 +314,11 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           rawStatus === "success" ||
           rawStatus === "approved" ||
           rawStatus === "done" ||
+          rawStatus === "ok" ||
           rawStatus === "مكتمل" ||
-          rawStatus === "مقبول";
+          rawStatus === "مقبول" ||
+          rawStatus === "تم" ||
+          rawStatus === "1";
 
         const isFailure =
           rawStatus === "refuse" ||
@@ -313,9 +338,10 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           note.includes("غير موجود");
 
         if (isSuccess) {
+          const receiptSuffix = parsed.receiptUrl ? ` | ${parsed.receiptUrl}` : "";
           await pool.query(
-            `UPDATE orders SET status='completed', notes = COALESCE(notes,'') || ' | تأكيد عبر المزامنة الآلية ✅', updated_at=NOW() WHERE id=$1 AND status='pending'`,
-            [order.id]
+            `UPDATE orders SET status='completed', notes = COALESCE(notes,'') || $1, updated_at=NOW() WHERE id=$2 AND status='pending'`,
+            [` | تأكيد عبر المزامنة الآلية ✅${receiptSuffix}`, order.id]
           );
           sendPushToUser(
             order.user_id,

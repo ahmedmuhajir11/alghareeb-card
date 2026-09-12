@@ -157,7 +157,7 @@ export default function OrdersPage() {
                     {cleanTargetId && (
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <span className="text-xs text-muted-foreground">{t('orders.targetId')}:</span>
-                        <code dir="ltr" className="font-mono text-xs font-bold text-foreground bg-background/60 px-2 py-0.5 rounded border border-primary/20 select-all">
+                        <code dir="ltr" className="font-mono text-xs font-bold text-foreground bg-background/60 px-2 py-0.5 rounded border border-primary/20 select-all whitespace-nowrap">
                           {cleanTargetId}
                         </code>
                         {receiptUrls.length > 0 && (

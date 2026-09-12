@@ -57,6 +57,7 @@ export default function OrdersManager() {
       if (!res.ok) throw new Error("فشل التحميل");
       return res.json();
     },
+    refetchInterval: 5000, // Live auto-refresh every 5 seconds
   });
 
   const orders = paged?.data ?? [];
@@ -260,9 +261,9 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
               </div>
             )}
             {cleanTargetId && (
-              <div className="bg-background/60 border border-primary/30 rounded-lg p-2.5 mr-6 space-y-1.5">
+              <div className="bg-background/70 border border-primary/30 rounded-lg p-2.5 space-y-1.5 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-muted-foreground">معرّف العميل (ID):</span>
+                  <span className="text-xs text-muted-foreground font-medium">معرّف العميل (ID):</span>
                   {receiptUrls.length > 0 && (
                     <Button
                       type="button"
@@ -276,8 +277,11 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
                     </Button>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <code className="font-mono font-bold text-base text-foreground select-all flex-1 break-all">
+                <div className="flex items-center justify-between gap-2 bg-black/25 px-3 py-2 rounded-md border border-border/40">
+                  <code
+                    dir="ltr"
+                    className="font-mono font-bold text-base sm:text-lg text-foreground select-all whitespace-nowrap tracking-wider"
+                  >
                     {cleanTargetId}
                   </code>
                   <Button
@@ -285,9 +289,9 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
                     size="sm"
                     variant={copied ? "default" : "outline"}
                     onClick={copyTargetId}
-                    className={`h-9 px-3 gap-1.5 flex-shrink-0 ${copied ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : ""}`}
+                    className={`h-8 px-3 gap-1.5 flex-shrink-0 text-xs font-semibold ${copied ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : ""}`}
                   >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? "تم النسخ" : "نسخ"}
                   </Button>
                 </div>
