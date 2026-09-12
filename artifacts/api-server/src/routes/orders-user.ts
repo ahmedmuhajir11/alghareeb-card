@@ -183,13 +183,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
             url.searchParams.set("playerId", String(targetId));
           }
 
-          // Pass webhook callback URL so YazanCard notifies our server immediately upon completion/rejection
-          const host = req.get("host") || "";
-          const proto = req.protocol || "https";
-          const apiOrigin = (process.env.PUBLIC_API_URL || process.env.BASE_URL || `${proto}://${host}` || "https://alghareebcard.com").replace(/\/+$/, "");
-          const callbackUrl = `${apiOrigin}/api/webhooks/yazancard`;
-          url.searchParams.set("callback_url", callbackUrl);
-          url.searchParams.set("callback", callbackUrl);
+
 
           apiRes = await fetch(url.toString(), {
             method: "GET",
