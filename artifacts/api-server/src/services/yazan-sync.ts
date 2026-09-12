@@ -241,18 +241,33 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           `${providerOrderId ? "" : " [uuid fallback]"}` +
           `, token: ${apiKey.slice(0, 4)}...)`
         );
-        const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(lookupId)}&api-token=${encodeURIComponent(apiKey)}`;
-        const apiRes = await fetch(checkUrl, {
+        let activeKey = apiKey;
+        let checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(lookupId)}&api-token=${encodeURIComponent(activeKey)}`;
+        let apiRes = await fetch(checkUrl, {
           headers: {
-            "api-token": apiKey,
-            "Api-Token": apiKey,
-            Authorization: `Bearer ${apiKey}`,
+            "api-token": activeKey,
+            "Api-Token": activeKey,
           },
           signal: AbortSignal.timeout(12000),
         });
 
+        // If 401 Unauthorized, retry with process.env.YAZANCARD_TOKEN if available and different
+        const envToken = (process.env.YAZANCARD_TOKEN || "").trim();
+        if (apiRes.status === 401 && envToken && envToken !== activeKey && !envToken.includes("PLACEHOLDER")) {
+          console.log(`[YazanSync] Order #${order.id}: HTTP 401 with stored key, retrying with server YAZANCARD_TOKEN...`);
+          activeKey = envToken;
+          checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(lookupId)}&api-token=${encodeURIComponent(activeKey)}`;
+          apiRes = await fetch(checkUrl, {
+            headers: {
+              "api-token": activeKey,
+              "Api-Token": activeKey,
+            },
+            signal: AbortSignal.timeout(12000),
+          });
+        }
+
         if (!apiRes.ok) {
-          console.warn(`[YazanSync] /check HTTP ${apiRes.status} for order #${order.id}`);
+          console.warn(`[YazanSync] /check HTTP ${apiRes.status} for order #${order.id} (url: ${checkUrl.replace(activeKey, activeKey.slice(0, 4) + '...')})`);
           continue;
         }
 

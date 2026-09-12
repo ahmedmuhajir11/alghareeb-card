@@ -88,6 +88,7 @@
     'artifacts/alghareeb-card/src/pages/reseller-api.tsx',
     'artifacts/alghareeb-card/src/components/admin/UsersManager.tsx',
     'update-vps.mjs',
+    'check-order.mjs',
   ];
 
   function download(filePath) {
