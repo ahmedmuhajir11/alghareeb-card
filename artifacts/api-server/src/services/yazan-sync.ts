@@ -220,9 +220,9 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
         continue;
       }
 
-      // If lookupId has ID_ prefix, prepare clean version and query both
-      const cleanLookup = lookupId.replace(/^ID_/i, "").trim();
-      const queryParam = lookupId.startsWith("ID_") ? `${lookupId},${cleanLookup}` : lookupId;
+      // YazanCard /check only accepts a single order ID — never send comma-separated
+      // Use the full ID as-is (including ID_ prefix if present)
+      const queryParam = lookupId;
 
       // Resolve API credentials
       const apiEndpoint: string = order.pkg_ep || order.item_ep || "";
