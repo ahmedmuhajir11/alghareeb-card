@@ -240,19 +240,106 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
             [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
           );
         } else if (yazanWait) {
-          // YazanCard wait → order stays pending, balance remains held
-          finalStatus = "pending";
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
           const txId = String(yzOrderId ?? "N/A");
-          await pool.query(
-            `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
-            [`بانتظار تأكيد YazanCard ⏳ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
-          );
+          let resolvedDirectly = false;
+
+          if (txId !== "N/A" && apiKey) {
+            try {
+              // Wait 2.5 seconds to catch fast completions/rejections (e.g. User Not Found)
+              await new Promise((r) => setTimeout(r, 2500));
+
+              const cleanKey = apiKey.trim();
+              let baseUrl = "https://api.yazancard.com/client/api";
+              if (apiEndpoint) {
+                baseUrl = apiEndpoint.replace(/\/newOrder\/.*$/, "").replace(/\/+$/, "");
+                if (!baseUrl.startsWith("http")) baseUrl = `https://${baseUrl}`;
+              }
+              const cleanTxId = txId.replace(/^ID_/i, "");
+              const queryIds = txId.startsWith("ID_") ? `${txId},${cleanTxId}` : txId;
+              const checkUrl = `${baseUrl}/check?orders=${encodeURIComponent(queryIds)}&api-token=${encodeURIComponent(cleanKey)}`;
+
+              const chkRes = await fetch(checkUrl, {
+                headers: { "api-token": cleanKey, "Api-Token": cleanKey },
+                signal: AbortSignal.timeout(6000),
+              });
+
+              if (chkRes.ok) {
+                const chkText = await chkRes.text().catch(() => "");
+                let chkData: any = {};
+                try { chkData = JSON.parse(chkText); } catch {}
+
+                let orderChk: any = null;
+                if (Array.isArray(chkData.data)) {
+                  orderChk = chkData.data[0];
+                } else if (chkData.data && typeof chkData.data === "object") {
+                  orderChk = chkData.data[txId] || chkData.data[cleanTxId] || chkData.data[Object.keys(chkData.data)[0]];
+                } else if (chkData.orders) {
+                  orderChk = Array.isArray(chkData.orders) ? chkData.orders[0] : chkData.orders[txId] || chkData.orders[cleanTxId];
+                }
+
+                if (orderChk && typeof orderChk === "object") {
+                  const s = String(orderChk.status || orderChk.state || orderChk.order_status || "").toLowerCase().trim();
+                  const note = String(orderChk.note || orderChk.msg || orderChk.message || orderChk.error || "");
+                  const noteLower = note.toLowerCase();
+
+                  const isAccepted =
+                    s === "accept" || s === "accepted" || s === "completed" || s === "success" ||
+                    s === "approved" || s === "done" || s === "ok" || s === "مقبول" || s === "مكتمل" || s === "تم";
+
+                  const isRejected =
+                    s === "reject" || s === "rejected" || s === "refuse" || s === "refused" ||
+                    s === "failed" || s === "fail" || s === "error" || s === "مرفوض" || s === "ملغى" ||
+                    s.includes("not found") || s.includes("user not found") ||
+                    noteLower.includes("user not found") || noteLower.includes("not found") ||
+                    note.includes("غير موجود") || note.includes("مرفوض");
+
+                  if (isAccepted) {
+                    finalStatus = "completed";
+                    autoCharged = true;
+                    resolvedDirectly = true;
+                    const receiptSuffix = (orderChk.receipt || orderChk.image || orderChk.url) ? ` | ${orderChk.receipt || orderChk.image || orderChk.url}` : "";
+                    await pool.query(
+                      `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
+                      [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}${receiptSuffix} [uuid:${orderUuid}]`, order.id]
+                    );
+                  } else if (isRejected) {
+                    finalStatus = "rejected";
+                    resolvedDirectly = true;
+                    const rejReason = note || s || "رفض من المزود";
+                    await pool.query(
+                      `UPDATE orders SET status='rejected', notes=$1, updated_at=NOW() WHERE id=$2`,
+                      [`فشل الشحن وتم استرجاع الرصيد تلقائياً ❌ (${rejReason}) - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
+                    );
+                    await pool.query(
+                      `UPDATE users SET balance = balance + $1, updated_at=NOW() WHERE id=$2`,
+                      [cost, user.id]
+                    );
+                    await pool.query(
+                      `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'refund', $2, $3, $4)`,
+                      [user.id, cost, `استرجاع رصيد تلقائي - رفض طلب ${item.name_ar} (${rejReason})`, order.id]
+                    );
+                  }
+                }
+              }
+            } catch (quickErr: any) {
+              console.warn("[OrdersUser] Quick check non-fatal error:", quickErr?.message);
+            }
+          }
+
+          if (!resolvedDirectly) {
+            finalStatus = "pending";
+            await pool.query(
+              `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
+              [`بانتظار تأكيد YazanCard ⏳ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
+            );
+          }
         } else {
           // Explicit rejection/failure → mark rejected AND AUTO-REFUND to wallet
           finalStatus = "rejected";
           const errMsg = String(
             apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ??
+            (apiData?.["data"] as any)?.["note"] ?? (apiData?.["data"] as any)?.["msg"] ?? (apiData?.["data"] as any)?.["error"] ??
             (rawText.includes("<!DOCTYPE") ? "IP محظور أو خطأ في الخادم" : "رفض من المزود")
           );
           const rawResp = rawText.slice(0, 150);

@@ -70,10 +70,10 @@ app.listen(port, (err) => {
         logger.error({ err: e }, "Logo restore failed");
       });
       // Start background sync worker for YazanCard pending orders
-      startYazanSyncWorker(20000);
+      startYazanSyncWorker(8000);
     })
     .catch((e) => {
       logger.error({ err: e }, "Seed failed");
-      startYazanSyncWorker(20000);
+      startYazanSyncWorker(8000);
     });
 });

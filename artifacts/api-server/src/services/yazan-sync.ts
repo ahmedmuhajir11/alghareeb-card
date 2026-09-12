@@ -307,35 +307,45 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
 
         const { status: rawStatus, note } = parsed;
 
+        const rawStatusLower = rawStatus.toLowerCase();
+        const noteLower = note.toLowerCase();
+
         const isSuccess =
-          rawStatus === "accept" ||
-          rawStatus === "accepted" ||
-          rawStatus === "completed" ||
-          rawStatus === "success" ||
-          rawStatus === "approved" ||
-          rawStatus === "done" ||
-          rawStatus === "ok" ||
-          rawStatus === "مكتمل" ||
-          rawStatus === "مقبول" ||
-          rawStatus === "تم" ||
-          rawStatus === "1";
+          rawStatusLower === "accept" ||
+          rawStatusLower === "accepted" ||
+          rawStatusLower === "completed" ||
+          rawStatusLower === "success" ||
+          rawStatusLower === "approved" ||
+          rawStatusLower === "done" ||
+          rawStatusLower === "ok" ||
+          rawStatusLower === "مكتمل" ||
+          rawStatusLower === "مقبول" ||
+          rawStatusLower === "تم" ||
+          rawStatusLower === "1";
 
         const isFailure =
-          rawStatus === "refuse" ||
-          rawStatus === "refused" ||
-          rawStatus === "rejected" ||
-          rawStatus === "reject" ||
-          rawStatus === "failed" ||
-          rawStatus === "fail" ||
-          rawStatus === "canceled" ||
-          rawStatus === "cancelled" ||
-          rawStatus === "cancel" ||
-          rawStatus === "error" ||
-          rawStatus === "مرفوض" ||
-          rawStatus === "ملغى" ||
-          note.toLowerCase().includes("user not found") ||
-          note.toLowerCase().includes("not found") ||
-          note.includes("غير موجود");
+          rawStatusLower === "refuse" ||
+          rawStatusLower === "refused" ||
+          rawStatusLower === "rejected" ||
+          rawStatusLower === "reject" ||
+          rawStatusLower === "failed" ||
+          rawStatusLower === "fail" ||
+          rawStatusLower === "canceled" ||
+          rawStatusLower === "cancelled" ||
+          rawStatusLower === "cancel" ||
+          rawStatusLower === "error" ||
+          rawStatusLower === "مرفوض" ||
+          rawStatusLower === "ملغى" ||
+          rawStatusLower.includes("not found") ||
+          rawStatusLower.includes("user not found") ||
+          noteLower.includes("user not found") ||
+          noteLower.includes("not found") ||
+          noteLower.includes("error") ||
+          noteLower.includes("fail") ||
+          noteLower.includes("reject") ||
+          noteLower.includes("refuse") ||
+          note.includes("غير موجود") ||
+          note.includes("مرفوض");
 
         if (isSuccess) {
           const receiptSuffix = parsed.receiptUrl ? ` | ${parsed.receiptUrl}` : "";

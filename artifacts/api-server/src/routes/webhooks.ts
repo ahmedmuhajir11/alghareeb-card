@@ -108,17 +108,21 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
 
     const cost = parseFloat(order.amount);
 
+    const rawStatusLower = rawStatus.toLowerCase();
+    const reasonLower = reason.toLowerCase();
+    const noteLower = String(payload.note || payload.data?.note || "").toLowerCase();
+
     // 2. Handle Statuses:
     const isSuccess =
-      rawStatus === "accept" ||
-      rawStatus === "accepted" ||
-      rawStatus === "success" ||
-      rawStatus === "completed" ||
-      rawStatus === "approved" ||
-      rawStatus === "ok" ||
-      rawStatus === "done" ||
-      rawStatus === "مقبول" ||
-      rawStatus === "مكتمل" ||
+      rawStatusLower === "accept" ||
+      rawStatusLower === "accepted" ||
+      rawStatusLower === "success" ||
+      rawStatusLower === "completed" ||
+      rawStatusLower === "approved" ||
+      rawStatusLower === "ok" ||
+      rawStatusLower === "done" ||
+      rawStatusLower === "مقبول" ||
+      rawStatusLower === "مكتمل" ||
       payload.success === true ||
       payload.status === 1 ||
       payload.status === "1" ||
@@ -128,19 +132,40 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
       payload.result === "ok";
 
     const isFailure =
-      rawStatus === "failed" ||
-      rawStatus === "fail" ||
-      rawStatus === "reject" ||
-      rawStatus === "rejected" ||
-      rawStatus === "refuse" ||
-      rawStatus === "refused" ||
-      rawStatus === "error" ||
-      rawStatus === "cancelled" ||
-      rawStatus === "canceled" ||
-      rawStatus === "cancel" ||
-      rawStatus === "مرفوض" ||
-      rawStatus === "ملغى" ||
-      payload.success === false;
+      rawStatusLower === "failed" ||
+      rawStatusLower === "fail" ||
+      rawStatusLower === "reject" ||
+      rawStatusLower === "rejected" ||
+      rawStatusLower === "refuse" ||
+      rawStatusLower === "refused" ||
+      rawStatusLower === "error" ||
+      rawStatusLower === "cancelled" ||
+      rawStatusLower === "canceled" ||
+      rawStatusLower === "cancel" ||
+      rawStatusLower === "مرفوض" ||
+      rawStatusLower === "ملغى" ||
+      rawStatusLower.includes("not found") ||
+      rawStatusLower.includes("user not found") ||
+      rawStatusLower.includes("غير موجود") ||
+      reasonLower.includes("not found") ||
+      reasonLower.includes("user not found") ||
+      reasonLower.includes("غير موجود") ||
+      reasonLower.includes("error") ||
+      reasonLower.includes("failed") ||
+      reasonLower.includes("reject") ||
+      reasonLower.includes("refuse") ||
+      reasonLower.includes("مرفوض") ||
+      noteLower.includes("not found") ||
+      noteLower.includes("user not found") ||
+      noteLower.includes("غير موجود") ||
+      payload.success === false ||
+      payload.status === 0 ||
+      payload.status === "0" ||
+      payload.code === 0 ||
+      payload.code === "0" ||
+      payload.result === "fail" ||
+      payload.result === "failed" ||
+      payload.result === "error";
 
     if (isSuccess) {
       const receiptSuffix = receiptLink ? ` | ${receiptLink}` : "";
