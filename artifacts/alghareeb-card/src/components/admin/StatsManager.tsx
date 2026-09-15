@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Users, ShoppingBag, TrendingUp, Clock, Wallet, Trophy, RefreshCw } from "lucide-react";
+import { Users, ShoppingBag, TrendingUp, Clock, Wallet, Trophy, RefreshCw, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ type Stats = {
   sales: { total: number; today: number; week: number };
   deposits: { pending: number; approvedTotal: number };
   topServices: { name: string; count: number }[];
+  usersByCountry: { country: string; count: number }[];
 };
 
 function StatCard({
@@ -67,6 +68,7 @@ export default function StatsManager() {
   if (!stats) return null;
 
   const maxCount = Math.max(...stats.topServices.map(s => s.count), 1);
+  const maxCountryCount = Math.max(...stats.usersByCountry.map(c => c.count), 1);
 
   return (
     <div className="space-y-8">
@@ -142,6 +144,35 @@ export default function StatsManager() {
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-primary rounded-full transition-all"
                       style={{ width: `${(s.count / maxCount) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </section>
+      )}
+
+      {/* Users by Country */}
+      {stats.usersByCountry.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Globe className="w-4 h-4 text-blue-400" />
+            المستخدمون حسب الدولة
+          </h3>
+          <Card className="p-5 bg-card/50 border-primary/15 space-y-3">
+            {stats.usersByCountry.map((c, i) => (
+              <div key={c.country} className="flex items-center gap-3">
+                <span className="text-xs font-black text-muted-foreground w-5 text-center">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-white truncate">{c.country}</span>
+                    <span className="text-xs font-black text-primary ms-2 shrink-0">{c.count} مستخدم</span>
+                  </div>
+                  <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 to-primary rounded-full transition-all"
+                      style={{ width: `${(c.count / maxCountryCount) * 100}%` }}
                     />
                   </div>
                 </div>

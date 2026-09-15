@@ -93,11 +93,32 @@ router.get("/admin/me", async (req: Request, res: Response): Promise<void> => {
   res.json(AdminMeResponse.parse({ isAdmin }));
 });
 
-// List all deposit requests (admin)
+// List deposit requests (admin) — paginated
 router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const status = (req.query.status as string) || "all";
+  const page = Math.max(1, parseInt((req.query.page as string) || "1", 10) || 1);
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
   try {
-    let q = `SELECT d.*,
+    // WHERE clause
+    const whereParams: any[] = [];
+    let whereClause = "";
+    if (status !== "all") {
+      whereParams.push(status);
+      whereClause = ` WHERE d.status = $${whereParams.length}`;
+    }
+
+    // Total count query
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM deposit_requests d${whereClause}`,
+      whereParams
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // Data query with LIMIT / OFFSET
+    const dataParams = [...whereParams, pageSize, offset];
+    const q = `SELECT d.*,
               u.name as user_name, u.email as user_email, u.account_number as user_account,
               u.currency as user_currency,
               wt.amount as credited_amount,
@@ -107,15 +128,12 @@ router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response):
              LEFT JOIN users u ON u.id = d.user_id
              LEFT JOIN wallet_transactions wt ON wt.ref_id = d.id AND wt.type = 'deposit'
              LEFT JOIN currencies uc ON uc.code = u.currency
-             LEFT JOIN currencies dc ON dc.code = d.currency`;
-    const params: any[] = [];
-    if (status !== "all") {
-      params.push(status);
-      q += ` WHERE d.status = $${params.length}`;
-    }
-    q += " ORDER BY d.created_at DESC";
-    const result = await pool.query(q, params);
-    res.json(result.rows.map(r => {
+             LEFT JOIN currencies dc ON dc.code = d.currency
+             ${whereClause}
+             ORDER BY d.created_at DESC
+             LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`;
+    const result = await pool.query(q, dataParams);
+    const rows = result.rows.map(r => {
       // Actual credited amount (approved deposits)
       let creditedAmount: number | null = r.credited_amount != null ? parseFloat(r.credited_amount) : null;
       // Estimated credited amount for pending/rejected deposits
@@ -155,7 +173,8 @@ router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response):
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       };
-    }));
+    });
+    res.json({ data: rows, total, page, pageSize, totalPages });
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في جلب الطلبات: " + err.message });
   }
@@ -264,23 +283,41 @@ router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Resp
   }
 });
 
-// List all charge/order requests (admin)
+// List charge/order requests (admin) — paginated
 router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const status = (req.query.status as string) || "all";
+  const page = Math.max(1, parseInt((req.query.page as string) || "1", 10) || 1);
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
   try {
-    let q = `SELECT o.*, u.name as user_name, u.email as user_email, u.account_number as user_account,
+    // WHERE clause
+    const whereParams: any[] = [];
+    let whereClause = "";
+    if (status !== "all") {
+      whereParams.push(status);
+      whereClause = ` WHERE o.status = $${whereParams.length}`;
+    }
+
+    // Total count query
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM orders o${whereClause}`,
+      whereParams
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // Data query with LIMIT / OFFSET
+    const dataParams = [...whereParams, pageSize, offset];
+    const q = `SELECT o.*, u.name as user_name, u.email as user_email, u.account_number as user_account,
                     p.label as p_label, p.quantity as p_quantity
              FROM orders o
              LEFT JOIN users u ON u.id = o.user_id
-             LEFT JOIN packages p ON p.id = o.package_id`;
-    const params: any[] = [];
-    if (status !== "all") {
-      params.push(status);
-      q += ` WHERE o.status = $${params.length}`;
-    }
-    q += " ORDER BY o.created_at DESC";
-    const result = await pool.query(q, params);
-    res.json(result.rows.map(r => ({
+             LEFT JOIN packages p ON p.id = o.package_id
+             ${whereClause}
+             ORDER BY o.created_at DESC
+             LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`;
+    const result = await pool.query(q, dataParams);
+    const rows = result.rows.map(r => ({
       id: r.id,
       userId: r.user_id,
       userName: r.user_name,
@@ -297,13 +334,14 @@ router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): P
       notes: r.notes || null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
-    })));
+    }));
+    res.json({ data: rows, total, page, pageSize, totalPages });
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في جلب الطلبات: " + err.message });
   }
 });
 
-// Approve or reject an order (admin). On reject: refund the user's balance.
+// Approve or reject an order (admin). On reject: refund balance ONLY if it was previously deducted.
 router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const id = parseInt(req.params.id);
   const { action, customMessage } = req.body ?? {};
@@ -314,7 +352,7 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 
   const client = await pool.connect();
-  let notifyOrder: { userId: number; itemName: string; packageName: string | null; amount: number; currency: string } | null = null;
+  let notifyOrder: { userId: number; itemName: string; packageName: string | null; amount: number; currency: string; wasDeducted: boolean } | null = null;
   try {
     await client.query("BEGIN");
     const ordRes = await client.query("SELECT * FROM orders WHERE id=$1 FOR UPDATE", [id]);
@@ -330,24 +368,65 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
       return;
     }
 
-    const newStatus = action === "approve" ? "approved" : "rejected";
-    await client.query(
-      `UPDATE orders SET status=$1, updated_at=NOW() WHERE id=$2`,
-      [newStatus, id]
-    );
+    const amount = parseFloat(order.amount);
 
-    if (action === "reject") {
-      const amount = parseFloat(order.amount);
-      // Refund to user's balance
+    // Check if balance was already deducted for this order (e.g. old orders or past deduction)
+    const txRes = await client.query(
+      `SELECT id FROM wallet_transactions WHERE user_id = $1 AND type = 'purchase' AND ref_id = $2 LIMIT 1`,
+      [order.user_id, id]
+    );
+    const wasDeducted = txRes.rows.length > 0;
+
+    if (action === "approve") {
+      // If balance was not deducted yet (new pending orders), deduct it now
+      if (!wasDeducted) {
+        const uRes = await client.query("SELECT balance FROM users WHERE id=$1 FOR UPDATE", [order.user_id]);
+        if (uRes.rows.length === 0) {
+          await client.query("ROLLBACK");
+          res.status(404).json({ error: "المستخدم غير موجود" });
+          return;
+        }
+        const currentBalance = parseFloat(uRes.rows[0].balance);
+        if (currentBalance < amount) {
+          await client.query("ROLLBACK");
+          res.status(400).json({
+            error: `رصيد العميل غير كافٍ لتنفيذ الطلب (الرصيد: ${currentBalance} ${order.currency} - المطلوب: ${amount} ${order.currency})`
+          });
+          return;
+        }
+
+        await client.query(
+          `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
+          [amount, order.user_id]
+        );
+        await client.query(
+          `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
+          [order.user_id, amount, `شراء ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+        );
+      }
+
       await client.query(
-        `UPDATE users SET balance = balance + $1, updated_at=NOW() WHERE id=$2`,
-        [amount, order.user_id]
+        `UPDATE orders SET status='approved', updated_at=NOW() WHERE id=$1`,
+        [id]
       );
-      // Audit log: refund transaction
+    } else {
+      // action === "reject"
       await client.query(
-        `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'refund', $2, $3, $4)`,
-        [order.user_id, amount, `استرجاع رصيد - رفض طلب ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+        `UPDATE orders SET status='rejected', updated_at=NOW() WHERE id=$1`,
+        [id]
       );
+
+      // ONLY refund if balance was actually deducted previously (old orders)
+      if (wasDeducted) {
+        await client.query(
+          `UPDATE users SET balance = balance + $1, updated_at=NOW() WHERE id=$2`,
+          [amount, order.user_id]
+        );
+        await client.query(
+          `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'refund', $2, $3, $4)`,
+          [order.user_id, amount, `استرجاع رصيد - رفض طلب ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+        );
+      }
     }
 
     await client.query("COMMIT");
@@ -355,10 +434,11 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
       userId: order.user_id,
       itemName: order.item_name,
       packageName: order.package_name,
-      amount: parseFloat(order.amount),
+      amount,
       currency: order.currency,
+      wasDeducted,
     };
-    res.json({ success: true, status: newStatus });
+    res.json({ success: true, status: action === "approve" ? "approved" : "rejected" });
   } catch (err: any) {
     await client.query("ROLLBACK").catch(() => {});
     res.status(500).json({ error: "خطأ في المعالجة: " + err.message });
@@ -368,12 +448,14 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   }
 
   if (notifyOrder) {
-    const { userId, itemName, packageName, amount, currency } = notifyOrder;
+    const { userId, itemName, packageName, amount, currency, wasDeducted } = notifyOrder;
     const itemLabel = packageName ? `${itemName} - ${packageName}` : itemName;
     const title = action === "approve" ? "✅ تم تنفيذ طلب الشحن" : "❌ تم رفض طلب الشحن";
     const defaultBody = action === "approve"
       ? `تم تنفيذ طلبك: ${itemLabel}. شكراً لاستخدامك بطاقة الغريب.`
-      : `تم رفض طلب ${itemLabel} وإرجاع ${amount} ${currency} إلى رصيدك.`;
+      : (wasDeducted
+          ? `تم رفض طلب ${itemLabel} وإرجاع ${amount} ${currency} إلى رصيدك.`
+          : `تم رفض طلب ${itemLabel}. لم يتم خصم أي رصيد من حسابك.`);
     const body = (customMessage && String(customMessage).trim()) || defaultBody;
     sendPushToUser(userId, title, body, "/orders").catch(() => {});
   }
@@ -453,7 +535,8 @@ router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res:
   const chargeUrl = new URL(apiEndpoint.replace(/\/params\/?$/, "") + "/params");
   chargeUrl.searchParams.set("qty", "1");
   chargeUrl.searchParams.set("order_uuid", crypto.randomUUID());
-  if (r.target_id) chargeUrl.searchParams.set("player_id", String(r.target_id));
+  // Map player_id → playerId (YazanCard field name). Send once only.
+  if (r.target_id) chargeUrl.searchParams.set("playerId", String(r.target_id));
 
   let rawText = "";
   let httpStatus = 0;
@@ -463,9 +546,7 @@ router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res:
     const apiRes = await fetch(chargeUrl.toString(), {
       method: "GET",
       headers: {
-        "Api-Token": cleanKey,
         "api-token": cleanKey,
-        "Authorization": `Bearer ${cleanKey}`,
       },
       signal: AbortSignal.timeout(15000),
     });
@@ -535,10 +616,11 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
         const chargeUrl = new URL(chargeEndpoint);
         chargeUrl.searchParams.set("qty", "1");
         chargeUrl.searchParams.set("order_uuid", crypto.randomUUID());
-        if (order.target_id) chargeUrl.searchParams.set("player_id", String(order.target_id));
+        // Map player_id → playerId (YazanCard field name). Send once only.
+        if (order.target_id) chargeUrl.searchParams.set("playerId", String(order.target_id));
         apiRes = await fetch(chargeUrl.toString(), {
           method: "GET",
-          headers: { "Api-Token": apiKey, "api-token": apiKey },
+          headers: { "api-token": apiKey },
           signal: AbortSignal.timeout(20000),
         });
       } else {
@@ -554,24 +636,65 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
         });
       }
 
-      apiData = await apiRes.json().catch(() => ({})) as Record<string, unknown>;
+      const rawText = await apiRes.text().catch(() => "");
+      try { apiData = JSON.parse(rawText); } catch { /* HTML or non-JSON */ }
       httpOk = apiRes.ok;
 
+      // YazanCard response shape: { status: "OK", data: { status: "accept"|"wait", order_id: "..." } }
+      const isYazanResp = typeof apiData?.["status"] === "string";
+      const yzStatus = isYazanResp ? String(apiData["status"]) : "";
+      const yzDataStatus = (apiData?.["data"] as any)?.["status"] ?? "";
+      const yazanAccepted = yzStatus === "OK" && yzDataStatus === "accept";
+      const yazanWait = yzStatus === "OK" && yzDataStatus === "wait";
+
       const explicitFailure =
-        apiData?.["success"] === false || apiData?.["status"] === "FAILED" ||
-        apiData?.["status"] === "failed" || apiData?.["status"] === "error" ||
+        apiData?.["success"] === false ||
+        yzStatus === "ERROR" || yzStatus === "FAILED" || yzStatus === "error" ||
+        apiData?.["status"] === "failed" ||
         apiData?.["code"] === 0;
 
-      if (httpOk && !explicitFailure) {
-        const txId = String(apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? "N/A");
+      const genericSuccess = httpOk && !isYazanResp && !explicitFailure;
+
+      if (yazanAccepted || genericSuccess) {
+        const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
+        const txId = String(yzOrderId ?? apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? "N/A");
+
+        // Deduct balance if not already deducted (for new pending orders)
+        const txRes = await pool.query(
+          `SELECT id FROM wallet_transactions WHERE user_id = $1 AND type = 'purchase' AND ref_id = $2 LIMIT 1`,
+          [order.user_id, id]
+        );
+        if (txRes.rows.length === 0) {
+          const cost = parseFloat(order.amount);
+          await pool.query(
+            `UPDATE users SET balance = balance - $1, updated_at=NOW() WHERE id=$2`,
+            [cost, order.user_id]
+          );
+          await pool.query(
+            `INSERT INTO wallet_transactions (user_id, type, amount, description, ref_id) VALUES ($1, 'purchase', $2, $3, $4)`,
+            [order.user_id, cost, `شراء ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, id]
+          );
+        }
+
         await pool.query(
           `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
-          [`تم الشحن تلقائياً - معرف العملية: ${txId}`, id]
+          [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}`, id]
         );
         sendPushToUser(order.user_id, "✅ تم الشحن التلقائي", `تم تنفيذ طلبك: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, "/orders").catch(() => {});
         res.json({ success: true, status: "completed", apiResponse: apiData });
+      } else if (yazanWait) {
+        const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
+        const txId = String(yzOrderId ?? "N/A");
+        await pool.query(
+          `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
+          [`بانتظار تأكيد YazanCard ⏳ - معرف العملية: ${txId}`, id]
+        );
+        res.json({ success: true, status: "pending", apiResponse: apiData });
       } else {
-        errMsg = String(apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ?? "خطأ غير معروف");
+        errMsg = String(
+          apiData?.["msg"] ?? apiData?.["error"] ?? apiData?.["message"] ??
+          (rawText.includes("<!DOCTYPE") ? "IP محظور أو خطأ في الخادم" : "خطأ غير معروف")
+        );
         await pool.query(
           `UPDATE orders SET notes=$1, updated_at=NOW() WHERE id=$2`,
           [`فشل الشحن التلقائي: ${errMsg} - سيتم المعالجة يدوياً`, id]
@@ -610,6 +733,7 @@ router.get("/admin/stats", requireAdmin, async (_req, res) => {
       depositsPending,
       depositsApprovedTotal,
       topServices,
+      usersByCountry,
     ] = await Promise.all([
       client.query(`SELECT COUNT(*) AS count FROM users`),
       client.query(`SELECT COUNT(*) AS count FROM users WHERE created_at >= NOW() - INTERVAL '1 day'`),
@@ -625,6 +749,7 @@ router.get("/admin/stats", requireAdmin, async (_req, res) => {
       client.query(`SELECT COUNT(*) AS count FROM deposit_requests WHERE status = 'pending'`),
       client.query(`SELECT COALESCE(SUM(amount::numeric), 0) AS total FROM deposit_requests WHERE status = 'approved'`),
       client.query(`SELECT item_name, COUNT(*) AS count FROM orders GROUP BY item_name ORDER BY count DESC LIMIT 7`),
+      client.query(`SELECT country, COUNT(*) AS count FROM users WHERE country IS NOT NULL AND country <> '' GROUP BY country ORDER BY count DESC`),
     ]);
 
     res.json({
@@ -653,6 +778,10 @@ router.get("/admin/stats", requireAdmin, async (_req, res) => {
         name: r.item_name,
         count: parseInt(r.count),
       })),
+      usersByCountry: usersByCountry.rows.map((r: any) => ({
+        country: r.country,
+        count: parseInt(r.count),
+      })),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -672,6 +801,17 @@ router.post("/migrate-item-names", requireAdmin, async (_req: Request, res: Resp
       WHERE i.name_ar = o.item_name
     `);
     res.json({ ok: true, updated: result.rowCount });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Manual trigger to sync all pending YazanCard orders ──────────────────────
+router.all("/admin/sync-yazan-orders", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const { syncPendingYazanOrders } = await import("../services/yazan-sync");
+    const result = await syncPendingYazanOrders();
+    res.json({ success: true, ...result });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
