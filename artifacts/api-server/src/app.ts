@@ -8,6 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { pool } from "@workspace/db";
 import router from "./routes";
+import webhooksRouter from "./routes/webhooks";
 import { logger } from "./lib/logger";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 
@@ -97,6 +98,8 @@ app.get("/favicon.ico", (_req, res) => {
   res.redirect(301, "/logo.png");
 });
 
+// Mount webhooks at root level so callbacks to /webhooks/yazancard and /yazan-callback work
+app.use(webhooksRouter);
 app.use("/api", router);
 
 if (process.env.NODE_ENV === "production") {

@@ -5,7 +5,9 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, Clock, CheckCircle2, XCircle, LogIn, ShoppingBag, Calendar, Hash } from "lucide-react";
+import { Package, Clock, CheckCircle2, XCircle, LogIn, ShoppingBag, Calendar, Hash, Receipt, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { parseOrderDetails, cleanPlayerId } from "@/lib/order-utils";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -43,6 +45,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
 
   const STATUS_META: Record<string, { label: string; icon: any; classes: string }> = {
     pending:   { label: t('orders.pending'),   icon: Clock,         classes: "bg-yellow-500/10 border-yellow-500/30 text-yellow-300" },
@@ -133,6 +136,8 @@ export default function OrdersPage() {
           {orders.map(o => {
             const meta = STATUS_META[o.status] ?? STATUS_META.pending;
             const Icon = meta.icon;
+            const { cleanTargetId, receiptUrls } = parseOrderDetails(o.targetId, (o as any).notes);
+
             return (
               <Card key={o.id} className="p-4 bg-card/40 border-primary/15 hover:border-primary/40 transition-colors">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -149,10 +154,25 @@ export default function OrdersPage() {
                     {o.packageName && (
                       <p className="text-sm text-purple-300/80 mt-0.5">{translatePkgName(o.packageName, t)}</p>
                     )}
-                    {o.targetId && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('orders.targetId')}: <span dir="ltr" className="font-mono">{o.targetId}</span>
-                      </p>
+                    {cleanTargetId && (
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-xs text-muted-foreground">{t('orders.targetId')}:</span>
+                        <code dir="ltr" className="font-mono text-xs font-bold text-foreground bg-background/60 px-2 py-0.5 rounded border border-primary/20 select-all whitespace-nowrap">
+                          {cleanTargetId}
+                        </code>
+                        {receiptUrls.length > 0 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedReceipt(receiptUrls[0])}
+                            className="h-6 px-2 text-[11px] gap-1 bg-primary/10 border-primary/30 hover:bg-primary/20 text-primary font-bold shadow-sm"
+                          >
+                            <Receipt className="w-3 h-3" />
+                            {lang === 'ar' ? 'عرض الوصل' : 'View Receipt'}
+                          </Button>
+                        )}
+                      </div>
                     )}
                     <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
                       <Calendar className="w-3 h-3" />
@@ -176,6 +196,50 @@ export default function OrdersPage() {
             );
           })}
         </div>
+      )}
+
+      {selectedReceipt && (
+        <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
+          <DialogContent className="max-w-md bg-card border-primary/25 p-4 space-y-3">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base font-bold">
+                <Receipt className="w-5 h-5 text-primary" />
+                {lang === 'ar' ? 'وصل العملية / إيصال الشحن' : 'Transaction Receipt'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="bg-background/90 rounded-lg p-2 border border-border/40 flex justify-center items-center min-h-[220px] max-h-[460px] overflow-auto">
+              <img
+                src={selectedReceipt}
+                alt="وصل الشحن"
+                className="max-h-[440px] max-w-full rounded object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+              <a
+                href={selectedReceipt}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                {lang === 'ar' ? 'فتح الصورة بحجم كامل' : 'Open full image'}
+              </a>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard?.writeText(selectedReceipt);
+                }}
+                className="h-8 text-xs gap-1"
+              >
+                {lang === 'ar' ? 'نسخ الرابط' : 'Copy link'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

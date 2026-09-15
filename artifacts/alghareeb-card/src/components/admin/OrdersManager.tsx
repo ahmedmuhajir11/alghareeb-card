@@ -4,7 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Package, User as UserIcon, Copy, Zap } from "lucide-react";
+import { Check, X, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Package, User as UserIcon, Copy, Zap, ChevronRight, ChevronLeft, Receipt, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { parseOrderDetails } from "@/lib/order-utils";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -26,6 +28,14 @@ type OrderRow = {
   createdAt: string;
 };
 
+type PagedResponse = {
+  data: OrderRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 const STATUS_TABS = [
   { value: "pending", label: "بانتظار التنفيذ", icon: Clock, color: "text-amber-400" },
   { value: "completed", label: "مشحونة تلقائياً", icon: Zap, color: "text-emerald-400" },
@@ -36,17 +46,29 @@ const STATUS_TABS = [
 
 export default function OrdersManager() {
   const [tab, setTab] = useState<string>("pending");
+  const [page, setPage] = useState(1);
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const { data, isLoading, refetch } = useQuery<OrderRow[]>({
-    queryKey: ["/api/admin/orders", tab],
+  const { data: paged, isLoading, refetch } = useQuery<PagedResponse>({
+    queryKey: ["/api/admin/orders", tab, page],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/admin/orders?status=${tab}`, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/api/admin/orders?status=${tab}&page=${page}`, { credentials: "include" });
       if (!res.ok) throw new Error("فشل التحميل");
       return res.json();
     },
+    refetchInterval: 5000, // Live auto-refresh every 5 seconds
   });
+
+  const orders = paged?.data ?? [];
+  const totalPages = paged?.totalPages ?? 1;
+  const total = paged?.total ?? 0;
+
+  // Reset page to 1 when tab changes
+  function handleTabChange(val: string) {
+    setTab(val);
+    setPage(1);
+  }
 
   const action = useMutation({
     mutationFn: async ({ id, action, customMessage }: { id: number; action: "approve" | "reject"; customMessage?: string }) => {
@@ -112,7 +134,7 @@ export default function OrdersManager() {
           return (
             <button
               key={t.value}
-              onClick={() => setTab(t.value)}
+              onClick={() => handleTabChange(t.value)}
               className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border ${
                 active
                   ? "bg-primary/20 border-primary text-primary"
@@ -130,24 +152,57 @@ export default function OrdersManager() {
         <div className="space-y-2">
           {[1, 2, 3].map(i => <div key={i} className="h-32 bg-card/50 rounded-xl animate-pulse" />)}
         </div>
-      ) : !data?.length ? (
+      ) : !orders.length ? (
         <div className="text-center py-16 text-muted-foreground bg-card/30 rounded-2xl border border-border/40">
           لا توجد طلبات في هذا التصنيف
         </div>
       ) : (
         <div className="space-y-3">
-          {data.map(o => <OrderCard key={o.id} o={o} executor={action} retryCharge={retryCharge} />)}
+          {orders.map(o => <OrderCard key={o.id} o={o} executor={action} retryCharge={retryCharge} />)}
+        </div>
+      )}
+
+      {/* Pagination controls */}
+      {!isLoading && total > 0 && (
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/30">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            className="gap-1.5"
+          >
+            <ChevronRight className="w-4 h-4" />
+            السابق
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            الصفحة <span className="font-bold text-foreground">{page}</span> من <span className="font-bold text-foreground">{totalPages}</span>
+            <span className="mr-2 text-xs">({total} طلب)</span>
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            className="gap-1.5"
+          >
+            التالي
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
         </div>
       )}
     </div>
   );
 }
 
+
 function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; retryCharge: any }) {
   const { toast } = useToast();
   const [showMsg, setShowMsg] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
   const [copied, setCopied] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
+  const { cleanTargetId, cleanNotes, receiptUrls } = parseOrderDetails(o.targetId, o.notes);
 
   const statusBadgeMap: Record<string, { label: string; cls: string }> = {
     pending:   { label: "بانتظار التنفيذ",         cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
@@ -159,13 +214,14 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
   const hasApiNote = o.notes && o.notes.includes("فشل");
 
   async function copyTargetId() {
-    if (!o.targetId) return;
+    const idToCopy = cleanTargetId || o.targetId;
+    if (!idToCopy) return;
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(o.targetId);
+        await navigator.clipboard.writeText(idToCopy);
       } else {
         const ta = document.createElement("textarea");
-        ta.value = o.targetId;
+        ta.value = idToCopy;
         ta.style.position = "fixed";
         ta.style.opacity = "0";
         document.body.appendChild(ta);
@@ -174,7 +230,7 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
         document.body.removeChild(ta);
       }
       setCopied(true);
-      toast({ title: "تم النسخ ✓", description: `تم نسخ معرّف العميل: ${o.targetId}` });
+      toast({ title: "تم النسخ ✓", description: `تم نسخ معرّف العميل: ${idToCopy}` });
       setTimeout(() => setCopied(false), 1500);
     } catch {
       toast({ variant: "destructive", title: "تعذّر النسخ", description: "اضغط مطوّلاً لتحديد المعرّف يدوياً" });
@@ -204,29 +260,60 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
                 )}
               </div>
             )}
-            {o.targetId && (
-              <div className="bg-background/60 border border-primary/30 rounded-lg p-2.5 mr-6 space-y-1.5">
-                <div className="text-xs text-muted-foreground">معرّف العميل (ID):</div>
-                <div className="flex items-center gap-2">
-                  <code className="font-mono font-bold text-base text-foreground select-all flex-1 break-all">
-                    {o.targetId}
+            {cleanTargetId && (
+              <div className="bg-background/70 border border-primary/30 rounded-lg p-2.5 space-y-1.5 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground font-medium">معرّف العميل (ID):</span>
+                  {receiptUrls.length > 0 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedReceipt(receiptUrls[0])}
+                      className="h-7 px-2.5 text-xs gap-1.5 bg-primary/10 border-primary/40 hover:bg-primary/20 text-primary font-bold shadow-sm"
+                    >
+                      <Receipt className="w-3.5 h-3.5" />
+                      عرض الوصل
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 bg-black/25 px-3 py-2 rounded-md border border-border/40">
+                  <code
+                    dir="ltr"
+                    className="font-mono font-bold text-base sm:text-lg text-foreground select-all whitespace-nowrap tracking-wider"
+                  >
+                    {cleanTargetId}
                   </code>
                   <Button
                     type="button"
                     size="sm"
                     variant={copied ? "default" : "outline"}
                     onClick={copyTargetId}
-                    className={`h-9 px-3 gap-1.5 flex-shrink-0 ${copied ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : ""}`}
+                    className={`h-8 px-3 gap-1.5 flex-shrink-0 text-xs font-semibold ${copied ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : ""}`}
                   >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? "تم النسخ" : "نسخ"}
                   </Button>
                 </div>
               </div>
             )}
-            {o.notes && (
-              <div className={`rounded-lg px-3 py-2 mr-0 text-xs leading-relaxed ${o.status === "completed" && o.notes.includes("تم الشحن تلقائياً") ? "bg-green-500/10 border border-green-500/30 text-green-400" : "bg-yellow-500/10 border border-yellow-500/30 text-yellow-300"}`}>
-                <span className="font-bold">ملاحظة API: </span>{o.notes}
+            {cleanNotes && (
+              <div className={`rounded-lg px-3 py-2 mr-0 text-xs leading-relaxed flex items-center justify-between gap-2 flex-wrap ${o.status === "completed" && cleanNotes.includes("تم الشحن تلقائياً") ? "bg-green-500/10 border border-green-500/30 text-green-400" : "bg-yellow-500/10 border border-yellow-500/30 text-yellow-300"}`}>
+                <div className="flex-1 min-w-0">
+                  <span className="font-bold">ملاحظة API: </span>{cleanNotes}
+                </div>
+                {receiptUrls.length > 0 && !cleanTargetId && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedReceipt(receiptUrls[0])}
+                    className="h-7 px-2.5 text-xs gap-1.5 bg-primary/10 border-primary/40 hover:bg-primary/20 text-primary font-bold"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    عرض الوصل
+                  </Button>
+                )}
               </div>
             )}
             <div className="border-t border-border/30 pt-2 mt-2 space-y-1">
@@ -308,6 +395,52 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
           </div>
         )}
       </CardContent>
+
+      {selectedReceipt && (
+        <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
+          <DialogContent className="max-w-lg bg-card border-primary/25 p-4 space-y-3">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base font-bold">
+                <Receipt className="w-5 h-5 text-primary" />
+                وصل العملية / إيصال الشحن
+              </DialogTitle>
+            </DialogHeader>
+            <div className="bg-background/90 rounded-lg p-2 border border-border/40 flex justify-center items-center min-h-[220px] max-h-[480px] overflow-auto">
+              <img
+                src={selectedReceipt}
+                alt="وصل الشحن"
+                className="max-h-[460px] max-w-full rounded object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+              <a
+                href={selectedReceipt}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                فتح في نافذة جديدة
+              </a>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard?.writeText(selectedReceipt);
+                  toast({ title: "تم نسخ رابط الوصل ✓" });
+                }}
+                className="h-8 text-xs gap-1"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                نسخ الرابط
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }

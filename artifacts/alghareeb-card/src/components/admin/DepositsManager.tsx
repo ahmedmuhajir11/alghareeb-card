@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, ExternalLink, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Download, ZoomIn, ZoomOut } from "lucide-react";
+import { Check, X, ExternalLink, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Download, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -26,6 +26,14 @@ type DepositRow = {
   createdAt: string;
 };
 
+type PagedResponse = {
+  data: DepositRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 const STATUS_TABS = [
   { value: "pending", label: "بانتظار المراجعة", icon: Clock, color: "text-amber-400" },
   { value: "approved", label: "مقبولة", icon: CheckCircle2, color: "text-green-400" },
@@ -35,17 +43,28 @@ const STATUS_TABS = [
 
 export default function DepositsManager() {
   const [tab, setTab] = useState<string>("pending");
+  const [page, setPage] = useState(1);
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const { data, isLoading, refetch } = useQuery<DepositRow[]>({
-    queryKey: ["/api/admin/deposits", tab],
+  const { data: paged, isLoading, refetch } = useQuery<PagedResponse>({
+    queryKey: ["/api/admin/deposits", tab, page],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/admin/deposits?status=${tab}`, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/api/admin/deposits?status=${tab}&page=${page}`, { credentials: "include" });
       if (!res.ok) throw new Error("فشل التحميل");
       return res.json();
     },
   });
+
+  const deposits = paged?.data ?? [];
+  const totalPages = paged?.totalPages ?? 1;
+  const total = paged?.total ?? 0;
+
+  // Reset page to 1 when tab changes
+  function handleTabChange(val: string) {
+    setTab(val);
+    setPage(1);
+  }
 
   const action = useMutation({
     mutationFn: async ({ id, action, adminNote }: { id: number; action: "approve" | "reject"; adminNote?: string }) => {
@@ -87,7 +106,7 @@ export default function DepositsManager() {
           return (
             <button
               key={t.value}
-              onClick={() => setTab(t.value)}
+              onClick={() => handleTabChange(t.value)}
               className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border ${
                 active
                   ? "bg-primary/20 border-primary text-primary"
@@ -105,18 +124,49 @@ export default function DepositsManager() {
         <div className="space-y-2">
           {[1, 2, 3].map(i => <div key={i} className="h-32 bg-card/50 rounded-xl animate-pulse" />)}
         </div>
-      ) : !data?.length ? (
+      ) : !deposits.length ? (
         <div className="text-center py-16 text-muted-foreground bg-card/30 rounded-2xl border border-border/40">
           لا توجد طلبات في هذا التصنيف
         </div>
       ) : (
         <div className="space-y-3">
-          {data.map(d => <DepositCard key={d.id} d={d} executor={action} />)}
+          {deposits.map(d => <DepositCard key={d.id} d={d} executor={action} />)}
+        </div>
+      )}
+
+      {/* Pagination controls */}
+      {!isLoading && total > 0 && (
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/30">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            className="gap-1.5"
+          >
+            <ChevronRight className="w-4 h-4" />
+            السابق
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            الصفحة <span className="font-bold text-foreground">{page}</span> من <span className="font-bold text-foreground">{totalPages}</span>
+            <span className="mr-2 text-xs">({total} طلب)</span>
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            className="gap-1.5"
+          >
+            التالي
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
         </div>
       )}
     </div>
   );
 }
+
 
 function ReceiptViewer({ url }: { url: string }) {
   const [expanded, setExpanded] = useState(false);

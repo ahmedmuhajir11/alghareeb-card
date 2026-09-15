@@ -34,6 +34,7 @@
     // Frontend components
     'artifacts/alghareeb-card/src/lib/auth.tsx',
     'artifacts/alghareeb-card/src/lib/currency.tsx',
+    'artifacts/alghareeb-card/src/lib/order-utils.ts',
     'artifacts/alghareeb-card/src/components/admin/SectionsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/SettingsManager.tsx',
     'artifacts/alghareeb-card/src/components/admin/TickerManager.tsx',
@@ -62,6 +63,8 @@
     'artifacts/alghareeb-card/public/favicon.ico',
     // API server routes
     'artifacts/api-server/src/app.ts',
+    'artifacts/api-server/src/index.ts',
+    'artifacts/api-server/src/services/yazan-sync.ts',
     'artifacts/api-server/src/routes/settings.ts',
     'artifacts/api-server/src/routes/orders-user.ts',
     'artifacts/api-server/src/routes/admin.ts',
@@ -73,6 +76,7 @@
     'artifacts/api-server/src/routes/yazancard.ts',
     'artifacts/api-server/src/routes/currencies.ts',
     'artifacts/api-server/src/routes/deposits.ts',
+    'artifacts/api-server/src/routes/webhooks.ts',
     // Admin dashboard + YazanCard importer
     'artifacts/alghareeb-card/src/components/admin/YazanCardImporter.tsx',
     'artifacts/alghareeb-card/src/pages/admin/dashboard.tsx',
@@ -84,6 +88,8 @@
     'artifacts/alghareeb-card/src/App.tsx',
     'artifacts/alghareeb-card/src/pages/reseller-api.tsx',
     'artifacts/alghareeb-card/src/components/admin/UsersManager.tsx',
+    'update-vps.mjs',
+    'check-order.mjs',
   ];
 
   function download(filePath) {
@@ -122,23 +128,108 @@
 
   // ── DB migrations ──────────────────────────────────────────────
   console.log('\n🗄️  Running DB migrations...');
-  // ⚠️ Set before running: export YAZANCARD_TOKEN=your_token_here
-  const YAZANCARD_TOKEN = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
+  
+  // Resolve DATABASE_URL from process.env, PM2, or .env files
+  let dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    try {
+      const raw = execSync('pm2 jlist', { encoding: 'utf8' });
+      const match = raw.match(/"DATABASE_URL"\s*:\s*"([^"]+)"/);
+      if (match) dbUrl = match[1];
+    } catch {}
+  }
+  if (!dbUrl) {
+    const envPaths = [`${BASE}/.env`, `${BASE}/artifacts/api-server/.env`];
+    for (const ep of envPaths) {
+      try {
+        const { readFileSync } = await import('fs');
+        const lines = readFileSync(ep, 'utf8').split('\n');
+        for (const line of lines) {
+          if (line.startsWith('DATABASE_URL=')) {
+            dbUrl = line.slice(13).trim().replace(/^["']|["']$/g, '');
+            break;
+          }
+        }
+        if (dbUrl) break;
+      } catch {}
+    }
+  }
 
-  // Write migration script inside lib/db where pg is a direct dependency
-  const migratePath = `${BASE}/lib/db/tmp-migrate.cjs`;
-  writeFileSync(migratePath, `
+  // Resolve YAZANCARD_TOKEN from process.env, PM2, or .env files
+  let yazanToken = process.env.YAZANCARD_TOKEN;
+  if (!yazanToken) {
+    try {
+      const raw = execSync('pm2 jlist', { encoding: 'utf8' });
+      const match = raw.match(/"YAZANCARD_TOKEN"\s*:\s*"([^"]+)"/);
+      if (match) yazanToken = match[1];
+    } catch {}
+  }
+  if (!yazanToken) {
+    const envPaths = [`${BASE}/.env`, `${BASE}/artifacts/api-server/.env`];
+    for (const ep of envPaths) {
+      try {
+        const { readFileSync } = await import('fs');
+        const lines = readFileSync(ep, 'utf8').split('\n');
+        for (const line of lines) {
+          if (line.startsWith('YAZANCARD_TOKEN=')) {
+            yazanToken = line.slice(16).trim().replace(/^["']|["']$/g, '');
+            break;
+          }
+        }
+        if (yazanToken) break;
+      } catch {}
+    }
+  }
+
+  const YAZANCARD_TOKEN = yazanToken || '';
+
+  if (!dbUrl) {
+    console.log('ℹ️  DATABASE_URL not found in shell/PM2/.env — skipping migrations.');
+  } else {
+    // Write migration script inside lib/db where pg is a direct dependency
+    const migratePath = `${BASE}/lib/db/tmp-migrate.cjs`;
+    writeFileSync(migratePath, `
 'use strict';
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const YZT = process.env.YAZANCARD_TOKEN || 'YAZANCARD_TOKEN_PLACEHOLDER';
+const pool = new Pool({ connectionString: ${JSON.stringify(dbUrl)} });
+const YZT = ${JSON.stringify(YAZANCARD_TOKEN)};
 async function run() {
   const c = await pool.connect();
   try {
-    await c.query(
-      "UPDATE items SET api_endpoint=$1, api_key=$2 WHERE name_en ILIKE '%party star%'",
-      ['https://api.yazancard.com/client/api/newOrder/145/params', YZT]
-    );
+    // Only update api_key if YZT is a real token, NEVER write placeholder!
+    if (YZT && !YZT.includes('PLACEHOLDER')) {
+      await c.query(
+        "UPDATE items SET api_endpoint=$1, api_key=$2 WHERE name_en ILIKE '%party star%'",
+        ['https://api.yazancard.com/client/api/newOrder/145/params', YZT]
+      );
+      await c.query(
+        "UPDATE packages SET api_key=$1 WHERE api_key ILIKE '%PLACEHOLDER%'",
+        [YZT]
+      );
+      await c.query(
+        "UPDATE items SET api_key=$1 WHERE api_key ILIKE '%PLACEHOLDER%'",
+        [YZT]
+      );
+    } else {
+      await c.query(
+        "UPDATE items SET api_endpoint=$1 WHERE name_en ILIKE '%party star%'",
+        ['https://api.yazancard.com/client/api/newOrder/145/params']
+      );
+      // Auto-heal any placeholder api_key from packages or items
+      await c.query(\`
+        UPDATE items 
+        SET api_key = (
+          SELECT api_key FROM packages 
+          WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+          LIMIT 1
+        )
+        WHERE (api_key IS NULL OR api_key = '' OR api_key ILIKE '%PLACEHOLDER%')
+          AND EXISTS (
+            SELECT 1 FROM packages 
+            WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+          )
+      \`);
+    }
     // Reseller API columns
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_reseller BOOLEAN NOT NULL DEFAULT false");
     await c.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS api_token TEXT");
@@ -207,7 +298,8 @@ run().catch(e => { console.error('❌ DB migration error:', e.message); process.
   } catch (dbErr) {
     console.warn('⚠️  DB migration skipped (can be done manually via admin panel):', dbErr.message);
   }
-  try { unlinkSync(migratePath); } catch {}
+    try { unlinkSync(migratePath); } catch {}
+  }
 
   console.log('\n🔨 Building API server...');
   execSync('pnpm --filter @workspace/api-server run build', {
