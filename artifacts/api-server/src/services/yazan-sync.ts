@@ -1,10 +1,11 @@
 import { pool } from "@workspace/db";
 import { sendPushToUser, sendPushToAdmins } from "../routes/push";
+import { extractProviderUsername } from "../lib/order-status";
 
 /**
  * Parses any response structure from YazanCard / Syria4Game /check endpoint
  */
-function parseCheckStatus(checkData: any, providerOrderId: string): { status: string; note: string; receiptUrl?: string } | null {
+function parseCheckStatus(checkData: any, providerOrderId: string): { status: string; note: string; receiptUrl?: string; username?: string | null } | null {
   if (!checkData) return null;
 
   let orderInfo: any = null;
@@ -87,8 +88,9 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
 
   const note = String(orderInfo.note || orderInfo.msg || orderInfo.message || orderInfo.error || orderInfo.details || "");
   const receiptUrl = orderInfo.receipt || orderInfo.image || orderInfo.img || orderInfo.url || undefined;
+  const username = extractProviderUsername(orderInfo);
 
-  return { status: rawStatus, note, receiptUrl };
+  return { status: rawStatus, note, receiptUrl, username };
 }
 
 /**
@@ -358,8 +360,8 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
         if (isSuccess) {
           const receiptSuffix = parsed.receiptUrl ? ` | ${parsed.receiptUrl}` : "";
           await pool.query(
-            `UPDATE orders SET status='completed', notes = COALESCE(notes,'') || $1, updated_at=NOW() WHERE id=$2 AND status='pending'`,
-            [` | تأكيد عبر المزامنة الآلية ✅${receiptSuffix}`, order.id]
+            `UPDATE orders SET status='completed', provider_username = COALESCE($1, provider_username), notes = COALESCE(notes,'') || $2, updated_at=NOW() WHERE id=$3 AND status='pending'`,
+            [parsed.username ?? null, ` | تأكيد عبر المزامنة الآلية ✅${receiptSuffix}`, order.id]
           );
           sendPushToUser(
             order.user_id,

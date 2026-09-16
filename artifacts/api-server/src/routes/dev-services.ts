@@ -191,7 +191,7 @@ router.put("/admin/dev/settings", requireAdmin, async (req: Request, res: Respon
        mobileAppsHeroTitle||"تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc||"", mobileAppsHeroImage||""]
     );
     res.json({ ok: true });
-  } catch (err: any) { res.status(500).json({ error: err.message }); }
+  } catch (err: any) { console.error("[PUT /admin/dev/settings] ERROR:", err); res.status(500).json({ error: err.message }); }
 });
 
 router.get("/admin/dev/requests", requireAdmin, async (req: Request, res: Response): Promise<void> => {

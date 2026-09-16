@@ -5,7 +5,6 @@ export async function ensureCriticalSections() {
   // Ensure the 6 core business sections exist
   await db.insert(sectionsTable).values([
     { id: 1, nameAr: "شحن الألعاب", nameEn: "Game Top-Up", sortOrder: 1, pricingType: "packages" },
-    { id: 2, nameAr: "شحن التطبيقات", nameEn: "App Top-Up", sortOrder: 2, pricingType: "per_quantity", logoUrl: "/section-apps-topup.jpg" },
     { id: 3, nameAr: "الحوالات المالية", nameEn: "Money Transfers", sortOrder: 3, pricingType: "per_quantity" },
     { id: 4, nameAr: "سحب رواتب المضيفين", nameEn: "Host Salary Withdrawal", sortOrder: 4, pricingType: "per_quantity" },
     { id: 5, nameAr: "تعبئة الرصيد", nameEn: "Credit Recharge", sortOrder: 5, pricingType: "packages" },
@@ -14,49 +13,6 @@ export async function ensureCriticalSections() {
 
   try {
     const { pool } = await import("@workspace/db");
-    
-    // 1. RECOVERY FIX: Guarantee section 2 is named "شحن التطبيقات" (App Top-Up)
-    await pool.query(`
-      UPDATE sections 
-      SET name_ar = 'شحن التطبيقات',
-          name_en = 'App Top-Up',
-          pricing_type = 'per_quantity',
-          sort_order = 2
-      WHERE id = 2;
-    `);
-
-    // 2. If section 2 has no logoUrl or has dev hero image, update to dedicated app topup card
-    await pool.query(`
-      UPDATE sections
-      SET logo_url = '/section-apps-topup.jpg'
-      WHERE id = 2 AND (logo_url IS NULL OR logo_url = '' OR logo_url = '/section-apps-dev.jpg' OR logo_url = '/dev-mobile-hero.jpg');
-    `);
-
-    // 3. If any other section was renamed to dev services while holding user items, restore its name
-    await pool.query(`
-      UPDATE sections 
-      SET name_ar = 'شحن التطبيقات',
-          name_en = 'App Top-Up',
-          pricing_type = 'per_quantity'
-      WHERE id NOT IN (1, 3, 4, 5, 6)
-        AND (name_ar LIKE '%تصميم وبرمجة%' OR name_ar = 'التصميم والبرمجة')
-        AND (SELECT COUNT(*) FROM items WHERE section_id = sections.id) > 0;
-    `);
-
-    // 4. Ensure default apps for section 2 exist and are active
-    await pool.query(`
-      INSERT INTO items (id, section_id, name_ar, name_en, min_quantity, sort_order, is_active, currency_unit, price_per_unit)
-      VALUES 
-        (10, 2, 'بارتي ستار', 'party star', 1, 1, true, 'ماسات', 0.0011236),
-        (11, 2, 'سول ستار', 'Soul Star', 1, 2, true, 'كوينز', 0.000128575),
-        (5, 2, 'بيغو لايف', 'BIGO LIVE', 1, 3, true, 'ماسات', 0.0186),
-        (6, 2, 'واهو شات', 'WAHO CHAT', 1, 4, true, 'كوينز', 9496.67616334283),
-        (7, 2, 'يويو شات', 'YOYO CHAT', 1, 5, true, 'كوينز', 0.00079828),
-        (17, 2, 'سو ماتش', 'SoMatch', 1, 6, true, 'كوينز', 0.000129870129870129),
-        (13, 2, 'سول شيل', 'SOULCHIIL', 1, 7, true, 'ماسات', 0.00188452)
-      ON CONFLICT (id) DO UPDATE SET
-        is_active = true;
-    `);
 
     // 5. Ensure dev_settings initial record exists in its own table
     await pool.query(`

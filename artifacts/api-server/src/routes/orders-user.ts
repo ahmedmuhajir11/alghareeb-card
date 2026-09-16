@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import { requireUser } from "../middleware/requireUser";
 import { sendPushToAdmins, sendPushToUser } from "./push";
+import { extractProviderUsername } from "../lib/order-status";
 
 const router: IRouter = Router();
 
@@ -157,6 +158,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     // Auto-charge via API if configured
     let finalStatus = order.status as string;
     let autoCharged = false;
+    let providerUsername: string | null = null;
     const apiEndpoint = item.api_endpoint as string | null;
     const apiKey = item.api_key as string | null;
     const orderUuid = crypto.randomUUID();
@@ -235,9 +237,10 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           autoCharged = true;
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
           const txId = String(yzOrderId ?? apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? apiData?.["id"] ?? "N/A");
+          providerUsername = extractProviderUsername(apiData?.["data"]) ?? extractProviderUsername(apiData);
           await pool.query(
-            `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
-            [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
+            `UPDATE orders SET status='completed', provider_username=$1, notes=$2, updated_at=NOW() WHERE id=$3`,
+            [providerUsername, `تم الشحن تلقائياً ✅ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
           );
         } else if (yazanWait) {
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
@@ -306,10 +309,11 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
                     finalStatus = "completed";
                     autoCharged = true;
                     resolvedDirectly = true;
+                    providerUsername = extractProviderUsername(orderChk);
                     const receiptSuffix = (orderChk.receipt || orderChk.image || orderChk.url) ? ` | ${orderChk.receipt || orderChk.image || orderChk.url}` : "";
                     await pool.query(
-                      `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
-                      [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}${receiptSuffix} [uuid:${orderUuid}]`, order.id]
+                      `UPDATE orders SET status='completed', provider_username=$1, notes=$2, updated_at=NOW() WHERE id=$3`,
+                      [providerUsername, `تم الشحن تلقائياً ✅ - معرف العملية: ${txId}${receiptSuffix} [uuid:${orderUuid}]`, order.id]
                     );
                   } else if (isRejected) {
                     finalStatus = "rejected";
@@ -412,8 +416,10 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       order: {
         id: order.id,
         itemName: order.item_name,
+        itemNameEn: order.item_name_en || null,
         packageName: order.package_name,
         targetId: order.target_id,
+        providerUsername: providerUsername,
         amount: parseFloat(order.amount),
         currency: order.currency,
         status: finalStatus,
@@ -446,6 +452,7 @@ router.get("/orders", requireUser, async (req: Request, res: Response): Promise<
       itemNameTr: r.item_name_tr || null,
       packageName: r.package_name,
       targetId: r.target_id,
+      providerUsername: r.provider_username || null,
       amount: parseFloat(r.amount),
       currency: r.currency,
       status: r.status,

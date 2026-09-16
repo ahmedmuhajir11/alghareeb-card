@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import { sendPushToUser, sendPushToAdmins } from "./push";
+import { extractProviderUsername } from "../lib/order-status";
 
 const router: IRouter = Router();
 
@@ -169,9 +170,10 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
 
     if (isSuccess) {
       const receiptSuffix = receiptLink ? ` | ${receiptLink}` : "";
+      const providerUsername = extractProviderUsername(payload.data) ?? extractProviderUsername(payload);
       await client.query(
-        `UPDATE orders SET status='completed', notes = COALESCE(notes, '') || $1, updated_at=NOW() WHERE id=$2`,
-        [` | تأكيد عبر Callback ✅${receiptSuffix}`, order.id]
+        `UPDATE orders SET status='completed', provider_username = COALESCE($1, provider_username), notes = COALESCE(notes, '') || $2, updated_at=NOW() WHERE id=$3`,
+        [providerUsername, ` | تأكيد عبر Callback ✅${receiptSuffix}`, order.id]
       );
       await client.query("COMMIT");
 

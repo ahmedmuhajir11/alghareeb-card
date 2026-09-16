@@ -15,6 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { OrderStatusDialog, type OrderStatusData } from "@/components/OrderStatusDialog";
+import { OrderWaitingDialog } from "@/components/OrderWaitingDialog";
 
 export default function ItemPage({ id }: { id: number }) {
   const { data: item, isLoading: itemLoading } = useGetItem(id);
@@ -27,6 +29,46 @@ export default function ItemPage({ id }: { id: number }) {
   const { isSignedIn, isLoaded, user, refetch: refetchAuth } = useAuth();
   const [, navigate] = useLocation();
   const [submitting, setSubmitting] = useState(false);
+  const [statusOrder, setStatusOrder] = useState<OrderStatusData | null>(null);
+  const [checkingOrder, setCheckingOrder] = useState(false);
+
+  const toStatusData = (o: any): OrderStatusData => ({
+    id: o.id,
+    itemName: o.itemName,
+    itemNameEn: o.itemNameEn,
+    packageName: o.packageName,
+    targetId: o.targetId,
+    providerUsername: o.providerUsername,
+    amount: o.amount,
+    currency: o.currency,
+    status: o.status,
+    createdAt: o.createdAt,
+  });
+
+  // Waits for the order to leave "pending" (success or failure) before
+  // the caller shows anything to the customer, so the status dialog
+  // always reflects the real outcome — including the account username
+  // when the provider only returns it once the check fully resolves —
+  // instead of opening on a placeholder "processing" state.
+  const waitForOrderResolution = async (orderId: number, fallback: OrderStatusData): Promise<OrderStatusData> => {
+    const maxAttempts = 20; // ~60s total, matches the background sync's typical resolution window
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const res = await fetch(`${API_BASE}/api/orders`, { credentials: "include" });
+        if (res.ok) {
+          const list = await res.json();
+          const found = Array.isArray(list) ? list.find((o: any) => o.id === orderId) : null;
+          if (found && found.status !== "pending") {
+            return toStatusData(found);
+          }
+        }
+      } catch {
+        /* transient network hiccup — keep trying until maxAttempts */
+      }
+    }
+    return fallback; // still pending after the max wait — show it anyway rather than leaving the customer with no feedback at all
+  };
 
   const isPerQuantity = item?.sectionPricingType === "per_quantity";
   const minQuantity = item?.minQuantity ?? 1;
@@ -85,13 +127,23 @@ export default function ItemPage({ id }: { id: number }) {
       }
 
       await refetchAuth();
-      const charged = data?.order?.amount ?? 0;
-      const chargedCur = data?.order?.currency ?? user?.currency ?? "USD";
-      toast({
-        title: t('item.orderSent'),
-        description: `${t('item.orderSentDesc')} (${charged.toFixed(2)} ${chargedCur})`,
-      });
-      setTimeout(() => navigate("/orders"), 900);
+      // Do NOT auto-navigate to "My Orders" — show the result directly
+      // in an in-page status dialog instead, per current product flow.
+      if (data?.order) {
+        const initial = toStatusData(data.order);
+        if (initial.status === "pending") {
+          // Don't show the dialog yet — wait until the charge actually
+          // resolves so the customer sees the real outcome (and the
+          // account username, if the provider supplies one) instead of
+          // a transient "processing" placeholder.
+          setCheckingOrder(true);
+          const resolved = await waitForOrderResolution(initial.id, initial);
+          setCheckingOrder(false);
+          setStatusOrder(resolved);
+        } else {
+          setStatusOrder(initial);
+        }
+      }
     } catch (e: any) {
       toast({ variant: "destructive", title: t('item.error'), description: e?.message ?? t('item.failed') });
     } finally {
@@ -363,11 +415,12 @@ export default function ItemPage({ id }: { id: number }) {
         <Button
           className="w-full h-11 text-lg font-bold mt-2 shadow-[0_0_15px_var(--color-primary)] hover:shadow-[0_0_25px_var(--color-primary)] transition-all gap-2 bg-purple-600 hover:bg-purple-700 text-white border-none disabled:opacity-60"
           onClick={handleOrder}
-          disabled={submitting || isUnavailable}
+          disabled={submitting || checkingOrder || isUnavailable}
         >
           <Send className="w-5 h-5" />
           {submitting ? t('item.sending') : isUnavailable ? t('item.unavailableBtn') : t('item.sendOrder')}
         </Button>
+        <OrderWaitingDialog open={checkingOrder} />
         {user && (
           <p className="text-xs text-center text-muted-foreground mt-1">
             {t('item.currentBalance')} <span className="text-primary font-bold">{user.balance.toFixed(2)} {user.currency}</span>
@@ -381,6 +434,11 @@ export default function ItemPage({ id }: { id: number }) {
             : t('item.fulfillManual')}
         </div>
       )}
+      <OrderStatusDialog
+        order={statusOrder}
+        open={!!statusOrder}
+        onClose={() => setStatusOrder(null)}
+      />
     </div>
   );
 }

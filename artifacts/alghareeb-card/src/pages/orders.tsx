@@ -5,7 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, Clock, CheckCircle2, XCircle, LogIn, ShoppingBag, Calendar, Hash, Receipt, ExternalLink } from "lucide-react";
+import { Package, Clock, CheckCircle2, XCircle, LogIn, ShoppingBag, Calendar, Hash, Receipt, ExternalLink, Download, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { parseOrderDetails, cleanPlayerId } from "@/lib/order-utils";
 
@@ -46,6 +46,32 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  const handleDownloadPdf = async (orderId: number) => {
+    setDownloadingId(orderId);
+    try {
+      const res = await fetch(`${API_BASE}/api/orders/${orderId}/receipt`, { credentials: "include" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d?.error || (lang === 'ar' ? "تعذر تحميل إثبات الدفع" : lang === 'tr' ? "Ödeme kanıtı indirilemedi" : "Could not download proof of payment"));
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `receipt-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      setError(e?.message ?? null);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const STATUS_META: Record<string, { label: string; icon: any; classes: string }> = {
     pending:   { label: t('orders.pending'),   icon: Clock,         classes: "bg-yellow-500/10 border-yellow-500/30 text-yellow-300" },
@@ -190,6 +216,22 @@ export default function OrdersPage() {
                       </span>
                       <span className="text-[11px] text-muted-foreground ms-1">{o.currency}</span>
                     </div>
+                    {o.status === "completed" && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleDownloadPdf(o.id)}
+                        disabled={downloadingId === o.id}
+                        className="h-7 px-2.5 text-[11px] gap-1 bg-gradient-to-r from-purple-600 to-primary hover:opacity-90 text-white font-bold"
+                      >
+                        {downloadingId === o.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Download className="w-3 h-3" />
+                        )}
+                        {lang === 'ar' ? 'إثبات الدفع' : lang === 'tr' ? 'Ödeme kanıtı' : 'Proof of payment'}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>

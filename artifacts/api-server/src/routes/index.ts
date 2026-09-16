@@ -26,6 +26,8 @@ import userItemPricesRouter from "./user-item-prices";
 import yazancardRouter from "./yazancard";
 import resellerRouter from "./reseller";
 import webhooksRouter from "./webhooks";
+import devServicesRouter from "./dev-services";
+import orderReceiptRouter from "./order-receipt";
 
 const router: IRouter = Router();
 
@@ -56,5 +58,7 @@ router.use(userItemPricesRouter);
 router.use(yazancardRouter);
 router.use(resellerRouter);
 router.use(webhooksRouter);
+router.use(devServicesRouter);
+router.use(orderReceiptRouter);
 
 export default router;

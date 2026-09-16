@@ -323,28 +323,30 @@ export default function DevServicesManager() {
       </div>
 
       <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList className="grid grid-cols-5 w-full bg-card border border-primary/20 h-auto p-1 gap-1">
-          <TabsTrigger value="websites" className="gap-2 py-2 text-xs md:text-sm">
-            <Globe className="w-4 h-4" />
-            تطوير المواقع
-          </TabsTrigger>
-          <TabsTrigger value="mobile_apps" className="gap-2 py-2 text-xs md:text-sm">
-            <Smartphone className="w-4 h-4" />
-            تطبيقات الجوال
-          </TabsTrigger>
-          <TabsTrigger value="questions" className="gap-2 py-2 text-xs md:text-sm">
-            <HelpCircle className="w-4 h-4" />
-            إدارة الأسئلة
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2 py-2 text-xs md:text-sm">
-            <Settings className="w-4 h-4" />
-            إعدادات واتساب
-          </TabsTrigger>
-          <TabsTrigger value="requests" className="gap-2 py-2 text-xs md:text-sm">
-            <MessageSquare className="w-4 h-4" />
-            الطلبات ({requests.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="flex w-max min-w-full md:grid md:grid-cols-5 bg-card border border-primary/20 h-auto p-1 gap-1">
+            <TabsTrigger value="websites" className="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap text-xs md:text-sm">
+              <Globe className="w-4 h-4 flex-shrink-0" />
+              تطوير المواقع
+            </TabsTrigger>
+            <TabsTrigger value="mobile_apps" className="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap text-xs md:text-sm">
+              <Smartphone className="w-4 h-4 flex-shrink-0" />
+              تطبيقات الجوال
+            </TabsTrigger>
+            <TabsTrigger value="questions" className="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap text-xs md:text-sm">
+              <HelpCircle className="w-4 h-4 flex-shrink-0" />
+              إدارة الأسئلة
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap text-xs md:text-sm">
+              <Settings className="w-4 h-4 flex-shrink-0" />
+              إعدادات واتساب
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap text-xs md:text-sm">
+              <MessageSquare className="w-4 h-4 flex-shrink-0" />
+              الطلبات ({requests.length})
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="websites" className="mt-6">
           {renderCardList("websites", webCards)}
