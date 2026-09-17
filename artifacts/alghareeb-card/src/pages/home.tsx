@@ -152,7 +152,7 @@ function Slider() {
   ];
 
   return (
-    <div className="relative mb-8 rounded-xl overflow-hidden neon-border group" ref={emblaRef}>
+    <div className="relative mb-8 rounded-xl overflow-hidden group" ref={emblaRef}>
       <div className="flex touch-pan-y">
         {slides.map((img) => {
           const inner = (
@@ -341,7 +341,7 @@ export default function Home() {
       </div>
 
       {/* Trust badges */}
-      <div className="mb-8 mt-4 rounded-2xl bg-gradient-to-l from-[hsl(260_35%_8%)] via-[hsl(260_30%_10%)] to-[hsl(260_35%_8%)] border border-[hsl(var(--gold)/0.25)] p-4 md:p-5 shadow-[0_0_30px_hsl(var(--gold)/0.08)]">
+      <div className="mb-8 mt-4 rounded-2xl bg-card border border-[hsl(var(--gold)/0.25)] p-4 md:p-5 shadow-[0_0_30px_hsl(var(--gold)/0.08)]">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {[
             { icon: <ShieldCheck className="w-6 h-6" />, titleKey: 'home.trust1Title', subKey: 'home.trust1Sub' },

@@ -10,16 +10,19 @@ import WelcomeModal from "@/components/WelcomeModal";
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 function ThemeToggleButton() {
-  const [isDark, setIsDark] = useState(() => {
+  // Light mode is the opt-in state (dark is the site's default look).
+  // Toggling adds/removes the "light" class on <html>, which is the
+  // class the CSS light-theme palette in index.css is scoped under.
+  const [isLight, setIsLight] = useState(() => {
     if (typeof document !== "undefined") {
-      return document.documentElement.classList.contains("dark");
+      return document.documentElement.classList.contains("light");
     }
-    return true;
+    return false;
   });
 
   useEffect(() => {
     const checkTheme = () => {
-      setIsDark(document.documentElement.classList.contains("dark"));
+      setIsLight(document.documentElement.classList.contains("light"));
     };
     const observer = new MutationObserver(checkTheme);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
@@ -27,22 +30,22 @@ function ThemeToggleButton() {
   }, []);
 
   const toggleTheme = () => {
-    const nextDark = !isDark;
-    setIsDark(nextDark);
+    const nextLight = !isLight;
+    setIsLight(nextLight);
 
     if ((window as any).FlutterThemeToggle) {
       (window as any).FlutterThemeToggle.postMessage("t");
     } else {
-      if (nextDark) {
-        document.documentElement.classList.add("dark");
+      if (nextLight) {
+        document.documentElement.classList.add("light");
       } else {
-        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.remove("light");
       }
-      localStorage.setItem("vite-ui-theme", nextDark ? "dark" : "light");
-      localStorage.setItem("theme", nextDark ? "dark" : "light");
+      localStorage.setItem("vite-ui-theme", nextLight ? "light" : "dark");
+      localStorage.setItem("theme", nextLight ? "light" : "dark");
       window.dispatchEvent(new StorageEvent("storage", {
         key: "vite-ui-theme",
-        newValue: nextDark ? "dark" : "light",
+        newValue: nextLight ? "light" : "dark",
       }));
     }
   };
@@ -57,14 +60,14 @@ function ThemeToggleButton() {
     >
       <div className="text-right leading-tight">
         <span className="block text-white text-xs font-bold">
-          {isDark ? "الثيم: داكن" : "الثيم: فاتح"}
+          {isLight ? "الثيم: فاتح" : "الثيم: داكن"}
         </span>
         <span className="block text-white/70 text-[10px]">
-          {isDark ? "اضغط للتحويل إلى فاتح" : "اضغط للتحويل إلى داكن"}
+          {isLight ? "اضغط للتحويل إلى داكن" : "اضغط للتحويل إلى فاتح"}
         </span>
       </div>
       <span className="flex-shrink-0 mr-2 flex items-center justify-center">
-        {isDark ? <Moon className="w-4 h-4 text-white" /> : <Sun className="w-4 h-4 text-white" />}
+        {isLight ? <Sun className="w-4 h-4 text-white" /> : <Moon className="w-4 h-4 text-white" />}
       </span>
     </button>
   );
@@ -177,7 +180,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
 
       <div
         id="ag-sidebar"
-        className={`fixed top-0 right-0 h-full w-[75%] max-w-sm z-50 flex flex-col bg-[#0d0d1a] border-l border-primary/20 shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full w-[75%] max-w-sm z-50 flex flex-col bg-sidebar border-l border-primary/20 shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
         dir="rtl"
       >
         {/* Header */}
@@ -248,7 +251,7 @@ function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
             <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0 ${langOpen ? "rotate-180" : ""}`} />
           </button>
           {langOpen && (
-            <div className="absolute top-full left-3 right-3 z-10 mt-1 rounded-xl border border-primary/20 bg-[#0d0d1a] shadow-xl overflow-hidden">
+            <div className="absolute top-full left-3 right-3 z-10 mt-1 rounded-xl border border-primary/20 bg-sidebar shadow-xl overflow-hidden">
               {(Object.entries(LANG_META) as [LangCode, typeof LANG_META[LangCode]][]).map(([code, meta]) => (
                 <button
                   key={code}
@@ -512,11 +515,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               user.balance > 0 ? (
                 <Link
                   href="/payment-methods"
-                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-purple-600/15 border border-purple-500/40 hover:border-purple-400 hover:bg-purple-600/25 transition-colors"
+                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-primary/10 border border-primary/40 hover:border-primary hover:bg-primary/20 transition-colors"
                 >
-                  <Wallet className="w-4 h-4 text-purple-300 flex-shrink-0" />
-                  <span className="text-sm font-bold text-purple-200 whitespace-nowrap">
-                    {user.balance.toFixed(2)} <span className="text-[11px] text-purple-300/80">{user.currency}</span>
+                  <Wallet className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span className="text-sm font-bold text-foreground whitespace-nowrap">
+                    {user.balance.toFixed(2)} <span className="text-[11px] text-primary/80">{user.currency}</span>
                   </span>
                 </Link>
               ) : (
@@ -576,7 +579,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <footer className="border-t border-purple-800/40 bg-[#0a0a0f] py-10 mt-auto">
+      <footer className="border-t border-purple-800/40 bg-card py-10 mt-auto">
         <div className="container mx-auto px-4 text-center space-y-6">
 
           {/* Phone / WhatsApp contact row */}

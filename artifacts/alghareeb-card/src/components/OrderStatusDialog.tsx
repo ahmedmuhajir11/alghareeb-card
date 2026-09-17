@@ -75,8 +75,9 @@ export function OrderStatusDialog({
       try {
         const res = await fetch(`${API_BASE}/api/orders`, { credentials: "include" });
         if (res.ok) {
-          const list = await res.json();
-          const updated = Array.isArray(list) ? list.find((o: any) => o.id === liveOrder.id) : null;
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data?.orders ?? []);
+          const updated = list.find((o: any) => o.id === liveOrder.id);
           if (updated && !cancelled) {
             setLiveOrder((prev) => (prev ? { ...prev, ...updated } : prev));
             if (updated.status !== "pending") clearInterval(interval);

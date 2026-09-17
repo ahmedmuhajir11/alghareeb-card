@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, ExternalLink, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Download, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from "lucide-react";
+import { Check, X, ExternalLink, Clock, CheckCircle2, XCircle, Filter, RefreshCw, Download, ZoomIn, ZoomOut, ChevronRight, ChevronLeft, XCircle as CloseIcon } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -171,6 +172,24 @@ export default function DepositsManager() {
 function ReceiptViewer({ url }: { url: string }) {
   const [expanded, setExpanded] = useState(false);
 
+  // The site's viewport meta disables pinch-zoom everywhere (maximum-scale=1)
+  // to avoid accidental zoom on buttons/forms. Temporarily lift that
+  // restriction only while this fullscreen receipt is open, so admins
+  // can pinch-zoom to read it, then restore it exactly as it was on close.
+  useEffect(() => {
+    if (!expanded) return;
+    const meta = document.querySelector('meta[name="viewport"]');
+    const original = meta?.getAttribute("content") ?? null;
+    if (meta) {
+      meta.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes");
+    }
+    return () => {
+      if (meta && original !== null) {
+        meta.setAttribute("content", original);
+      }
+    };
+  }, [expanded]);
+
   const handleDownload = async () => {
     try {
       const res = await fetch(url, { credentials: "include" });
@@ -190,17 +209,36 @@ function ReceiptViewer({ url }: { url: string }) {
       <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
         صورة الإيصال
       </div>
-      <div className={`relative border border-border/40 rounded-xl overflow-hidden bg-background/50 transition-all ${expanded ? "max-h-none" : "max-h-48"}`}>
+      <div className="relative border border-border/40 rounded-xl overflow-hidden bg-background/50 max-h-48">
         <img
           src={url}
           alt="إيصال"
-          className={`w-full object-contain transition-all ${expanded ? "" : "max-h-48"}`}
+          className="w-full object-contain max-h-48"
           style={{ display: "block" }}
         />
-        {!expanded && (
-          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background/90 to-transparent" />
-        )}
+        <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background/90 to-transparent" />
       </div>
+      {expanded && createPortal(
+        <div
+          className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4 overflow-auto touch-pinch-zoom"
+          onClick={() => setExpanded(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
+          >
+            <CloseIcon className="w-6 h-6" />
+          </button>
+          <img
+            src={url}
+            alt="إيصال"
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>,
+        document.body
+      )}
       <div className="flex gap-2">
         <Button
           variant="outline"

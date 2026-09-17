@@ -57,8 +57,9 @@ export default function ItemPage({ id }: { id: number }) {
       try {
         const res = await fetch(`${API_BASE}/api/orders`, { credentials: "include" });
         if (res.ok) {
-          const list = await res.json();
-          const found = Array.isArray(list) ? list.find((o: any) => o.id === orderId) : null;
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data?.orders ?? []);
+          const found = list.find((o: any) => o.id === orderId);
           if (found && found.status !== "pending") {
             return toStatusData(found);
           }
@@ -303,7 +304,7 @@ export default function ItemPage({ id }: { id: number }) {
             <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
             {t('item.enterQty')}
           </h2>
-          <div className="bg-card/30 rounded-2xl neon-border p-3 space-y-2">
+          <div className="bg-card/30 rounded-2xl border border-primary/20 p-3 space-y-2">
             <div className="space-y-1">
               <label className="text-sm font-medium">{t('item.quantityOf')} {unitLabel}</label>
               <Input
@@ -391,7 +392,7 @@ export default function ItemPage({ id }: { id: number }) {
         </div>
       )}
 
-      <div className="space-y-2 bg-card/30 p-3 rounded-2xl neon-border">
+      <div className="space-y-2 bg-card/30 p-3 rounded-2xl border border-primary/20">
         <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
           <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
           {t('item.shippingData')}

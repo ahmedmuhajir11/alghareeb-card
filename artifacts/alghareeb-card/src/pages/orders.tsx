@@ -47,6 +47,9 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 20;
 
   const handleDownloadPdf = async (orderId: number) => {
     setDownloadingId(orderId);
@@ -95,10 +98,13 @@ export default function OrdersPage() {
     const run = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/orders`, { credentials: "include" });
+        const res = await fetch(`${API_BASE}/api/orders?limit=${PAGE_SIZE}&offset=0`, { credentials: "include" });
         if (!res.ok) throw new Error("فشل في جلب الطلبات");
         const data = await res.json();
-        if (!cancelled) setOrders(data);
+        if (!cancelled) {
+          setOrders(data.orders ?? data);
+          setHasMore(Boolean(data.hasMore));
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? "خطأ");
       } finally {
@@ -108,6 +114,22 @@ export default function OrdersPage() {
     run();
     return () => { cancelled = true; };
   }, [isLoaded, isSignedIn]);
+
+  const loadMore = async () => {
+    if (loadingMore || !orders) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/orders?limit=${PAGE_SIZE}&offset=${orders.length}`, { credentials: "include" });
+      if (!res.ok) throw new Error("فشل في جلب الطلبات");
+      const data = await res.json();
+      setOrders(prev => [...(prev ?? []), ...(data.orders ?? [])]);
+      setHasMore(Boolean(data.hasMore));
+    } catch (e: any) {
+      setError(e?.message ?? "خطأ");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (isLoaded && !isSignedIn) {
     return (
@@ -237,6 +259,20 @@ export default function OrdersPage() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center mt-4">
+          <Button
+            variant="outline"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="gap-2 border-primary/30 hover:border-primary/60"
+          >
+            {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+            {lang === 'ar' ? 'تحميل المزيد' : lang === 'tr' ? 'Daha fazla yükle' : 'Load more'}
+          </Button>
         </div>
       )}
 

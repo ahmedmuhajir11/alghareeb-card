@@ -438,27 +438,42 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
 router.get("/orders", requireUser, async (req: Request, res: Response): Promise<void> => {
   const user = (req as any).currentUser;
   const { from, to } = req.query;
+  // Pagination: default 20 per page, capped at 100 to avoid abuse.
+  // Fetching "limit + 1" rows (instead of a separate COUNT query) lets
+  // us tell the client whether more pages exist for one query cost.
+  const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? "20"), 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(String(req.query.offset ?? "0"), 10) || 0, 0);
   try {
     let q = "SELECT * FROM orders WHERE user_id=$1";
     const params: any[] = [user.id];
     if (from) { params.push(from); q += ` AND created_at >= $${params.length}`; }
     if (to) { params.push(to); q += ` AND created_at <= $${params.length}`; }
     q += " ORDER BY created_at DESC";
+    params.push(limit + 1);
+    q += ` LIMIT $${params.length}`;
+    params.push(offset);
+    q += ` OFFSET $${params.length}`;
     const result = await pool.query(q, params);
-    res.json(result.rows.map(r => ({
-      id: r.id,
-      itemName: r.item_name,
-      itemNameEn: r.item_name_en || null,
-      itemNameTr: r.item_name_tr || null,
-      packageName: r.package_name,
-      targetId: r.target_id,
-      providerUsername: r.provider_username || null,
-      amount: parseFloat(r.amount),
-      currency: r.currency,
-      status: r.status,
-      notes: r.notes || null,
-      createdAt: r.created_at,
-    })));
+    const hasMore = result.rows.length > limit;
+    const rows = hasMore ? result.rows.slice(0, limit) : result.rows;
+    res.json({
+      orders: rows.map(r => ({
+        id: r.id,
+        itemName: r.item_name,
+        itemNameEn: r.item_name_en || null,
+        itemNameTr: r.item_name_tr || null,
+        packageName: r.package_name,
+        targetId: r.target_id,
+        providerUsername: r.provider_username || null,
+        amount: parseFloat(r.amount),
+        currency: r.currency,
+        status: r.status,
+        notes: r.notes || null,
+        createdAt: r.created_at,
+      })),
+      hasMore,
+      nextOffset: offset + rows.length,
+    });
   } catch {
     res.status(500).json({ error: "خطأ في جلب الطلبات" });
   }

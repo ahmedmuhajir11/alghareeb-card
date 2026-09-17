@@ -152,6 +152,59 @@
   --background: 260 35% 5%;
 }
 
+/* Light mode — full palette, mirrors the dark theme's brand identity
+   (same purple/gold accents) on light backgrounds. Applied via the
+   "light" class on <html>, toggled by ThemeToggleButton. */
+.light {
+  --button-outline: rgba(0,0,0, .08);
+  --badge-outline: rgba(0,0,0, .05);
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .06);
+
+  --background: 45 40% 97%;
+  --foreground: 260 35% 8%;
+  --border: 260 20% 88%;
+  --card: 0 0% 100%;
+  --card-foreground: 260 35% 8%;
+  --card-border: 270 80% 60% / 0.18;
+
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 260 35% 8%;
+  --sidebar-border: 260 20% 88%;
+  --sidebar-primary: 270 80% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 260 20% 94%;
+  --sidebar-accent-foreground: 260 35% 8%;
+  --sidebar-ring: 270 80% 55%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 260 35% 8%;
+  --popover-border: 260 20% 88%;
+
+  --primary: 270 75% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 20% 94%;
+  --secondary-foreground: 260 35% 8%;
+  --muted: 260 20% 94%;
+  --muted-foreground: 260 10% 40%;
+  --accent: 270 80% 55% / 0.1;
+  --accent-foreground: 270 80% 45%;
+  --destructive: 0 74% 50%;
+  --destructive-foreground: 0 0% 98%;
+
+  --input: 260 20% 90%;
+  --ring: 270 80% 55%;
+
+  --shadow-2xs: 0 0 4px 0 hsl(260 20% 40% / 0.06);
+  --shadow-xs: 0 1px 2px 0 hsl(260 20% 40% / 0.08);
+  --shadow-sm: 0 1px 3px 0 hsl(260 20% 40% / 0.10);
+  --shadow: 0 2px 6px 0 hsl(260 20% 40% / 0.12);
+  --shadow-md: 0 4px 10px 0 hsl(260 20% 40% / 0.14);
+  --shadow-lg: 0 8px 16px 0 hsl(260 20% 40% / 0.16);
+  --shadow-xl: 0 12px 24px 0 hsl(260 20% 40% / 0.18);
+  --shadow-2xl: 0 16px 32px 0 hsl(260 20% 40% / 0.22);
+}
+
 /* Gold theme utilities */
 .text-gold { color: hsl(var(--gold)); }
 .text-gold-light { color: hsl(var(--gold-light)); }

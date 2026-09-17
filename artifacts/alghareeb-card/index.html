@@ -2,6 +2,16 @@
 <html lang="ar" dir="rtl" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Apply the saved theme preference immediately, before first
+      // paint, so returning visitors who chose light mode don't see a
+      // flash of the default dark theme.
+      try {
+        if (localStorage.getItem("vite-ui-theme") === "light") {
+          document.documentElement.classList.add("light");
+        }
+      } catch (e) {}
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
