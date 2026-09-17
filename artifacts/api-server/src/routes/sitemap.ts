@@ -18,7 +18,7 @@ function url(loc: string, priority: string, changefreq: string): string {
 router.get("/sitemap.xml", async (_req: Request, res: Response): Promise<void> => {
   try {
     const [sections, items] = await Promise.all([
-      db.select({ id: sectionsTable.id }).from(sectionsTable),
+      db.select({ id: sectionsTable.id, nameAr: sectionsTable.nameAr }).from(sectionsTable),
       db.select({ id: itemsTable.id, isAvailable: itemsTable.isAvailable }).from(itemsTable),
     ]);
 
@@ -30,9 +30,13 @@ router.get("/sitemap.xml", async (_req: Request, res: Response): Promise<void> =
       url(`${BASE_URL}/about`, "0.6", "monthly"),
     ];
 
-    const sectionUrls = sections.map(s =>
-      url(`${BASE_URL}/section/${s.id}`, "0.9", "daily")
-    );
+    // The "payment methods" section immediately client-redirects to
+    // /payment-methods (which is already listed separately above), so
+    // its own /section/:id URL has no real content for crawlers and
+    // was flagged by Search Console as a soft-404 — exclude it here.
+    const sectionUrls = sections
+      .filter(s => !(s.nameAr || "").includes("طرق الدفع"))
+      .map(s => url(`${BASE_URL}/section/${s.id}`, "0.9", "daily"));
 
     const itemUrls = items
       .filter(i => i.isAvailable !== false)
