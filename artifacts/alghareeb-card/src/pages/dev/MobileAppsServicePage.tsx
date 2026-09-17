@@ -49,6 +49,18 @@ export default function MobileAppsServicePage() {
       <Helmet>
         <title>تطوير وبرمجة تطبيقات الجوال | الغريب كارد</title>
         <meta name="description" content="خدمات تصميم وبرمجة وتطوير تطبيقات الهواتف الذكية iOS و Android باحترافية." />
+        <meta property="og:title" content="تطوير وبرمجة تطبيقات الجوال | الغريب كارد" />
+        <meta property="og:description" content="خدمات تصميم وبرمجة وتطوير تطبيقات الهواتف الذكية iOS و Android باحترافية." />
+        <meta property="og:url" content="https://alghareebcard.com/dev/mobile-apps" />
+        <link rel="canonical" href="https://alghareebcard.com/dev/mobile-apps" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "الغريب كارد", "item": "https://alghareebcard.com/" },
+            { "@type": "ListItem", "position": 2, "name": "تطوير وبرمجة تطبيقات الجوال", "item": "https://alghareebcard.com/dev/mobile-apps" }
+          ]
+        })}</script>
       </Helmet>
 
       {/* Hero Section */}

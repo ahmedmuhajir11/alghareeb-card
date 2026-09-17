@@ -49,6 +49,18 @@ export default function WebsitesServicePage() {
       <Helmet>
         <title>تطوير وبرمجة المواقع | الغريب كارد</title>
         <meta name="description" content="خدمات تطوير وبرمجة المواقع الاحترافية — متاجر إلكترونية، مواقع شركات، منصات ويب مخصصة." />
+        <meta property="og:title" content="تطوير وبرمجة المواقع | الغريب كارد" />
+        <meta property="og:description" content="خدمات تطوير وبرمجة المواقع الاحترافية — متاجر إلكترونية، مواقع شركات، منصات ويب مخصصة." />
+        <meta property="og:url" content="https://alghareebcard.com/dev/websites" />
+        <link rel="canonical" href="https://alghareebcard.com/dev/websites" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "الغريب كارد", "item": "https://alghareebcard.com/" },
+            { "@type": "ListItem", "position": 2, "name": "تطوير وبرمجة المواقع", "item": "https://alghareebcard.com/dev/websites" }
+          ]
+        })}</script>
       </Helmet>
 
       {/* Hero Section */}

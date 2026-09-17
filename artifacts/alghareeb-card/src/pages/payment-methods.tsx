@@ -700,6 +700,14 @@ export default function PaymentMethodsPage() {
         <meta property="og:title" content="طرق الدفع | الغريب كارد" />
         <meta property="og:url" content="https://alghareebcard.com/payment-methods" />
         <link rel="canonical" href="https://alghareebcard.com/payment-methods" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "الغريب كارد", "item": "https://alghareebcard.com/" },
+            { "@type": "ListItem", "position": 2, "name": "طرق الدفع والإيداع", "item": "https://alghareebcard.com/payment-methods" }
+          ]
+        })}</script>
       </Helmet>
       <div className="text-right">
         <h1 className="text-2xl font-bold neon-text mb-1">{t('payment.title')}</h1>

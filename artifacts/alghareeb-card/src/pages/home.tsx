@@ -229,7 +229,25 @@ export default function Home() {
         <meta property="og:url" content="https://alghareebcard.com/" />
         <link rel="canonical" href="https://alghareebcard.com/" />
       </Helmet>
+      <h1 className="text-xl md:text-2xl font-black neon-text mb-3">
+        الغريب كارد — شحن التطبيقات والألعاب والخدمات الرقمية
+      </h1>
       <Slider />
+      <nav aria-label="أقسام الموقع الرئيسية" className="mb-8">
+        <h2 className="text-lg font-bold text-foreground mb-3">أقسام الغريب كارد</h2>
+        <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <li><Link href="/section/9" className="text-primary hover:underline font-semibold">شحن التطبيقات</Link></li>
+          <li><Link href="/section/1" className="text-primary hover:underline font-semibold">شحن الألعاب</Link></li>
+          <li><Link href="/section/3" className="text-primary hover:underline font-semibold">الحوالات المالية</Link></li>
+          <li><Link href="/section/7" className="text-primary hover:underline font-semibold">خدمات التلفاز</Link></li>
+          <li><Link href="/section/8" className="text-primary hover:underline font-semibold">البطاقات الرقمية</Link></li>
+          <li><Link href="/section/4" className="text-primary hover:underline font-semibold">سحب رواتب</Link></li>
+          <li><Link href="/section/5" className="text-primary hover:underline font-semibold">تعبئة الرصيد</Link></li>
+          <li><Link href="/payment-methods" className="text-primary hover:underline font-semibold">طرق الدفع والإيداع</Link></li>
+          <li><Link href="/dev/mobile-apps" className="text-primary hover:underline font-semibold">تطوير وبرمجة تطبيقات الجوال</Link></li>
+          <li><Link href="/dev/websites" className="text-primary hover:underline font-semibold">تطوير وبرمجة المواقع</Link></li>
+        </ul>
+      </nav>
       <GlobalSearch />
 
       <div className="mb-8">

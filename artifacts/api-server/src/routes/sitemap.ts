@@ -24,7 +24,9 @@ router.get("/sitemap.xml", async (_req: Request, res: Response): Promise<void> =
 
     const staticUrls = [
       url(`${BASE_URL}/`, "1.0", "daily"),
-      url(`${BASE_URL}/payment-methods`, "0.8", "weekly"),
+      url(`${BASE_URL}/payment-methods`, "0.9", "weekly"),
+      url(`${BASE_URL}/dev/mobile-apps`, "0.9", "weekly"),
+      url(`${BASE_URL}/dev/websites`, "0.9", "weekly"),
       url(`${BASE_URL}/about`, "0.6", "monthly"),
     ];
 
@@ -34,7 +36,7 @@ router.get("/sitemap.xml", async (_req: Request, res: Response): Promise<void> =
 
     const itemUrls = items
       .filter(i => i.isAvailable !== false)
-      .map(i => url(`${BASE_URL}/item/${i.id}`, "0.8", "weekly"));
+      .map(i => url(`${BASE_URL}/item/${i.id}`, "0.5", "weekly"));
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
