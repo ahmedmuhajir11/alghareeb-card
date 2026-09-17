@@ -229,11 +229,11 @@ export default function Home() {
         <meta property="og:url" content="https://alghareebcard.com/" />
         <link rel="canonical" href="https://alghareebcard.com/" />
       </Helmet>
-      <h1 className="text-xl md:text-2xl font-black neon-text mb-3">
+      <h1 className="sr-only">
         الغريب كارد — شحن التطبيقات والألعاب والخدمات الرقمية
       </h1>
       <Slider />
-      <nav aria-label="أقسام الموقع الرئيسية" className="mb-8">
+      <nav aria-label="أقسام الموقع الرئيسية" className="sr-only">
         <h2 className="text-lg font-bold text-foreground mb-3">أقسام الغريب كارد</h2>
         <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           <li><Link href="/section/9" className="text-primary hover:underline font-semibold">شحن التطبيقات</Link></li>

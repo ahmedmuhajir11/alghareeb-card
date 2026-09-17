@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,14 +157,23 @@ export default function ProfileSetupPage() {
       .catch(() => {});
   }, []);
 
+  // Pre-fill fields from the user's existing profile data ONCE, on
+  // initial load only. Previously this ran on every change to the
+  // `user` object reference (e.g. a background refetch elsewhere in
+  // the app), which silently overwrote the customer's in-progress
+  // country/currency selection back to the old saved value a few
+  // seconds after they picked something new — that was the bug.
+  const initializedFromUserRef = useRef(false);
   useEffect(() => {
     if (!isLoaded) return;
     if (!user) { setLocation("/sign-in"); return; }
+    if (initializedFromUserRef.current) return;
+    initializedFromUserRef.current = true;
     if (user.country) setCountry(user.country);
     if (user.phone) setPhone(user.phone);
     if (user.currency) setCurrency(user.currency);
     if (user.profileCompleted) setCurrencyLocked(true);
-  }, [isLoaded, user]);
+  }, [isLoaded, user, setLocation]);
 
   const selectedCountry = COUNTRIES.find(c => c.name === country);
   const phoneCode = selectedCountry?.code ?? "";
