@@ -5,7 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, Clock, CheckCircle2, XCircle, LogIn, ShoppingBag, Calendar, Hash, Receipt, ExternalLink, Download, Loader2 } from "lucide-react";
+import { Package, Clock, CheckCircle2, XCircle, LogIn, ShoppingBag, Calendar, Hash, Copy, Receipt, ExternalLink, Download, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { parseOrderDetails, cleanPlayerId } from "@/lib/order-utils";
 
@@ -23,6 +23,7 @@ type Order = {
   amount: number;
   currency: string;
   status: OrderStatus;
+  notes: string | null;
   createdAt: string;
 };
 
@@ -185,6 +186,7 @@ export default function OrdersPage() {
             const meta = STATUS_META[o.status] ?? STATUS_META.pending;
             const Icon = meta.icon;
             const { cleanTargetId, receiptUrls } = parseOrderDetails(o.targetId, (o as any).notes);
+            const operationId = String(o.notes || "").match(/معرف العملية:\s*([^\s|\[]+)/)?.[1] || null;
 
             return (
               <Card key={o.id} className="p-4 bg-card/40 border-primary/15 hover:border-primary/40 transition-colors">
@@ -202,6 +204,7 @@ export default function OrdersPage() {
                     {o.packageName && (
                       <p className="text-sm text-purple-300/80 mt-0.5">{translatePkgName(o.packageName, t)}</p>
                     )}
+                    {operationId && <div className="flex items-center gap-2 mt-1.5 flex-wrap"><span className="text-xs text-muted-foreground">رقم العملية:</span><code dir="ltr" className="font-mono text-xs font-bold text-foreground bg-background/60 px-2 py-0.5 rounded border border-primary/20 select-all whitespace-nowrap">{operationId}</code><Button type="button" size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(operationId)} className="h-6 px-2 text-[11px] gap-1"><Copy className="w-3 h-3" />نسخ</Button></div>}
                     {cleanTargetId && (
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <span className="text-xs text-muted-foreground">{t('orders.targetId')}:</span>

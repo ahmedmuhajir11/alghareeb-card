@@ -286,17 +286,23 @@ router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Resp
 // List charge/order requests (admin) — paginated
 router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const status = (req.query.status as string) || "all";
+  const operationId = String(req.query.operationId || "").trim();
   const page = Math.max(1, parseInt((req.query.page as string) || "1", 10) || 1);
   const pageSize = 20;
   const offset = (page - 1) * pageSize;
   try {
     // WHERE clause
     const whereParams: any[] = [];
-    let whereClause = "";
+    const whereConditions: string[] = [];
     if (status !== "all") {
       whereParams.push(status);
-      whereClause = ` WHERE o.status = $${whereParams.length}`;
+      whereConditions.push(`o.status = $${whereParams.length}`);
     }
+    if (operationId) {
+      whereParams.push(`%${operationId}%`);
+      whereConditions.push(`o.notes ILIKE $${whereParams.length}`);
+    }
+    const whereClause = whereConditions.length ? ` WHERE ${whereConditions.join(" AND ")}` : "";
 
     // Total count query
     const countRes = await pool.query(
@@ -332,6 +338,10 @@ router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): P
       currency: r.currency,
       status: r.status,
       notes: r.notes || null,
+      operationId: (() => {
+        const m = String(r.notes || "").match(/معرف العملية:\s*([^\s|\[]+)/);
+        return m ? m[1].trim() : null;
+      })(),
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     }));
@@ -711,6 +721,239 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
   } catch (err: any) {
     client.release();
     res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ── Verify existing provider operation (read-only) ─────────────────────────
+router.get("/admin/orders/:id/verify-provider", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const id = parseInt(String(req.params.id), 10);
+  if (!id || isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صالح" });
+    return;
+  }
+
+  try {
+    const { extractProviderOrderId, extractOrderUuid } = await import("../services/yazan-sync");
+
+    const ordRes = await pool.query(
+      `SELECT o.*,
+              i.api_endpoint AS item_api_endpoint, i.api_key AS item_api_key,
+              p.api_endpoint AS pkg_api_endpoint, p.api_key AS pkg_api_key
+       FROM orders o
+       LEFT JOIN items i ON (i.name_ar = o.item_name OR i.name_en = o.item_name)
+       LEFT JOIN packages p ON (p.label = o.package_name AND (p.item_id = i.id OR i.id IS NULL))
+       WHERE o.id = $1`,
+      [id]
+    );
+
+    if (ordRes.rows.length === 0) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+
+    const order = ordRes.rows[0];
+    const notes = String(order.notes || "");
+    const providerOrderId = extractProviderOrderId(notes);
+    const orderUuid = extractOrderUuid(notes);
+    const lookupId = providerOrderId || orderUuid;
+
+    if (!lookupId) {
+      res.status(400).json({
+        error: "لا يوجد رقم عملية أو UUID مرتبط بهذا الطلب",
+        orderId: id,
+      });
+      return;
+    }
+
+    const apiEndpoint: string = order.pkg_api_endpoint || order.item_api_endpoint || "";
+    let apiKey = String(order.pkg_api_key || order.item_api_key || "").trim();
+
+    if (!apiKey || apiKey.includes("PLACEHOLDER")) {
+      apiKey = String(process.env.YAZANCARD_TOKEN || "").trim();
+    }
+
+    if (!apiKey || apiKey.includes("PLACEHOLDER")) {
+      try {
+        const validKeyRes = await pool.query(
+          `SELECT api_key FROM packages
+           WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+           UNION ALL
+           SELECT api_key FROM items
+           WHERE api_key IS NOT NULL AND api_key <> '' AND api_key NOT ILIKE '%PLACEHOLDER%'
+           LIMIT 1`
+        );
+        if (validKeyRes.rows.length > 0 && validKeyRes.rows[0].api_key) {
+          apiKey = String(validKeyRes.rows[0].api_key).trim();
+        }
+      } catch {}
+    }
+
+    if (!apiKey || apiKey.includes("PLACEHOLDER")) {
+      res.status(400).json({ error: "لا يوجد مفتاح API صالح مرتبط بهذا الطلب" });
+      return;
+    }
+
+    let baseUrl = "https://api.yazancard.com/client/api";
+    if (apiEndpoint) {
+      baseUrl = apiEndpoint
+        .replace(/\/newOrder\/.*$/, "")
+        .replace(/\/params\/?$/, "")
+        .replace(/\/+$/, "");
+      if (!baseUrl.startsWith("http")) baseUrl = `https://${baseUrl}`;
+    }
+
+    const cleanLookup = lookupId.replace(/^ID_/i, "").trim();
+
+    const doCheckFetch = async (targetId: string, inQuery: boolean) => {
+      const u = inQuery
+        ? `${baseUrl}/check?orders=${encodeURIComponent(targetId)}&api-token=${encodeURIComponent(apiKey)}`
+        : `${baseUrl}/check?orders=${encodeURIComponent(targetId)}`;
+
+      return fetch(u, {
+        headers: { "api-token": apiKey },
+        signal: AbortSignal.timeout(10000),
+      });
+    };
+
+    let apiRes = await doCheckFetch(lookupId, false);
+
+    if (apiRes.status === 401) {
+      apiRes = await doCheckFetch(lookupId, true);
+    }
+
+    if (!apiRes.ok && cleanLookup && cleanLookup !== lookupId) {
+      const cleanRes = await doCheckFetch(cleanLookup, false);
+      if (cleanRes.ok) {
+        apiRes = cleanRes;
+      } else {
+        const cleanQueryRes = await doCheckFetch(cleanLookup, true);
+        if (cleanQueryRes.ok) apiRes = cleanQueryRes;
+      }
+    }
+
+    const rawText = await apiRes.text().catch(() => "");
+    let apiData: any = {};
+
+    try {
+      apiData = JSON.parse(rawText);
+    } catch {
+      apiData = { raw: rawText };
+    }
+
+    if (!apiRes.ok) {
+      res.status(502).json({
+        error: `فشل التحقق من YazanCard (HTTP ${apiRes.status})`,
+        orderId: id,
+        operationId: providerOrderId,
+        lookupId,
+        httpStatus: apiRes.status,
+        apiResponse: apiData,
+      });
+      return;
+    }
+
+    const parseCheckStatus = (data: any): {
+      status: string;
+      note: string;
+      receiptUrl?: string;
+      username?: string | null;
+    } | null => {
+      if (!data) return null;
+
+      let orderInfo: any = null;
+      const cleanPid = lookupId.replace(/^ID_/i, "").trim();
+
+      if (Array.isArray(data.data)) {
+        orderInfo = data.data.find((o: any) => {
+          const oid = String(o?.order_id || o?.id || o?.order_uuid || o?.uuid || "");
+          const cleanOid = oid.replace(/^ID_/i, "").trim();
+          return (
+            (oid && (oid.includes(lookupId) || lookupId.includes(oid))) ||
+            (cleanOid && cleanPid && (cleanOid === cleanPid || cleanOid.includes(cleanPid) || cleanPid.includes(cleanOid)))
+          );
+        }) || data.data[0];
+      } else if (data.data && typeof data.data === "object") {
+        if (
+          typeof data.data.status === "string" ||
+          typeof data.data.state === "string" ||
+          typeof data.data.order_status === "string"
+        ) {
+          orderInfo = data.data;
+        } else if (data.data[lookupId] && typeof data.data[lookupId] === "object") {
+          orderInfo = data.data[lookupId];
+        } else if (data.data[cleanPid] && typeof data.data[cleanPid] === "object") {
+          orderInfo = data.data[cleanPid];
+        } else if (data.data[`ID_${cleanPid}`] && typeof data.data[`ID_${cleanPid}`] === "object") {
+          orderInfo = data.data[`ID_${cleanPid}`];
+        } else {
+          const keys = Object.keys(data.data);
+          if (keys.length > 0 && typeof data.data[keys[0]] === "object") {
+            orderInfo = data.data[keys[0]];
+          } else {
+            orderInfo = data.data;
+          }
+        }
+      } else if (data.orders) {
+        if (Array.isArray(data.orders)) {
+          orderInfo = data.orders.find((o: any) => {
+            const oid = String(o?.order_id || o?.id || o?.order_uuid || o?.uuid || "");
+            const cleanOid = oid.replace(/^ID_/i, "").trim();
+            return (
+              (oid && (oid.includes(lookupId) || lookupId.includes(oid))) ||
+              (cleanOid && cleanPid && (cleanOid === cleanPid || cleanOid.includes(cleanPid) || cleanPid.includes(cleanOid)))
+            );
+          }) || data.orders[0];
+        } else if (typeof data.orders === "object") {
+          if (
+            typeof data.orders.status === "string" ||
+            typeof data.orders.state === "string" ||
+            typeof data.orders.order_status === "string"
+          ) {
+            orderInfo = data.orders;
+          } else if (data.orders[lookupId] && typeof data.orders[lookupId] === "object") {
+            orderInfo = data.orders[lookupId];
+          } else if (data.orders[cleanPid] && typeof data.orders[cleanPid] === "object") {
+            orderInfo = data.orders[cleanPid];
+          } else if (data.orders[`ID_${cleanPid}`] && typeof data.orders[`ID_${cleanPid}`] === "object") {
+            orderInfo = data.orders[`ID_${cleanPid}`];
+          } else {
+            const firstVal = Object.values(data.orders)[0];
+            orderInfo = typeof firstVal === "object" ? firstVal : data.orders;
+          }
+        }
+      } else if (data.status && typeof data.status === "string" && data.status !== "OK") {
+        orderInfo = data;
+      }
+
+      if (!orderInfo || typeof orderInfo !== "object") return null;
+
+      return {
+        status: String(orderInfo.status || orderInfo.state || orderInfo.order_status || orderInfo.result || "").trim(),
+        note: String(orderInfo.note || orderInfo.msg || orderInfo.message || orderInfo.error || orderInfo.details || ""),
+        receiptUrl: orderInfo.receipt || orderInfo.image || orderInfo.img || orderInfo.url || undefined,
+        username: orderInfo.username || orderInfo.user_name || orderInfo.host_username || null,
+      };
+    };
+
+    const parsed = parseCheckStatus(apiData);
+
+    res.json({
+      success: true,
+      orderId: id,
+      operationId: providerOrderId,
+      lookupId,
+      usedUuidFallback: !providerOrderId && !!orderUuid,
+      httpStatus: apiRes.status,
+      provider: "YazanCard",
+      result: parsed,
+      apiResponse: apiData,
+    });
+  } catch (err: any) {
+    console.error(`[AdminVerify] Error verifying order #${id}:`, err);
+    res.status(500).json({
+      error: err?.message || "حدث خطأ أثناء التحقق من العملية",
+    });
   }
 });
 

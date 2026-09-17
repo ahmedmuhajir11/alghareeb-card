@@ -97,8 +97,8 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
  * Extracts the order_uuid embedded by orders-user.ts in the notes field.
  * Format: "... [uuid:SOME-UUID-VALUE]"
  */
-function extractUuid(notes: string): string | null {
-  const m = notes.match(/\[uuid:([^\]]+)\]/);
+export function extractOrderUuid(notes: string | null | undefined): string | null {
+  const m = String(notes || "").match(/\[uuid:([^\]]+)\]/);
   return m ? m[1].trim() : null;
 }
 
@@ -106,13 +106,15 @@ function extractUuid(notes: string): string | null {
  * Extracts the YazanCard provider order ID from notes.
  * Returns null if value is N/A, undefined, or missing.
  */
-function extractProviderOrderId(notes: string): string | null {
-  const match = notes.match(/معرف العملية:\s*([^\s|\[]+)/);
+export function extractProviderOrderId(notes: string | null | undefined): string | null {
+  const text = String(notes || "");
+  const match = text.match(/معرف العملية:\s*([^\s|\[]+)/);
   if (!match) return null;
   const val = match[1].trim();
-  if (!val || val === "N/A" || val === "undefined" || val === "null") return null;
+  if (!val || /^(N\/A|undefined|null)$/i.test(val)) return null;
   return val;
 }
+
 
 /**
  * Checks all pending orders with YazanCard/provider API and auto-updates & refunds on rejection
@@ -212,7 +214,7 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
       // We now fall back to the uuid for the /check lookup, which solves the
       // "orders stuck on pending forever" bug.
       const providerOrderId = extractProviderOrderId(notesStr);
-      const orderUuid       = extractUuid(notesStr);
+      const orderUuid       = extractOrderUuid(notesStr);
 
       // The lookup key for /check: prefer numeric provider ID, fall back to uuid
       const lookupId = providerOrderId || orderUuid;

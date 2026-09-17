@@ -47,13 +47,15 @@ const STATUS_TABS = [
 export default function OrdersManager() {
   const [tab, setTab] = useState<string>("pending");
   const [page, setPage] = useState(1);
+  const [operationSearch, setOperationSearch] = useState("");
+  const [operationQuery, setOperationQuery] = useState("");
   const qc = useQueryClient();
   const { toast } = useToast();
 
   const { data: paged, isLoading, refetch } = useQuery<PagedResponse>({
-    queryKey: ["/api/admin/orders", tab, page],
+    queryKey: ["/api/admin/orders", tab, page, operationQuery],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/admin/orders?status=${tab}&page=${page}`, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/api/admin/orders?status=${operationQuery ? "all" : tab}&page=${page}&operationId=${encodeURIComponent(operationQuery)}`, { credentials: "include" });
       if (!res.ok) throw new Error("فشل التحميل");
       return res.json();
     },
@@ -147,6 +149,7 @@ export default function OrdersManager() {
           );
         })}
       </div>
+      <div className="flex gap-2"><Input value={operationSearch} onChange={e => setOperationSearch(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setOperationQuery(operationSearch.trim()); setPage(1); } }} placeholder="ابحث برقم العملية..." className="bg-card/50" dir="ltr" /><Button onClick={() => { setOperationQuery(operationSearch.trim()); setPage(1); }} className="gap-2"><Receipt className="w-4 h-4" /> بحث</Button>{operationQuery && <Button variant="outline" onClick={() => { setOperationSearch(""); setOperationQuery(""); setPage(1); }}>مسح</Button>}</div>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -202,6 +205,7 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
   const [customMessage, setCustomMessage] = useState("");
   const [copied, setCopied] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
+  const [verifyResult, setVerifyResult] = useState<any>(null); const [verifying, setVerifying] = useState(false);
   const { cleanTargetId, cleanNotes, receiptUrls } = parseOrderDetails(o.targetId, o.notes);
 
   const statusBadgeMap: Record<string, { label: string; cls: string }> = {
@@ -338,6 +342,8 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
           </div>
         </div>
 
+        <div className="flex justify-end pt-1"><Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 border-purple-500/40 text-purple-300 hover:bg-purple-500/10" disabled={verifying} onClick={async () => { setVerifying(true); setVerifyResult(null); try { const res = await fetch(`${API_BASE}/api/admin/orders/${o.id}/verify-provider`, { credentials: "include" }); const data = await res.json().catch(() => ({})); setVerifyResult(data); } catch (e: any) { setVerifyResult({ error: e?.message || "تعذر الاتصال" }); } finally { setVerifying(false); } }}>{verifying ? "جاري التحقق..." : "تحقق من Yazan Card"}</Button></div>
+        {verifyResult && <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3 text-sm"><div className="font-bold text-purple-300 mb-1">نتيجة التحقق من Yazan Card</div><div>الحالة: <span className="font-bold">{verifyResult.result?.status || verifyResult.error || "غير معروف"}</span></div>{verifyResult.operationId && <div className="mt-1">رقم العملية: <code dir="ltr" className="font-mono">{verifyResult.operationId}</code></div>}{verifyResult.result?.note && <div className="mt-1 text-muted-foreground">{verifyResult.result.note}</div>}{verifyResult.result?.receiptUrl && <a href={verifyResult.result.receiptUrl} target="_blank" rel="noreferrer" className="inline-block mt-2 text-primary underline">عرض الوصل</a>}</div>}
         {o.status === "pending" && (
           <div className="space-y-2 pt-2 border-t border-border/30">
             {hasApiNote && (
