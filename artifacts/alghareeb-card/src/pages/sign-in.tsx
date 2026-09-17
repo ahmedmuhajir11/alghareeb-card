@@ -18,6 +18,8 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const blockedByOAuth = new URLSearchParams(window.location.search).get("error") === "account_blocked";
+
   const [showAdminLink, setShowAdminLink] = useState(false);
   const isApp = typeof navigator !== "undefined" && navigator.userAgent.includes("AlGhareebApp");
 
@@ -86,6 +88,16 @@ export default function SignInPage() {
           <span className="text-sm">{t('signIn.or')}</span>
           <div className="flex-1 h-px bg-border" />
         </div>
+
+        {blockedByOAuth && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-center">
+            <p className="font-bold text-red-400">تم حظر حسابك</p>
+            <p className="mt-1 text-sm text-red-300/80">
+              يرجى التواصل مع الإدارة لمزيد من المعلومات.
+            </p>
+          </div>
+        )}
+
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="relative">

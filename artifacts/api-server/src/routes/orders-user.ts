@@ -167,7 +167,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
       try {
         const isYazanCard = apiEndpoint.includes("yazancard.com") || apiEndpoint.includes("/client/api/");
 
-        let apiRes: Response;
+        let apiRes: globalThis.Response;
         if (isYazanCard) {
           // yazancard.com: GET /newOrder/{id}/params?qty=...&playerId=...
           // Auth header: api-token (per official docs)

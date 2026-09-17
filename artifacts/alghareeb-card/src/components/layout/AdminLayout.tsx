@@ -10,6 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [, setLocation] = useLocation();
   const { data: me, isLoading, error } = useAdminMe({
     query: {
+      queryKey: ["/api/admin/me"],
       retry: false,
     }
   });

@@ -20,7 +20,7 @@ const router: IRouter = Router();
  */
 router.get("/orders/:id/receipt", requireUser, async (req: Request, res: Response): Promise<void> => {
   const user = (req as any).currentUser;
-  const orderId = parseInt(req.params.id, 10);
+  const orderId = parseInt(String(req.params.id), 10);
 
   if (!orderId || isNaN(orderId)) {
     res.status(400).json({ error: "رقم طلب غير صالح" });

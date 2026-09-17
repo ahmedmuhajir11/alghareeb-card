@@ -110,7 +110,7 @@ router.post("/admin/dev/service-cards", requireAdmin, async (req: Request, res: 
 
 router.put("/admin/dev/service-cards/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { nameAr, nameEn, descriptionAr, descriptionEn, imageUrl, icon, price, isActive, sortOrder } = req.body;
     await pool.query(
       `UPDATE dev_service_cards SET name_ar=$1,name_en=$2,description_ar=$3,description_en=$4,image_url=$5,icon=$6,price=$7,is_active=$8,sort_order=$9 WHERE id=$10`,
@@ -122,7 +122,7 @@ router.put("/admin/dev/service-cards/:id", requireAdmin, async (req: Request, re
 
 router.delete("/admin/dev/service-cards/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    await pool.query(`DELETE FROM dev_service_cards WHERE id=$1`, [parseInt(req.params.id)]);
+    await pool.query(`DELETE FROM dev_service_cards WHERE id=$1`, [parseInt(String(req.params.id), 10)]);
     res.json({ ok: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -161,7 +161,7 @@ router.post("/admin/dev/form-questions", requireAdmin, async (req: Request, res:
 
 router.put("/admin/dev/form-questions/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { titleAr, titleEn, questionType, options, isRequired, sortOrder, isActive } = req.body;
     await pool.query(
       `UPDATE dev_form_questions SET title_ar=$1,title_en=$2,question_type=$3,options=$4,is_required=$5,sort_order=$6,is_active=$7 WHERE id=$8`,
@@ -173,7 +173,7 @@ router.put("/admin/dev/form-questions/:id", requireAdmin, async (req: Request, r
 
 router.delete("/admin/dev/form-questions/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    await pool.query(`DELETE FROM dev_form_questions WHERE id=$1`, [parseInt(req.params.id)]);
+    await pool.query(`DELETE FROM dev_form_questions WHERE id=$1`, [parseInt(String(req.params.id), 10)]);
     res.json({ ok: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });

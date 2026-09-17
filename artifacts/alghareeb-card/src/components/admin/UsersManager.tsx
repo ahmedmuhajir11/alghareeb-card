@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users, Search, ShieldCheck, Wallet, ShoppingBag, ArrowDownCircle,
-  Loader2, Mail, Hash, KeyRound, Pencil, X, Trash2, AlertTriangle, Code2
+  Loader2, Mail, Hash, KeyRound, Pencil, X, Trash2, AlertTriangle, Code2, Lock, Unlock
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ type AdminUser = {
   level: string;
   isVerified: boolean;
   isReseller: boolean;
+  isBlocked: boolean;
   apiToken: string | null;
   totalPurchases: number;
   totalDeposits: number;
@@ -126,6 +127,95 @@ function PasswordDialog({ user, onClose }: { user: AdminUser; onClose: () => voi
           <Button variant="ghost" onClick={onClose}>إلغاء</Button>
           <Button onClick={() => mut.mutate()} disabled={password.length < 6 || mut.isPending}>
             {mut.isPending ? "جاري الحفظ..." : "تحديث كلمة المرور"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BlockUserDialog({
+  user,
+  onClose,
+  onSuccess,
+}: {
+  user: AdminUser;
+  onClose: () => void;
+  onSuccess: (blocked: boolean) => void;
+}) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const blocked = !user.isBlocked;
+
+  const mut = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/admin/users/${user.id}/block`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blocked }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "فشل تحديث حالة الحظر");
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: blocked ? "🔒 تم حظر الحساب" : "🔓 تم إلغاء الحظر",
+        description: data.message || "تم تحديث حالة الحساب بنجاح",
+      });
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      onSuccess(blocked);
+    },
+    onError: (e: any) => {
+      toast({
+        title: "حدث خطأ",
+        description: e.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent dir="rtl" className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className={`flex items-center gap-2 ${blocked ? "text-amber-400" : "text-emerald-400"}`}>
+            {blocked ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
+            {blocked ? "حظر حساب المستخدم" : "إلغاء حظر المستخدم"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 pt-2">
+          <p className="text-sm">
+            {blocked
+              ? `هل أنت متأكد من حظر حساب "${user.name}"؟`
+              : `هل تريد إلغاء حظر حساب "${user.name}"؟`}
+          </p>
+
+          {blocked && (
+            <p className="text-xs text-muted-foreground">
+              بعد الحظر لن يتمكن المستخدم من تسجيل الدخول أو استخدام حسابه، وسيتم رفض طلبات API الخاصة به.
+            </p>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={mut.isPending}>
+            إلغاء
+          </Button>
+          <Button
+            onClick={() => mut.mutate()}
+            disabled={mut.isPending}
+            className={blocked
+              ? "bg-amber-600 hover:bg-amber-700"
+              : "bg-emerald-600 hover:bg-emerald-700"}
+          >
+            {mut.isPending
+              ? "جاري التنفيذ..."
+              : blocked
+                ? "تأكيد الحظر"
+                : "تأكيد إلغاء الحظر"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -360,6 +450,7 @@ export default function UsersManager() {
   const [pwUser, setPwUser] = useState<AdminUser | null>(null);
   const [balUser, setBalUser] = useState<AdminUser | null>(null);
   const [delUser, setDelUser] = useState<AdminUser | null>(null);
+  const [blockUser, setBlockUser] = useState<AdminUser | null>(null);
   const [togglingReseller, setTogglingReseller] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -479,6 +570,23 @@ export default function UsersManager() {
             <Button
               size="sm"
               variant="outline"
+              className={`gap-1.5 ${
+                selected.isBlocked
+                  ? "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200"
+                  : "border-amber-500/40 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"
+              }`}
+              onClick={() => setBlockUser(selected)}
+            >
+              {selected.isBlocked ? (
+                <><Unlock className="w-3.5 h-3.5" /> إلغاء الحظر</>
+              ) : (
+                <><Lock className="w-3.5 h-3.5" /> حظر الحساب</>
+              )}
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
               className="gap-1.5 border-rose-500/40 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
               onClick={() => setDelUser(selected)}
             >
@@ -571,6 +679,21 @@ export default function UsersManager() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                     <button
+                      onClick={() => setBlockUser(u)}
+                      title={u.isBlocked ? "إلغاء حظر الحساب" : "حظر الحساب"}
+                      className={`p-2 rounded-lg transition-colors ${
+                        u.isBlocked
+                          ? "text-emerald-400 hover:bg-emerald-500/10"
+                          : "text-amber-400 hover:bg-amber-500/10"
+                      }`}
+                    >
+                      {u.isBlocked ? (
+                        <Unlock className="w-4 h-4" />
+                      ) : (
+                        <Lock className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
                       title={u.isReseller ? "مفعّل API" : "تفعيل API"}
                       disabled={togglingReseller === u.id}
                       onClick={async () => {
@@ -597,6 +720,18 @@ export default function UsersManager() {
 
       {pwUser && <PasswordDialog user={pwUser} onClose={() => setPwUser(null)} />}
       {balUser && <BalanceDialog user={balUser} onClose={() => setBalUser(null)} />}
+      {blockUser && (
+        <BlockUserDialog
+          user={blockUser}
+          onClose={() => setBlockUser(null)}
+          onSuccess={(blocked) => {
+            setBlockUser(null);
+            if (selected?.id === blockUser.id) {
+              setSelected({ ...blockUser, isBlocked: blocked });
+            }
+          }}
+        />
+      )}
       {delUser && <DeleteUserDialog user={delUser} onClose={() => { setDelUser(null); setSelected(null); }} />}
     </div>
   );

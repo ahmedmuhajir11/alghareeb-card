@@ -59,7 +59,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
   const convertFromUsd = (priceUsd: number): { amount: number; currency: Currency } => {
     if (!settings) return { amount: priceUsd, currency: 'USD' };
-    const rateMap = buildRateMap(settings as Record<string, unknown>);
+    const rateMap = buildRateMap(settings as unknown as Record<string, unknown>);
     const rate = rateMap[currency.toUpperCase()] ?? null;
     if (!rate) return { amount: priceUsd, currency: 'USD' };
     return { amount: priceUsd * rate, currency };
@@ -67,7 +67,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
   const formatPrice = (priceUsd: number) => {
     if (!settings) return `${priceUsd.toFixed(2)} ${currency}`;
-    const rateMap = buildRateMap(settings as Record<string, unknown>);
+    const rateMap = buildRateMap(settings as unknown as Record<string, unknown>);
     const code = currency.toUpperCase();
     const rate = rateMap[code] ?? null;
     if (!rate) return `${priceUsd.toFixed(2)} USD`;

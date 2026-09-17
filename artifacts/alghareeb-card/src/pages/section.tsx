@@ -86,9 +86,9 @@ export default function SectionPage({ id }: { id: number }) {
         />
         <meta property="og:url" content={`https://alghareebcard.com/section/${id}`} />
         <link rel="canonical" href={`https://alghareebcard.com/section/${id}`} />
-        <link rel="alternate" hreflang="ar" href={`https://alghareebcard.com/section/${id}`} />
-        <link rel="alternate" hreflang="en" href={`https://alghareebcard.com/section/${id}`} />
-        <link rel="alternate" hreflang="x-default" href={`https://alghareebcard.com/section/${id}`} />
+        <link rel="alternate" hrefLang="ar" href={`https://alghareebcard.com/section/${id}`} />
+        <link rel="alternate" hrefLang="en" href={`https://alghareebcard.com/section/${id}`} />
+        <link rel="alternate" hrefLang="x-default" href={`https://alghareebcard.com/section/${id}`} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",

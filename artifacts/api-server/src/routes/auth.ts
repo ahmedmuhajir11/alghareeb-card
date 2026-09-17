@@ -110,6 +110,10 @@ router.post("/auth/login", async (req: Request, res: Response): Promise<void> =>
       return;
     }
     const user = result.rows[0];
+    if (user.is_blocked) {
+      res.status(403).json({ error: "تم حظر هذا الحساب. يرجى التواصل مع الإدارة." });
+      return;
+    }
     if (!user.password_hash) {
       res.status(401).json({ error: "هذا الحساب مسجل عبر جوجل. استخدم تسجيل الدخول بجوجل." });
       return;
@@ -173,6 +177,11 @@ router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query("SELECT * FROM users WHERE id=$1", [userId]);
     if (result.rows.length === 0) { res.json({ user: null }); return; }
+    if (result.rows[0].is_blocked) {
+      req.session.destroy(() => {});
+      res.status(403).json({ error: "تم حظر هذا الحساب. يرجى التواصل مع الإدارة." });
+      return;
+    }
     res.json({ user: mapUser(result.rows[0]) });
   } catch {
     res.json({ user: null });
@@ -234,6 +243,12 @@ router.get("/auth/google/callback", async (req: Request, res: Response): Promise
     const existing = await pool.query("SELECT * FROM users WHERE google_id=$1 OR email=$2 LIMIT 1", [googleId, email.toLowerCase()]);
     if (existing.rows.length > 0) {
       userRow = existing.rows[0];
+
+      if (userRow.is_blocked) {
+        res.redirect(`${FRONTEND_URL}/sign-in?error=account_blocked`);
+        return;
+      }
+
       // Update google_id and avatar_url
       await pool.query(
         "UPDATE users SET google_id=COALESCE(google_id,$1), avatar_url=$2, updated_at=NOW() WHERE id=$3",
@@ -284,6 +299,12 @@ router.post("/auth/exchange-token", async (req: Request, res: Response): Promise
       res.status(404).json({ error: "user not found" });
       return;
     }
+
+    if (result.rows[0].is_blocked) {
+      res.status(403).json({ error: "تم حظر هذا الحساب. يرجى التواصل مع الإدارة." });
+      return;
+    }
+
     (req.session as any).userId = payload.userId;
     req.session.save((err) => {
       if (err) {

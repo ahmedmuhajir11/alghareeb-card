@@ -182,7 +182,7 @@ router.get("/admin/deposits", requireAdmin, async (req: Request, res: Response):
 
 // Approve or reject a deposit request (admin)
 router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   const { action, adminNote, customMessage } = req.body ?? {};
   if (!id || isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   if (action !== "approve" && action !== "reject") {
@@ -343,7 +343,7 @@ router.get("/admin/orders", requireAdmin, async (req: Request, res: Response): P
 
 // Approve or reject an order (admin). On reject: refund balance ONLY if it was previously deducted.
 router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   const { action, customMessage } = req.body ?? {};
   if (!id || isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   if (action !== "approve" && action !== "reject") {
@@ -502,7 +502,7 @@ router.post("/admin/fix-yazancard-token", requireAdmin, async (req: Request, res
 
 // ── Diagnostic: test YazanCard API for a specific order (no side effects) ─────
 router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   if (!id || isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const ordRes = await pool.query(
@@ -571,7 +571,7 @@ router.get("/admin/orders/:id/diagnose", requireAdmin, async (req: Request, res:
 
 // ── Retry auto-charge for a pending order ────────────────────────────────────
 router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   if (!id || isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const client = await pool.connect();

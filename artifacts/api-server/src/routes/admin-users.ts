@@ -18,7 +18,7 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
     }
     const result = await pool.query(
       `SELECT u.id, u.account_number, u.name, u.email, u.phone, u.phone_code, u.balance, u.currency,
-              u.level, u.is_verified, u.is_reseller, u.api_token, u.created_at,
+              u.level, u.is_verified, u.is_reseller, u.is_blocked, u.api_token, u.created_at,
               COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id=u.id AND type='purchase'), 0) AS total_purchases,
               COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id=u.id AND type='deposit'), 0) AS total_deposits
        FROM users u ${where}
@@ -38,6 +38,7 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
       level: r.level,
       isVerified: r.is_verified,
       isReseller: r.is_reseller || false,
+      isBlocked: r.is_blocked || false,
       apiToken: r.api_token || null,
       totalPurchases: parseFloat(r.total_purchases),
       totalDeposits: parseFloat(r.total_deposits),
@@ -137,7 +138,7 @@ router.put("/admin/users/:id/balance", requireAdmin, async (req: Request, res: R
       const body = delta >= 0
         ? `تمت إضافة ${absDelta.toFixed(2)} ${currency} إلى رصيدك.${note?.trim() ? " (" + note.trim() + ")" : ""} رصيدك الحالي: ${newBalance.toFixed(2)} ${currency}.`
         : `تم خصم ${absDelta.toFixed(2)} ${currency} من رصيدك.${note?.trim() ? " (" + note.trim() + ")" : ""} رصيدك الحالي: ${newBalance.toFixed(2)} ${currency}.`;
-      sendPushToUser(parseInt(id), title, body, "/wallet").catch(() => {});
+      sendPushToUser(parseInt(String(id), 10), title, body, "/wallet").catch(() => {});
     }
 
     res.json({ success: true, balance: newBalance });
@@ -146,10 +147,53 @@ router.put("/admin/users/:id/balance", requireAdmin, async (req: Request, res: R
   }
 });
 
+// Block / unblock a user
+router.patch("/admin/users/:id/block", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(String(req.params.id), 10);
+  const { blocked } = req.body ?? {};
+
+  if (!Number.isFinite(userId)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+
+  if (typeof blocked !== "boolean") {
+    res.status(400).json({ error: "قيمة الحظر غير صحيحة" });
+    return;
+  }
+
+  try {
+    const u = await pool.query(
+      "SELECT id, name, email, is_blocked FROM users WHERE id=$1",
+      [userId]
+    );
+
+    if (u.rows.length === 0) {
+      res.status(404).json({ error: "المستخدم غير موجود" });
+      return;
+    }
+
+    await pool.query(
+      "UPDATE users SET is_blocked=$1, updated_at=NOW() WHERE id=$2",
+      [blocked, userId]
+    );
+
+    res.json({
+      success: true,
+      isBlocked: blocked,
+      message: blocked
+        ? `تم حظر المستخدم ${u.rows[0].name}`
+        : `تم إلغاء حظر المستخدم ${u.rows[0].name}`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete a user permanently (cascades to all related rows)
 router.delete("/admin/users/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const userId = parseInt(id, 10);
+  const userId = parseInt(String(id), 10);
   if (!Number.isFinite(userId)) { res.status(400).json({ error: "معرّف غير صحيح" }); return; }
 
   const client = await pool.connect();
@@ -181,7 +225,7 @@ router.delete("/admin/users/:id", requireAdmin, async (req: Request, res: Respon
 
 // Toggle reseller API access for a user
 router.patch("/admin/users/:id/reseller", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const userId = parseInt(req.params.id, 10);
+  const userId = parseInt(String(req.params.id), 10);
   if (!Number.isFinite(userId)) { res.status(400).json({ error: "معرّف غير صحيح" }); return; }
   try {
     const u = await pool.query("SELECT id, is_reseller, api_token FROM users WHERE id=$1", [userId]);

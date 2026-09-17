@@ -234,9 +234,9 @@ export default function ItemPage({ id }: { id: number }) {
         } />
         <meta property="og:url" content={`https://alghareebcard.com/item/${id}`} />
         <link rel="canonical" href={`https://alghareebcard.com/item/${id}`} />
-        <link rel="alternate" hreflang="ar" href={`https://alghareebcard.com/item/${id}`} />
-        <link rel="alternate" hreflang="en" href={`https://alghareebcard.com/item/${id}`} />
-        <link rel="alternate" hreflang="x-default" href={`https://alghareebcard.com/item/${id}`} />
+        <link rel="alternate" hrefLang="ar" href={`https://alghareebcard.com/item/${id}`} />
+        <link rel="alternate" hrefLang="en" href={`https://alghareebcard.com/item/${id}`} />
+        <link rel="alternate" hrefLang="x-default" href={`https://alghareebcard.com/item/${id}`} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Product",

@@ -112,7 +112,7 @@ export default function SliderManager() {
   const regularImages = images?.filter(img => !img.linkUrl) ?? [];
   const clickableImages = images?.filter(img => !!img.linkUrl) ?? [];
 
-  const ImageCard = ({ img, isClickable }: { img: typeof images[0]; isClickable?: boolean }) => (
+  const ImageCard = ({ img, isClickable }: { img: NonNullable<typeof images>[number]; isClickable?: boolean }) => (
     <Card className={`overflow-hidden bg-card/50 ${isClickable ? "border-2 border-green-500/50 shadow-[0_0_14px_rgba(34,197,94,0.15)]" : "border border-border/50"}`}>
       <div className="aspect-[21/9] relative">
         <img src={img.imageUrl} alt={img.title || "صورة"} className="w-full h-full object-cover" />
