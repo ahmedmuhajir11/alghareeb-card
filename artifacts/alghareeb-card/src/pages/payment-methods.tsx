@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { Copy, Check, Download, ZoomIn, ChevronDown, AlertTriangle, Lock, ShieldCheck, BadgeCheck, Upload, Send, Image as ImageIcon, ArrowDown } from "lucide-react";
+import { Copy, Check, Download, ZoomIn, ChevronDown, AlertTriangle, Lock, ShieldCheck, BadgeCheck, Upload, Send, Image as ImageIcon, ArrowDown, Camera } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -514,25 +514,39 @@ function DepositForm({ method, compact = false }: { method: PaymentMethod; compa
 
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">{t('payment.receiptLabel')}</Label>
-        <label className={`flex items-center justify-center gap-2 cursor-pointer ${compact ? "h-14" : "h-20"} rounded-lg border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-background/40 transition-colors`}>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={e => setFile(e.target.files?.[0] ?? null)}
-          />
-          {file ? (
-            <div className="flex items-center gap-2 text-sm text-green-400">
-              <ImageIcon className="w-4 h-4" />
-              <span className="truncate max-w-[200px]">{file.name}</span>
-            </div>
-          ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <label className={`flex items-center justify-center gap-2 cursor-pointer ${compact ? "h-14" : "h-20"} rounded-lg border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-background/40 transition-colors`}>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={e => setFile(e.target.files?.[0] ?? null)}
+            />
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Upload className="w-4 h-4" />
-              <span>{t('payment.chooseReceipt')}</span>
+              <Camera className="w-4 h-4" />
+              <span>{t('payment.takePhoto')}</span>
             </div>
-          )}
-        </label>
+          </label>
+          <label className={`flex items-center justify-center gap-2 cursor-pointer ${compact ? "h-14" : "h-20"} rounded-lg border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-background/40 transition-colors`}>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => setFile(e.target.files?.[0] ?? null)}
+            />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <ImageIcon className="w-4 h-4" />
+              <span>{t('payment.chooseFromGallery')}</span>
+            </div>
+          </label>
+        </div>
+        {file && (
+          <div className="flex items-center gap-2 text-sm text-green-400 pt-1">
+            <ImageIcon className="w-4 h-4" />
+            <span className="truncate max-w-[250px]">{file.name}</span>
+          </div>
+        )}
       </div>
 
       <Button
