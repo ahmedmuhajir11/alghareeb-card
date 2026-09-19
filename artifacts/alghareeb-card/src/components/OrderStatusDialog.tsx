@@ -95,6 +95,30 @@ export function OrderStatusDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, liveOrder?.id, liveOrder?.status]);
 
+  // Ask the wrapping Flutter app to show Google Play's in-app star
+  // rating prompt after the customer's 3rd distinct successful charge
+  // — the moment they're most likely to feel positive about the app.
+  // Only ever asked once per device (never again after the first ask).
+  useEffect(() => {
+    if (!open || !liveOrder || liveOrder.status !== "completed") return;
+    try {
+      const REVIEWED_KEY = "ag_review_prompted";
+      if (localStorage.getItem(REVIEWED_KEY)) return;
+      const LAST_COUNTED_KEY = "ag_last_counted_order_id";
+      if (localStorage.getItem(LAST_COUNTED_KEY) === String(liveOrder.id)) return;
+      localStorage.setItem(LAST_COUNTED_KEY, String(liveOrder.id));
+      const COUNT_KEY = "ag_successful_charges";
+      const count = parseInt(localStorage.getItem(COUNT_KEY) || "0", 10) + 1;
+      localStorage.setItem(COUNT_KEY, String(count));
+      if (count >= 3 && (window as any).FlutterRequestReview) {
+        (window as any).FlutterRequestReview.postMessage("review");
+        localStorage.setItem(REVIEWED_KEY, "1");
+      }
+    } catch {
+      /* localStorage unavailable in this browser context — skip silently */
+    }
+  }, [open, liveOrder]);
+
   if (!liveOrder) return null;
 
   const isSuccess = liveOrder.status === "completed";
