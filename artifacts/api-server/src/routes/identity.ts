@@ -46,6 +46,7 @@ router.get("/identity", requireUser, async (req: Request, res: Response): Promis
       id: r.id,
       fullName: r.full_name,
       idNumber: r.id_number,
+      documentType: r.document_type || "national_id",
       country: r.country,
       province: r.province,
       extraInfo: r.extra_info,
@@ -74,6 +75,10 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     const user = (req as any).currentUser;
     const { fullName, idNumber, country, province, extraInfo } = req.body ?? {};
+    const documentTypeRaw = (req.body?.documentType as string) || "national_id";
+    const documentType = ["national_id", "passport", "driving_license"].includes(documentTypeRaw)
+      ? documentTypeRaw
+      : "national_id";
     if (!fullName || !idNumber) {
       res.status(400).json({ error: "الاسم الكامل ورقم الهوية مطلوبان" });
       return;
@@ -106,24 +111,32 @@ router.post(
         selfieUrl = toBase64DataUrl(f.buffer, f.mimetype);
       }
 
+      // Back-of-document photo is only mandatory for national_id / driving_license —
+      // a passport has no meaningful "back side". Mirrors the client-side rule in kyc.tsx.
+      const hasExistingBack = existing.rows.length > 0 && !!existing.rows[0].id_photo_back_url;
+      if (documentType !== "passport" && !idPhotoBackUrl && !hasExistingBack) {
+        res.status(400).json({ error: "صورة الوجه الخلفي للوثيقة مطلوبة" });
+        return;
+      }
+
       if (existing.rows.length > 0) {
         await pool.query(
           `UPDATE identity_verifications
-           SET full_name=$1, id_number=$2, country=$3, province=$4, extra_info=$5,
-               id_photo_front_url=COALESCE($6, id_photo_front_url),
-               id_photo_back_url=COALESCE($7, id_photo_back_url),
-               selfie_url=COALESCE($8, selfie_url),
+           SET full_name=$1, id_number=$2, document_type=$3, country=$4, province=$5, extra_info=$6,
+               id_photo_front_url=COALESCE($7, id_photo_front_url),
+               id_photo_back_url=COALESCE($8, id_photo_back_url),
+               selfie_url=COALESCE($9, selfie_url),
                status='pending', admin_note=NULL, updated_at=NOW()
-           WHERE user_id=$9`,
-          [fullName, idNumber, country || null, province || null, extraInfo || null,
+           WHERE user_id=$10`,
+          [fullName, idNumber, documentType, country || null, province || null, extraInfo || null,
            idPhotoFrontUrl, idPhotoBackUrl, selfieUrl, user.id]
         );
       } else {
         await pool.query(
           `INSERT INTO identity_verifications
-           (user_id, full_name, id_number, country, province, extra_info, id_photo_front_url, id_photo_back_url, selfie_url)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-          [user.id, fullName, idNumber, country || null, province || null, extraInfo || null,
+           (user_id, full_name, id_number, document_type, country, province, extra_info, id_photo_front_url, id_photo_back_url, selfie_url)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+          [user.id, fullName, idNumber, documentType, country || null, province || null, extraInfo || null,
            idPhotoFrontUrl, idPhotoBackUrl, selfieUrl]
         );
       }

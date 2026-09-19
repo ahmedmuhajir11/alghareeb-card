@@ -6,16 +6,26 @@ import { sendPushToUser } from "./push";
 
 const router: IRouter = Router();
 
-// List all users (with optional search & per-user totals)
+// List all users (with optional search & per-user totals), paginated like /admin/deposits
 router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     const q = ((req.query.q as string) || "").trim().toLowerCase();
-    const params: any[] = [];
+    const page = Math.max(1, parseInt((req.query.page as string) || "1", 10) || 1);
+    const pageSize = 20;
+    const offset = (page - 1) * pageSize;
+
+    const whereParams: any[] = [];
     let where = "";
     if (q) {
-      params.push(`%${q}%`);
+      whereParams.push(`%${q}%`);
       where = `WHERE LOWER(u.email) LIKE $1 OR u.account_number LIKE $1 OR LOWER(u.name) LIKE $1`;
     }
+
+    const countRes = await pool.query(`SELECT COUNT(*) FROM users u ${where}`, whereParams);
+    const total = parseInt(countRes.rows[0].count, 10);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    const dataParams = [...whereParams, pageSize, offset];
     const result = await pool.query(
       `SELECT u.id, u.account_number, u.name, u.email, u.phone, u.phone_code, u.balance, u.currency,
               u.level, u.is_verified, u.is_reseller, u.is_blocked, u.api_token, u.created_at,
@@ -23,27 +33,33 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
               COALESCE((SELECT SUM(amount) FROM wallet_transactions WHERE user_id=u.id AND type='deposit'), 0) AS total_deposits
        FROM users u ${where}
        ORDER BY u.created_at DESC
-       LIMIT 500`,
-      params
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
     );
-    res.json(result.rows.map(r => ({
-      id: r.id,
-      accountNumber: r.account_number,
-      name: r.name,
-      email: r.email,
-      phone: r.phone,
-      phoneCode: r.phone_code || null,
-      balance: parseFloat(r.balance),
-      currency: r.currency,
-      level: r.level,
-      isVerified: r.is_verified,
-      isReseller: r.is_reseller || false,
-      isBlocked: r.is_blocked || false,
-      apiToken: r.api_token || null,
-      totalPurchases: parseFloat(r.total_purchases),
-      totalDeposits: parseFloat(r.total_deposits),
-      createdAt: r.created_at,
-    })));
+    res.json({
+      data: result.rows.map(r => ({
+        id: r.id,
+        accountNumber: r.account_number,
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        phoneCode: r.phone_code || null,
+        balance: parseFloat(r.balance),
+        currency: r.currency,
+        level: r.level,
+        isVerified: r.is_verified,
+        isReseller: r.is_reseller || false,
+        isBlocked: r.is_blocked || false,
+        apiToken: r.api_token || null,
+        totalPurchases: parseFloat(r.total_purchases),
+        totalDeposits: parseFloat(r.total_deposits),
+        createdAt: r.created_at,
+      })),
+      total,
+      page,
+      pageSize,
+      totalPages,
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -346,6 +362,7 @@ router.get("/admin/identities", requireAdmin, async (req: Request, res: Response
       phone: r.phone,
       fullName: r.full_name,
       idNumber: r.id_number,
+      documentType: r.document_type || "national_id",
       country: r.country,
       province: r.province,
       extraInfo: r.extra_info,
@@ -376,6 +393,13 @@ router.put("/admin/identities/:id/approve", requireAdmin, async (req: Request, r
       "UPDATE users SET is_verified=true, name=$1, updated_at=NOW() WHERE id=$2",
       [iv.rows[0].full_name, iv.rows[0].user_id]
     );
+    // Notify the user the same way order approvals do.
+    sendPushToUser(
+      iv.rows[0].user_id,
+      "✅ تم قبول طلب توثيق الهوية",
+      (adminNote && String(adminNote).trim()) || "تمت الموافقة على طلب توثيق هويتك. حسابك الآن موثّق.",
+      "/kyc"
+    ).catch(() => {});
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -387,10 +411,20 @@ router.put("/admin/identities/:id/reject", requireAdmin, async (req: Request, re
   const { id } = req.params;
   const { adminNote } = req.body ?? {};
   try {
+    const iv = await pool.query("SELECT user_id FROM identity_verifications WHERE id=$1", [id]);
+    if (iv.rows.length === 0) { res.status(404).json({ error: "الطلب غير موجود" }); return; }
     await pool.query(
       "UPDATE identity_verifications SET status='rejected', admin_note=$1, updated_at=NOW() WHERE id=$2",
       [adminNote || null, id]
     );
+    // Notify the user the same way order rejections do.
+    const reasonSuffix = (adminNote && String(adminNote).trim()) ? ` السبب: ${String(adminNote).trim()}` : "";
+    sendPushToUser(
+      iv.rows[0].user_id,
+      "❌ تم رفض طلب توثيق الهوية",
+      `تم رفض طلب توثيق هويتك.${reasonSuffix} يمكنك إعادة الإرسال بالبيانات الصحيحة.`,
+      "/kyc"
+    ).catch(() => {});
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

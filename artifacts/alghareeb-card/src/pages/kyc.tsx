@@ -75,6 +75,7 @@ export default function KycPage() {
 
   const [fullName, setFullName] = useState("");
   const [idNumber, setIdNumber] = useState("");
+  const [documentType, setDocumentType] = useState<"national_id" | "passport" | "driving_license">("national_id");
   const [country, setCountry] = useState("");
   const [province, setProvince] = useState("");
   const [extraInfo, setExtraInfo] = useState("");
@@ -149,7 +150,7 @@ export default function KycPage() {
       toast({ variant: "destructive", title: t('kyc.requiredMsg') });
       return;
     }
-    if (!idFrontFile || !idBackFile || !selfieFile) {
+    if (!idFrontFile || (documentType !== "passport" && !idBackFile) || !selfieFile) {
       toast({ variant: "destructive", title: t('kyc.photosRequiredMsg'), description: t('kyc.photosRequiredDesc') });
       return;
     }
@@ -158,6 +159,7 @@ export default function KycPage() {
       const formData = new FormData();
       formData.append("fullName", fullName);
       formData.append("idNumber", idNumber);
+      formData.append("documentType", documentType);
       if (country) formData.append("country", country);
       if (province) formData.append("province", province);
       if (extraInfo) formData.append("extraInfo", extraInfo);
@@ -255,6 +257,19 @@ export default function KycPage() {
               />
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t('kyc.documentType')} <span className="text-destructive">*</span></label>
+              <select
+                value={documentType}
+                onChange={e => setDocumentType(e.target.value as typeof documentType)}
+                className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="national_id">{t('kyc.docNationalId')}</option>
+                <option value="passport">{t('kyc.docPassport')}</option>
+                <option value="driving_license">{t('kyc.docDrivingLicense')}</option>
+              </select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t('kyc.country')}</label>
@@ -291,7 +306,7 @@ export default function KycPage() {
 
             <div className="border-t border-border/40 pt-4">
               <p className="text-sm text-muted-foreground mb-4">{t('kyc.photosRequired')}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className={`grid grid-cols-1 gap-4 ${documentType === "passport" ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
                 <FileUploadField
                   label={t('kyc.idFront')}
                   name="idPhotoFront"
@@ -299,13 +314,15 @@ export default function KycPage() {
                   tapLabel={t('kyc.tapToChoose')}
                   onFile={f => handleFile(f, setIdFrontFile, setIdFrontPreview)}
                 />
-                <FileUploadField
-                  label={t('kyc.idBack')}
-                  name="idPhotoBack"
-                  preview={idBackPreview}
-                  tapLabel={t('kyc.tapToChoose')}
-                  onFile={f => handleFile(f, setIdBackFile, setIdBackPreview)}
-                />
+                {documentType !== "passport" && (
+                  <FileUploadField
+                    label={t('kyc.idBack')}
+                    name="idPhotoBack"
+                    preview={idBackPreview}
+                    tapLabel={t('kyc.tapToChoose')}
+                    onFile={f => handleFile(f, setIdBackFile, setIdBackPreview)}
+                  />
+                )}
                 <FileUploadField
                   label={t('kyc.selfie')}
                   name="selfie"

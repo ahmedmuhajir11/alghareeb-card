@@ -391,7 +391,12 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال الاسم بالعربية والإنجليزية" });
       return;
     }
-    if (showQuantityFields && formData.pricePerUnit <= 0) {
+    // Price-per-unit is only mandatory for a pure "per_quantity" section, where it's
+    // the item's only pricing path. In a "hybrid" section the item may be
+    // packages-only (e.g. imported from YazanCard), so leaving it at 0 must stay
+    // allowed — the customer-facing page already hides the quantity option
+    // whenever pricePerUnit isn't set (> 0) for that specific item.
+    if (isPerQuantity && formData.pricePerUnit <= 0) {
       toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال سعر لكل وحدة" });
       return;
     }

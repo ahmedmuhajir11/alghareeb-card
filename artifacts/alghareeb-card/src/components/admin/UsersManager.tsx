@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users, Search, ShieldCheck, Wallet, ShoppingBag, ArrowDownCircle,
-  Loader2, Mail, Hash, KeyRound, Pencil, X, Trash2, AlertTriangle, Code2, Lock, Unlock
+  Loader2, Mail, Hash, KeyRound, Pencil, X, Trash2, AlertTriangle, Code2, Lock, Unlock,
+  ChevronRight, ChevronLeft
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,14 @@ type AdminUser = {
   totalPurchases: number;
   totalDeposits: number;
   createdAt: string;
+};
+
+type PagedUsers = {
+  data: AdminUser[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 };
 
 type Stats = {
@@ -446,6 +455,7 @@ function BalanceDialog({ user, onClose }: { user: AdminUser; onClose: () => void
 
 export default function UsersManager() {
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<AdminUser | null>(null);
   const [pwUser, setPwUser] = useState<AdminUser | null>(null);
   const [balUser, setBalUser] = useState<AdminUser | null>(null);
@@ -455,17 +465,27 @@ export default function UsersManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const usersQuery = useQuery<AdminUser[]>({
-    queryKey: ["admin-users", query],
+  // Reset to page 1 whenever the search term changes.
+  function handleQueryChange(val: string) {
+    setQuery(val);
+    setPage(1);
+    setSelected(null);
+  }
+
+  const usersQuery = useQuery<PagedUsers>({
+    queryKey: ["admin-users", query, page],
     queryFn: async () => {
-      const url = query.trim()
-        ? `${API_BASE}/admin/users?q=${encodeURIComponent(query.trim())}`
-        : `${API_BASE}/admin/users`;
-      const res = await fetch(url, { credentials: "include" });
+      const params = new URLSearchParams({ page: String(page) });
+      if (query.trim()) params.set("q", query.trim());
+      const res = await fetch(`${API_BASE}/admin/users?${params.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error("فشل تحميل المستخدمين");
       return res.json();
     },
   });
+
+  const users = usersQuery.data?.data ?? [];
+  const totalUsers = usersQuery.data?.total ?? 0;
+  const totalPages = usersQuery.data?.totalPages ?? 1;
 
   const statsQuery = useQuery<Stats>({
     queryKey: ["admin-users-stats"],
@@ -510,7 +530,7 @@ export default function UsersManager() {
           dir="rtl"
           placeholder="ابحث بالبريد الإلكتروني أو رقم الحساب أو الاسم"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setSelected(null); }}
+          onChange={(e) => handleQueryChange(e.target.value)}
           className="pr-10"
         />
       </div>
@@ -599,7 +619,7 @@ export default function UsersManager() {
       {/* Users list */}
       <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
-          <p className="text-sm font-bold">قائمة المستخدمين {usersQuery.data ? `(${usersQuery.data.length})` : ""}</p>
+          <p className="text-sm font-bold">قائمة المستخدمين {usersQuery.data ? `(${totalUsers})` : ""}</p>
         </div>
 
         {usersQuery.isLoading ? (
@@ -608,11 +628,11 @@ export default function UsersManager() {
           </div>
         ) : usersQuery.error ? (
           <p className="text-center text-rose-400 py-8 text-sm">{(usersQuery.error as Error).message}</p>
-        ) : !usersQuery.data || usersQuery.data.length === 0 ? (
+        ) : users.length === 0 ? (
           <p className="text-center text-muted-foreground py-10 text-sm">لا يوجد نتائج</p>
         ) : (
-          <div className="divide-y divide-border/40 max-h-[480px] overflow-y-auto">
-            {usersQuery.data.map((u) => {
+          <div className="divide-y divide-border/40">
+            {users.map((u) => {
               const isActive = selected?.id === u.id;
               return (
                 <div
@@ -717,6 +737,36 @@ export default function UsersManager() {
           </div>
         )}
       </div>
+
+      {/* Pagination controls — same pattern as deposits/orders */}
+      {!usersQuery.isLoading && totalUsers > 0 && (
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/30">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            className="gap-1.5"
+          >
+            <ChevronRight className="w-4 h-4" />
+            السابق
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            الصفحة <span className="font-bold text-foreground">{page}</span> من <span className="font-bold text-foreground">{totalPages}</span>
+            <span className="mr-2 text-xs">({totalUsers} مستخدم)</span>
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            className="gap-1.5"
+          >
+            التالي
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
 
       {pwUser && <PasswordDialog user={pwUser} onClose={() => setPwUser(null)} />}
       {balUser && <BalanceDialog user={balUser} onClose={() => setBalUser(null)} />}

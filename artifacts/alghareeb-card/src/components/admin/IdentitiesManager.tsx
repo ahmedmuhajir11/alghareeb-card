@@ -17,6 +17,7 @@ interface Identity {
   userEmail: string;
   fullName: string;
   idNumber: string;
+  documentType?: "national_id" | "passport" | "driving_license";
   country?: string;
   province?: string;
   extraInfo?: string;
@@ -27,6 +28,12 @@ interface Identity {
   adminNote?: string;
   createdAt: string;
 }
+
+const DOCUMENT_TYPE_LABEL: Record<string, string> = {
+  national_id: "هوية وطنية",
+  passport: "جواز سفر",
+  driving_license: "رخصة قيادة",
+};
 
 async function adminFetch(path: string, opts?: RequestInit) {
   const token = document.cookie.match(/admin_token=([^;]+)/)?.[1];
@@ -151,6 +158,7 @@ function IdentityRow({ identity, onUpdate }: { identity: Identity; onUpdate: () 
         <div className="border-t border-border/40 p-4 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
             <div><span className="text-muted-foreground">رقم الهوية:</span> <span className="font-mono">{identity.idNumber}</span></div>
+            <div><span className="text-muted-foreground">نوع الوثيقة:</span> {DOCUMENT_TYPE_LABEL[identity.documentType || "national_id"]}</div>
             {identity.country && <div><span className="text-muted-foreground">الدولة:</span> {identity.country}</div>}
             {identity.province && <div><span className="text-muted-foreground">المحافظة:</span> {identity.province}</div>}
             {identity.extraInfo && <div className="col-span-2 sm:col-span-3"><span className="text-muted-foreground">ملاحظات:</span> {identity.extraInfo}</div>}
