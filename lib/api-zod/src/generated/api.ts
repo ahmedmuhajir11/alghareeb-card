@@ -228,6 +228,12 @@ export const ListItemsResponseItem = zod.object({
     .string()
     .optional()
     .describe("Fulfillment mode: auto, manual, or none"),
+  hasApiPackage: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True if this item has no api_endpoint/api_key of its own but at least one of its packages does (grouped/packages import mode)",
+    ),
   createdAt: zod.string(),
 });
 export const ListItemsResponse = zod.array(ListItemsResponseItem);

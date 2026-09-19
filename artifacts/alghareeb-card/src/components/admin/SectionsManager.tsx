@@ -193,8 +193,14 @@ function SectionsView({ onSelect }: { onSelect: (s: Section) => void }) {
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${section.pricingType === 'packages' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
-                    {section.pricingType === 'packages' ? 'باقات' : 'كميات'}
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    section.pricingType === 'packages'
+                      ? 'bg-blue-500/20 text-blue-400'
+                      : section.pricingType === 'hybrid'
+                        ? 'bg-purple-500/20 text-purple-400'
+                        : 'bg-green-500/20 text-green-400'
+                  }`}>
+                    {section.pricingType === 'packages' ? 'باقات' : section.pricingType === 'hybrid' ? 'باقات + كميات' : 'كميات'}
                   </span>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" onClick={() => onSelect(section)} className="text-primary hover:bg-primary/10 h-7 w-7">
@@ -246,6 +252,7 @@ function SectionsView({ onSelect }: { onSelect: (s: Section) => void }) {
                 <SelectContent>
                   <SelectItem value="packages">باقات محددة (مثال: الألعاب وشحن الرصيد)</SelectItem>
                   <SelectItem value="per_quantity">كميات يدوية (الزبون يدخل الكمية)</SelectItem>
+                  <SelectItem value="hybrid">كميات يدوية + باقات محددة (الاثنان معاً)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -292,6 +299,10 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
   const queryClient = useQueryClient();
 
   const isPerQuantity = section.pricingType === "per_quantity";
+  const isHybrid = section.pricingType === "hybrid";
+  // Sections that need the manual-quantity price fields on each item:
+  // pure "per_quantity" sections, plus "hybrid" sections (packages + manual quantity together).
+  const showQuantityFields = isPerQuantity || isHybrid;
   const isAppCharging = section.id === 2;
   const isMoneyTransfer = section.id === 3 || section.nameEn === "Money Transfers" || section.nameAr === "الحوالات المالية";
 
@@ -380,7 +391,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال الاسم بالعربية والإنجليزية" });
       return;
     }
-    if (isPerQuantity && formData.pricePerUnit <= 0) {
+    if (showQuantityFields && formData.pricePerUnit <= 0) {
       toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال سعر لكل وحدة" });
       return;
     }
@@ -390,8 +401,8 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
       nameEn: formData.nameEn,
       nameTr: formData.nameTr || undefined,
       logoUrl: formData.logoUrl || undefined,
-      currencyUnit: isPerQuantity ? finalCurrencyUnit : undefined,
-      pricePerUnit: isPerQuantity ? formData.pricePerUnit : undefined,
+      currencyUnit: showQuantityFields ? finalCurrencyUnit : undefined,
+      pricePerUnit: showQuantityFields ? formData.pricePerUnit : undefined,
       description: isAppCharging ? undefined : (formData.description || undefined),
       sortOrder: formData.sortOrder,
       isActive: formData.isActive,
@@ -441,7 +452,7 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
           <div>
             <CardTitle className="text-lg">{section.nameAr}</CardTitle>
             <p className="text-xs text-muted-foreground">
-              {isPerQuantity ? "نظام الكميات اليدوية" : "نظام الباقات"}
+              {isHybrid ? "نظام مختلط (باقات محددة + كميات يدوية)" : isPerQuantity ? "نظام الكميات اليدوية" : "نظام الباقات"}
             </p>
           </div>
         </div>
@@ -534,8 +545,8 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
               item.nameAr.toLowerCase().includes(itemSearch.toLowerCase()) ||
               (item.nameEn || "").toLowerCase().includes(itemSearch.toLowerCase())
             ) : items)?.map(item => (
-              <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card hover:border-primary/50 transition-colors">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div key={item.id} className="flex items-center justify-between flex-wrap gap-y-2 p-4 border border-border/50 rounded-xl bg-card hover:border-primary/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-[70%] sm:min-w-0">
                   {item.logoUrl ? (
                     <img src={item.logoUrl} alt="" className="w-10 h-10 object-contain rounded-lg flex-shrink-0" />
                   ) : (
@@ -549,26 +560,26 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                       {(item as any).isAvailable === false && (
                         <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 flex-shrink-0">غير متاح</span>
                       )}
-                      {(item as any).apiEndpoint && (item as any).apiKey && (
+                      {((item as any).apiEndpoint && (item as any).apiKey) || (item as any).hasApiPackage ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 flex-shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
                           API تلقائي
                         </span>
-                      )}
+                      ) : null}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>
-                    {isPerQuantity && item.pricePerUnit && (
+                    {showQuantityFields && item.pricePerUnit && (
                       <p className="text-xs text-primary/80">${item.pricePerUnit} / {item.currencyUnit || "وحدة"}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0 mr-2">
+                <div className="flex items-center gap-1 flex-shrink-0 w-full justify-end pt-2 mt-1 border-t border-border/20 sm:w-auto sm:pt-0 sm:mt-0 sm:border-0 sm:mr-2">
                   {!isPerQuantity && (
                     <Button variant="ghost" size="icon" onClick={() => onSelect(item)} className="text-primary hover:bg-primary/10 h-8 w-8" title="الباقات">
                       <PackageIcon className="w-4 h-4" />
                     </Button>
                   )}
-                  {isPerQuantity && (
+                  {showQuantityFields && (
                     <Button variant="ghost" size="icon" onClick={() => setCustomPricesItem(item)} className="text-yellow-300 hover:text-yellow-300 hover:bg-yellow-300/10 h-8 w-8" title="أسعار مخصصة">
                       <Tag className="w-4 h-4" />
                     </Button>
@@ -687,7 +698,14 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                 value={formData.logoUrl}
                 onChange={url => setFormData({ ...formData, logoUrl: url })}
               />
-              {isPerQuantity && !isAppCharging && (
+              {isHybrid && (
+                <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-xs text-purple-300 leading-6">
+                  هذا القسم مختلط: عبّئ سعر الوحدة أدناه للكمية اليدوية، ثم بعد الحفظ اضغط على أيقونة
+                  <span className="inline-flex mx-1 align-middle"><PackageIcon className="w-3.5 h-3.5 inline" /></span>
+                  بجانب المنتج لإضافة الباقات الجاهزة الخاصة به. سيرى الزبون الخيارين معاً في صفحة المنتج.
+                </div>
+              )}
+              {showQuantityFields && !isAppCharging && (
                 <>
                   <div className="space-y-2">
                     <Label>نوع العملة داخل التطبيق</Label>
@@ -730,6 +748,38 @@ function ItemsView({ section, onBack, onSelect }: { section: Section; onBack: ()
                         مثال: 1000 {formData.currencyUnit === "أخرى" ? formData.customCurrencyUnit : formData.currencyUnit} = ${(formData.pricePerUnit * 1000).toFixed(2)}
                       </p>
                     )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>الحد الأدنى لعدد {formData.currencyUnit === "أخرى" ? (formData.customCurrencyUnit || "الوحدات") : formData.currencyUnit}</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={formData.minQuantity === 0 ? "" : formData.minQuantity}
+                      onChange={e => setFormData({ ...formData, minQuantity: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })}
+                      className="bg-background/50"
+                      dir="ltr"
+                      placeholder="مثال: 1000"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      المستخدم لن يستطيع طلب كمية أقل من هذا الرقم.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>الحد الأقصى لعدد {formData.currencyUnit === "أخرى" ? (formData.customCurrencyUnit || "الوحدات") : formData.currencyUnit} (اختياري)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={formData.maxQuantity === null || formData.maxQuantity === 0 ? "" : formData.maxQuantity}
+                      onChange={e => setFormData({ ...formData, maxQuantity: e.target.value === "" ? null : parseFloat(e.target.value) || null })}
+                      className="bg-background/50"
+                      dir="ltr"
+                      placeholder="اتركه فارغاً = بلا حد أقصى"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      المستخدم لن يستطيع طلب كمية أكثر من هذا الرقم.
+                    </p>
                   </div>
                 </>
               )}

@@ -41,7 +41,38 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     let priceUsd = 0;
     let packageName: string | null = null;
 
-    const isPerQuantity = item.section_pricing_type === "per_quantity";
+    // "hybrid" sections support BOTH a manual quantity and fixed packages on the
+    // same product. The client decides per-order which mode it used by sending
+    // either `quantity` or `packageId`; we mirror that choice here instead of
+    // forcing a single fixed mode for the whole section.
+    const sectionPricingType = item.section_pricing_type;
+    const isPureQuantitySection = sectionPricingType === "per_quantity";
+    const isPurePackagesSection = sectionPricingType === "packages";
+    const isHybridSection = sectionPricingType === "hybrid";
+
+    let isPerQuantity: boolean;
+    if (isPureQuantitySection) {
+      isPerQuantity = true;
+    } else if (isPurePackagesSection) {
+      isPerQuantity = false;
+    } else if (isHybridSection) {
+      // Hybrid: infer the mode from what the client actually sent.
+      const hasQty = quantity !== undefined && quantity !== null && quantity !== "";
+      const hasPkg = packageId !== undefined && packageId !== null && packageId !== "";
+      if (hasPkg) {
+        isPerQuantity = false;
+      } else if (hasQty) {
+        isPerQuantity = true;
+      } else {
+        await client.query("ROLLBACK");
+        res.status(400).json({ error: "الرجاء اختيار باقة جاهزة أو إدخال كمية يدوية" });
+        return;
+      }
+    } else {
+      // Unknown/legacy pricing type — fall back to previous default behavior.
+      isPerQuantity = false;
+    }
+
     if (isPerQuantity) {
       const qty = parseFloat(quantity);
       if (!qty || qty <= 0 || isNaN(qty)) {
@@ -238,6 +269,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
           const txId = String(yzOrderId ?? apiData?.["order_id"] ?? apiData?.["transaction_id"] ?? apiData?.["id"] ?? "N/A");
           providerUsername = extractProviderUsername(apiData?.["data"]) ?? extractProviderUsername(apiData);
+          console.log("[DEBUG apiData raw]", JSON.stringify(apiData));
           await pool.query(
             `UPDATE orders SET status='completed', provider_username=$1, notes=$2, updated_at=NOW() WHERE id=$3`,
             [providerUsername, `تم الشحن تلقائياً ✅ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
@@ -310,6 +342,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
                     autoCharged = true;
                     resolvedDirectly = true;
                     providerUsername = extractProviderUsername(orderChk);
+                    console.log("[DEBUG orderChk raw]", JSON.stringify(orderChk));
                     const receiptSuffix = (orderChk.receipt || orderChk.image || orderChk.url) ? ` | ${orderChk.receipt || orderChk.image || orderChk.url}` : "";
                     await pool.query(
                       `UPDATE orders SET status='completed', provider_username=$1, notes=$2, updated_at=NOW() WHERE id=$3`,

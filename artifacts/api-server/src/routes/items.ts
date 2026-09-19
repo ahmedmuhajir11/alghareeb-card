@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, inArray, isNotNull } from "drizzle-orm";
 import { db, itemsTable, packagesTable, sectionsTable } from "@workspace/db";
 import { sendPushNotification } from "./push";
 import {
@@ -33,7 +33,29 @@ router.get("/sections/:sectionId/items", async (req, res): Promise<void> => {
       .where(eq(itemsTable.sectionId, params.data.sectionId))
       .orderBy(asc(itemsTable.sortOrder), asc(itemsTable.id));
 
-    res.json(ListItemsResponse.parse(serializeRows(items)));
+    // An item can be auto-fulfilled either via its OWN api_endpoint/api_key,
+    // or — for products imported in "grouped/packages" mode — via credentials
+    // that live on its packages instead. Surface that here as `hasApiPackage`
+    // so the admin UI can show the correct "auto API" status either way,
+    // without changing what api_endpoint/api_key mean on the item itself.
+    const itemIds = items.map(i => i.id);
+    let apiPackageItemIds = new Set<number>();
+    if (itemIds.length > 0) {
+      const rows = await db
+        .selectDistinct({ itemId: packagesTable.itemId })
+        .from(packagesTable)
+        .where(
+          and(
+            inArray(packagesTable.itemId, itemIds),
+            isNotNull(packagesTable.apiEndpoint),
+            isNotNull(packagesTable.apiKey),
+          ),
+        );
+      apiPackageItemIds = new Set(rows.map(r => r.itemId));
+    }
+    const itemsWithFlag = items.map(i => ({ ...i, hasApiPackage: apiPackageItemIds.has(i.id) }));
+
+    res.json(ListItemsResponse.parse(serializeRows(itemsWithFlag)));
   } catch (err: any) {
     req.log.error({ err, cause: err?.cause }, "Failed to list items");
     res.status(500).json({ error: "Failed to list items" });

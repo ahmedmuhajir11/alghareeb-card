@@ -71,7 +71,23 @@ export default function ItemPage({ id }: { id: number }) {
     return fallback; // still pending after the max wait — show it anyway rather than leaving the customer with no feedback at all
   };
 
-  const isPerQuantity = item?.sectionPricingType === "per_quantity";
+  const pricingType = item?.sectionPricingType;
+  const isPerQuantity = pricingType === "per_quantity";
+  const isHybrid = pricingType === "hybrid";
+  // In a "hybrid" section, each item decides for itself which mode(s) it actually
+  // supports — NOT the section as a whole. A product imported as fixed packages
+  // (e.g. via the YazanCard packages import) never gets a manual price-per-unit,
+  // so it must never show a manual-quantity option just because its section is
+  // hybrid; likewise an item with no packages must never show "choose a package".
+  const itemHasQuantityPrice = item?.pricePerUnit != null && item.pricePerUnit > 0;
+  const itemHasPackages = !!item?.packages && item.packages.length > 0;
+  // Whether the manual-quantity UI/logic should be available for THIS item.
+  const hasQuantityOption = isPerQuantity || (isHybrid && itemHasQuantityPrice);
+  // Whether the fixed-packages UI/logic should be available for THIS item.
+  const hasPackagesOption = pricingType === "packages" || (isHybrid && itemHasPackages);
+  // Only a hybrid item that genuinely has BOTH gets the switcher; otherwise it
+  // silently behaves like a plain single-mode item (packages-only or quantity-only).
+  const showModeSwitch = isHybrid && hasQuantityOption && hasPackagesOption;
   const minQuantity = item?.minQuantity ?? 1;
   const maxQuantity = item?.maxQuantity ?? null;
 
@@ -79,20 +95,33 @@ export default function ItemPage({ id }: { id: number }) {
   const [userId, setUserId] = useState("");
   const [quantity, setQuantity] = useState<string>("");
   const [customPricePerUnit, setCustomPricePerUnit] = useState<number | null>(null);
+  // For hybrid items that support BOTH modes: which one the customer is using.
+  const [orderMode, setOrderMode] = useState<"package" | "quantity">("package");
+
+  // Default the mode to whichever option this item actually has, preferring packages.
+  useEffect(() => {
+    if (!isHybrid || !item) return;
+    setOrderMode(hasPackagesOption ? "package" : "quantity");
+  }, [isHybrid, item, hasPackagesOption]);
+
+  // Whether the quantity/packages UI is the one currently in effect for this order.
+  // Outside the switcher case, whichever single mode the item supports just wins.
+  const quantityModeActive = isPerQuantity || (isHybrid && hasQuantityOption && (orderMode === "quantity" || !hasPackagesOption));
+  const packageModeActive = !quantityModeActive && (pricingType === "packages" || (isHybrid && hasPackagesOption));
 
   useEffect(() => {
-    if (!isSignedIn || !isPerQuantity || !id) return;
+    if (!isSignedIn || !hasQuantityOption || !id) return;
     fetch(`${API_BASE}/api/user-item-prices/item/${id}`, { credentials: "include" })
       .then(r => r.json())
       .then(data => { if (data.customPricePerUnit != null) setCustomPricePerUnit(data.customPricePerUnit); })
       .catch(() => {});
-  }, [isSignedIn, isPerQuantity, id]);
+  }, [isSignedIn, hasQuantityOption, id]);
 
   const effectivePricePerUnit = customPricePerUnit ?? item?.pricePerUnit ?? null;
 
   const parsedQty = parseFloat(quantity);
-  const isBelowMin = isPerQuantity && quantity !== "" && parsedQty > 0 && parsedQty < minQuantity;
-  const calculatedPrice = isPerQuantity && effectivePricePerUnit && parsedQty > 0 && !isBelowMin
+  const isBelowMin = quantityModeActive && quantity !== "" && parsedQty > 0 && parsedQty < minQuantity;
+  const calculatedPrice = quantityModeActive && effectivePricePerUnit && parsedQty > 0 && !isBelowMin
     ? parsedQty * effectivePricePerUnit
     : null;
 
@@ -162,7 +191,7 @@ export default function ItemPage({ id }: { id: number }) {
       return;
     }
 
-    if (isPerQuantity) {
+    if (quantityModeActive) {
       const qty = parseFloat(quantity);
       if (!qty || qty <= 0) {
         toast({ variant: "destructive", title: t('item.error'), description: t('item.errorMissingQty') });
@@ -275,9 +304,9 @@ export default function ItemPage({ id }: { id: number }) {
         <div className="text-start flex-1">
           <h1 className="text-2xl font-bold neon-text leading-tight">{itemName}</h1>
           <p className="text-muted-foreground text-sm">
-            {item.description || (isPerQuantity ? `${t('item.enterQty')} ${unitLabel}` : t('item.choosePackage'))}
+            {item.description || (quantityModeActive ? `${t('item.enterQty')} ${unitLabel}` : t('item.choosePackage'))}
           </p>
-          {isPerQuantity && effectivePricePerUnit && (
+          {quantityModeActive && effectivePricePerUnit && (
             <p className="text-sm text-primary/80">
               {t('item.pricePerUnit')} {unitLabel}: {formatPrice(effectivePricePerUnit)}
               {customPricePerUnit != null && (
@@ -298,7 +327,30 @@ export default function ItemPage({ id }: { id: number }) {
         </div>
       )}
 
-      {isPerQuantity ? (
+      {showModeSwitch && (
+        <div className="flex gap-2 p-1 bg-card/30 rounded-2xl border border-primary/20">
+          <button
+            type="button"
+            onClick={() => setOrderMode("package")}
+            className={`flex-1 text-sm font-bold py-2 rounded-xl transition-colors ${
+              orderMode === "package" ? "bg-primary text-primary-foreground shadow-[0_0_10px_var(--color-primary)]" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t('item.choosePackageTitle')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOrderMode("quantity")}
+            className={`flex-1 text-sm font-bold py-2 rounded-xl transition-colors ${
+              orderMode === "quantity" ? "bg-primary text-primary-foreground shadow-[0_0_10px_var(--color-primary)]" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t('item.enterQty')}
+          </button>
+        </div>
+      )}
+
+      {quantityModeActive ? (
         <div className="space-y-2">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <span className="w-2 h-6 bg-primary rounded-full inline-block"></span>
