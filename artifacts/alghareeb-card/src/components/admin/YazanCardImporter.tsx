@@ -108,9 +108,15 @@ export default function YazanCardImporter() {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
-      const d = await res.json();
-      if (res.ok) setResetResult(`✅ تم إعادة تفعيل ${d.itemsReset} تطبيق`);
-      else setResetResult(`❌ ${d.error}`);
+      const text = await res.text();
+      if (res.ok) {
+        const d = JSON.parse(text);
+        setResetResult(`✅ تم إعادة تفعيل ${d.itemsReset} تطبيق`);
+      } else {
+        let msg = `فشل (رمز ${res.status})`;
+        try { msg = JSON.parse(text).error ?? msg; } catch { /* keep generic message */ }
+        setResetResult(`❌ ${msg}`);
+      }
     } catch (e: any) { setResetResult(`❌ ${e.message}`); }
     finally { setResetting(false); }
   }
@@ -120,11 +126,14 @@ export default function YazanCardImporter() {
     setFixResult(null);
     try {
       const res = await fetch("/api/admin/fix-yazancard-token", { method: "POST", credentials: "include" });
-      const d = await res.json();
+      const text = await res.text();
       if (res.ok) {
+        const d = JSON.parse(text);
         setFixResult(`✅ تم التحديث — باقات: ${d.packagesUpdated}، عناصر: ${d.itemsUpdated} (توكن: ${d.tokenPrefix})`);
       } else {
-        setFixResult(`❌ ${d.error}`);
+        let msg = `فشل (رمز ${res.status})`;
+        try { msg = JSON.parse(text).error ?? msg; } catch { /* keep generic message */ }
+        setFixResult(`❌ ${msg}`);
       }
     } catch (e: any) {
       setFixResult(`❌ ${e.message}`);
@@ -185,12 +194,20 @@ export default function YazanCardImporter() {
       params.set("baseUrl", providerBase);
       if (!useEnvToken && customToken) params.set("token", customToken);
       const res = await fetch(`/api/admin/provider/products?${params}`, { credentials: "include" });
+      const text = await res.text();
       if (!res.ok) {
-        const d = await res.json();
-        setError(d.error || "فشل جلب المنتجات");
+        let msg = `فشل جلب المنتجات (رمز ${res.status})`;
+        try {
+          msg = JSON.parse(text).error ?? msg;
+        } catch {
+          // The provider (or a proxy in between) didn't return JSON — most often this
+          // means the Base URL points at a docs/landing page instead of the real API path.
+          msg = "الرد المستلم ليس بصيغة JSON. تأكد أن الـ Base URL يشير للمسار الفعلي لواجهة الـ API (وليس رابط صفحة التوثيق)، وأن التوكن صحيح.";
+        }
+        setError(msg);
         return;
       }
-      const data = await res.json();
+      const data = JSON.parse(text);
       setProducts(data.products || []);
       setCategories(data.categories || {});
       if (Object.keys(data.categories || {}).length > 0) {
@@ -262,7 +279,18 @@ export default function YazanCardImporter() {
         credentials: "include",
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        setError(`فشل الاستيراد (رمز ${res.status}) — الرد المستلم ليس بصيغة JSON.`);
+        return;
+      }
+      if (!res.ok) {
+        setError(data.error || `فشل الاستيراد (رمز ${res.status})`);
+        return;
+      }
       setImportResult(data);
       if (data.imported > 0) setSelected(new Set());
     } catch (e: any) {
