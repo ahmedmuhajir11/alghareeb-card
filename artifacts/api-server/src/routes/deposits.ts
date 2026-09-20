@@ -7,6 +7,7 @@ import { pool } from "@workspace/db";
 import { requireUser } from "../middleware/requireUser";
 import { objectStorageClient } from "../lib/objectStorage";
 import { sendPushToAdmins } from "./push";
+import { logIpEvent } from "../lib/ipTracking";
 
 const router: IRouter = Router();
 
@@ -78,6 +79,7 @@ router.post("/deposits", requireUser, upload.single("receipt"), async (req: Requ
       [user.id, paymentMethodName, parsedAmount, sentCurrency, receiptUrl, senderName || null]
     );
     res.json({ success: true, deposit: result.rows[0] });
+    logIpEvent({ req, userId: user.id, eventType: "deposit_request", metadata: { depositId: result.rows[0].id, amount: parsedAmount } }).catch(() => {});
 
     // Notify admins (fire-and-forget, never breaks the user response)
     const userLabel = user.name || user.email || `#${user.account_number ?? user.id}`;

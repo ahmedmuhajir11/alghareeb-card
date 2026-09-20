@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "@workspace/db";
+import { logIpEvent, isIpAllowed, getClientIp } from "../lib/ipTracking";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? "";
@@ -73,6 +74,12 @@ router.post("/auth/register", async (req: Request, res: Response): Promise<void>
     res.status(400).json({ error: "كلمة السر يجب أن تكون 6 أحرف على الأقل" });
     return;
   }
+  const clientIp = getClientIp(req);
+  const banCheck = await isIpAllowed(clientIp, "register");
+  if (!banCheck.allowed) {
+    res.status(403).json({ error: banCheck.reason || "غير مسموح بإنشاء حساب من هذا العنوان" });
+    return;
+  }
   try {
     const exists = await pool.query("SELECT id FROM users WHERE email=$1", [email.toLowerCase()]);
     if (exists.rows.length > 0) {
@@ -91,6 +98,7 @@ router.post("/auth/register", async (req: Request, res: Response): Promise<void>
     user.account_number = accountNumber;
     (req.session as any).userId = user.id;
     res.json({ success: true, user: mapUser(user) });
+    logIpEvent({ req, userId: user.id, eventType: "register" }).catch(() => {});
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في التسجيل: " + err.message });
   }
@@ -103,28 +111,39 @@ router.post("/auth/login", async (req: Request, res: Response): Promise<void> =>
     res.status(400).json({ error: "البريد الإلكتروني وكلمة السر مطلوبان" });
     return;
   }
+  const clientIp = getClientIp(req);
+  const banCheck = await isIpAllowed(clientIp, "login");
+  if (!banCheck.allowed) {
+    res.status(403).json({ error: banCheck.reason || "غير مسموح بتسجيل الدخول من هذا العنوان" });
+    return;
+  }
   try {
     const result = await pool.query("SELECT * FROM users WHERE email=$1", [email.toLowerCase()]);
     if (result.rows.length === 0) {
+      logIpEvent({ req, eventType: "login_failed", success: false, metadata: { reason: "no_such_email" } }).catch(() => {});
       res.status(401).json({ error: "البريد الإلكتروني أو كلمة السر غير صحيحة" });
       return;
     }
     const user = result.rows[0];
     if (user.is_blocked) {
+      logIpEvent({ req, userId: user.id, eventType: "login_failed", success: false, metadata: { reason: "blocked" } }).catch(() => {});
       res.status(403).json({ error: "تم حظر هذا الحساب. يرجى التواصل مع الإدارة." });
       return;
     }
     if (!user.password_hash) {
+      logIpEvent({ req, userId: user.id, eventType: "login_failed", success: false, metadata: { reason: "google_account" } }).catch(() => {});
       res.status(401).json({ error: "هذا الحساب مسجل عبر جوجل. استخدم تسجيل الدخول بجوجل." });
       return;
     }
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      logIpEvent({ req, userId: user.id, eventType: "login_failed", success: false, metadata: { reason: "wrong_password" } }).catch(() => {});
       res.status(401).json({ error: "البريد الإلكتروني أو كلمة السر غير صحيحة" });
       return;
     }
     (req.session as any).userId = user.id;
     res.json({ success: true, user: mapUser(user) });
+    logIpEvent({ req, userId: user.id, eventType: "login" }).catch(() => {});
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في تسجيل الدخول" });
   }
@@ -160,6 +179,10 @@ router.post("/auth/profile", async (req: Request, res: Response): Promise<void> 
 
 // Logout
 router.post("/auth/logout", (req: Request, res: Response): void => {
+  const userId = (req.session as any)?.userId ?? null;
+  if (userId) {
+    logIpEvent({ req, userId, eventType: "logout" }).catch(() => {});
+  }
   req.session.destroy(() => {
     res.clearCookie("alghareeb.sid", {
       httpOnly: true,
@@ -240,6 +263,7 @@ router.get("/auth/google/callback", async (req: Request, res: Response): Promise
 
     // Find or create user
     let userRow: any;
+    let isNewUser = false;
     const existing = await pool.query("SELECT * FROM users WHERE google_id=$1 OR email=$2 LIMIT 1", [googleId, email.toLowerCase()]);
     if (existing.rows.length > 0) {
       userRow = existing.rows[0];
@@ -262,12 +286,14 @@ router.get("/auth/google/callback", async (req: Request, res: Response): Promise
         ["0000", name || email.split("@")[0], email.toLowerCase(), googleId, picture || null]
       );
       userRow = ins.rows[0];
+      isNewUser = true;
       const accNum = generateAccountNumber(userRow.id);
       await pool.query("UPDATE users SET account_number=$1 WHERE id=$2", [accNum, userRow.id]);
       userRow.account_number = accNum;
     }
 
     (req.session as any).userId = userRow.id;
+    logIpEvent({ req, userId: userRow.id, eventType: isNewUser ? "register" : "login", metadata: { via: "google" } }).catch(() => {});
     const redirectPath = userRow.profile_completed ? "/" : "/profile-setup";
     // Generate short-lived JWT to pass auth cross-domain (Render → Vercel)
     const oauthToken = jwt.sign({ userId: userRow.id }, JWT_SECRET, { expiresIn: "5m" });

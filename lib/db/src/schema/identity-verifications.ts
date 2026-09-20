@@ -5,6 +5,7 @@ export const identityVerificationsTable = pgTable("identity_verifications", {
   userId: integer("user_id").notNull().unique(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   idNumber: varchar("id_number", { length: 100 }).notNull(),
+  documentType: varchar("document_type", { length: 20 }).notNull().default("national_id"), // national_id | passport | driving_license
   country: varchar("country", { length: 100 }),
   province: varchar("province", { length: 100 }),
   extraInfo: varchar("extra_info", { length: 500 }),

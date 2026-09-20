@@ -3,6 +3,7 @@ import { pool } from "@workspace/db";
 import { requireUser } from "../middleware/requireUser";
 import { sendPushToAdmins, sendPushToUser } from "./push";
 import { extractProviderUsername } from "../lib/order-status";
+import { logIpEvent, isIpAllowed, getClientIp } from "../lib/ipTracking";
 
 const router: IRouter = Router();
 
@@ -15,6 +16,13 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
   const itemIdNum = parseInt(itemId, 10);
   if (!itemIdNum || isNaN(itemIdNum)) {
     res.status(400).json({ error: "معرّف المنتج مطلوب" });
+    return;
+  }
+
+  const banCheck = await isIpAllowed(getClientIp(req), "orders");
+  if (!banCheck.allowed) {
+    logIpEvent({ req, userId: user.id, eventType: "order_create_failed", success: false, metadata: { reason: "ip_banned" } }).catch(() => {});
+    res.status(403).json({ error: banCheck.reason || "غير مسموح بإنشاء طلبات من هذا العنوان" });
     return;
   }
 
@@ -185,6 +193,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     );
 
     await client.query("COMMIT");
+    logIpEvent({ req, userId: user.id, eventType: "order_create", orderId: order.id }).catch(() => {});
 
     // Auto-charge via API if configured
     let finalStatus = order.status as string;
@@ -274,6 +283,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
             `UPDATE orders SET status='completed', provider_username=$1, notes=$2, updated_at=NOW() WHERE id=$3`,
             [providerUsername, `تم الشحن تلقائياً ✅ - معرف العملية: ${txId} [uuid:${orderUuid}]`, order.id]
           );
+          logIpEvent({ req, userId: user.id, eventType: "order_complete", orderId: order.id }).catch(() => {});
         } else if (yazanWait) {
           const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;
           const txId = String(yzOrderId ?? "N/A");
@@ -348,6 +358,7 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
                       `UPDATE orders SET status='completed', provider_username=$1, notes=$2, updated_at=NOW() WHERE id=$3`,
                       [providerUsername, `تم الشحن تلقائياً ✅ - معرف العملية: ${txId}${receiptSuffix} [uuid:${orderUuid}]`, order.id]
                     );
+                    logIpEvent({ req, userId: user.id, eventType: "order_complete", orderId: order.id }).catch(() => {});
                   } else if (isRejected) {
                     finalStatus = "rejected";
                     resolvedDirectly = true;
