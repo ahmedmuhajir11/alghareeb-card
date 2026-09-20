@@ -303,7 +303,7 @@ function OrderCard({ o, executor, retryCharge }: { o: OrderRow; executor: any; r
             )}
             {cleanNotes && (
               <div className={`rounded-lg px-3 py-2 mr-0 text-xs leading-relaxed flex items-center justify-between gap-2 flex-wrap ${o.status === "completed" && cleanNotes.includes("تم الشحن تلقائياً") ? "bg-green-500/10 border border-green-500/30 text-green-400" : "bg-yellow-500/10 border border-yellow-500/30 text-yellow-300"}`}>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 break-words">
                   <span className="font-bold">ملاحظة API: </span>{cleanNotes}
                 </div>
                 {receiptUrls.length > 0 && !cleanTargetId && (
