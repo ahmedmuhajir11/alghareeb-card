@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users, Search, ShieldCheck, Wallet, ShoppingBag, ArrowDownCircle,
   Loader2, Mail, Hash, KeyRound, Pencil, X, Trash2, AlertTriangle, Code2, Lock, Unlock,
-  ChevronRight, ChevronLeft
+  ChevronRight, ChevronLeft, Copy
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -638,14 +638,14 @@ export default function UsersManager() {
                 <div
                   key={u.id}
                   onClick={() => setSelected(isActive ? null : u)}
-                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
+                  className={`px-4 py-3 flex items-center gap-3 flex-wrap gap-y-2 cursor-pointer transition-colors ${
                     isActive ? "bg-primary/10" : "hover:bg-primary/5"
                   }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-purple-600/15 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm shrink-0">
                     {u.name?.[0]?.toUpperCase() ?? "?"}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-[65%] sm:min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-sm truncate">{u.name}</p>
                       {u.isVerified && (
@@ -654,7 +654,7 @@ export default function UsersManager() {
                     </div>
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
                       {u.email && (
-                        <span className="flex items-center gap-1 truncate">
+                        <span className="flex items-center gap-1 truncate" dir="ltr">
                           <Mail className="w-3 h-3" />
                           <span className="truncate">{u.email}</span>
                         </span>
@@ -664,8 +664,23 @@ export default function UsersManager() {
                         {u.accountNumber}
                       </span>
                       {u.phone && (
-                        <span className="flex items-center gap-1 shrink-0 text-purple-300/80" dir="ltr">
-                          📞 {u.phoneCode ?? ""}{u.phone}
+                        <span className="flex items-center gap-1 shrink-0 text-purple-300/80">
+                          <span dir="ltr">📞 {u.phoneCode ?? ""}{u.phone}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const fullPhone = `${u.phoneCode ?? ""}${u.phone}`;
+                              navigator.clipboard?.writeText(fullPhone).then(() => {
+                                toast({ title: "✅ تم النسخ", description: fullPhone });
+                              }).catch(() => {
+                                toast({ variant: "destructive", title: "خطأ", description: "تعذر نسخ الرقم" });
+                              });
+                            }}
+                            title="نسخ رقم الهاتف"
+                            className="p-1 rounded hover:bg-primary/10 text-purple-300/80 hover:text-primary transition-colors"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
                         </span>
                       )}
                     </div>
@@ -676,7 +691,10 @@ export default function UsersManager() {
                       {fmt(u.balance)} <span className="text-[10px] text-muted-foreground">{u.currency}</span>
                     </p>
                   </div>
-                  <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex gap-1 shrink-0 w-full justify-end pt-2 mt-1 border-t border-border/20 sm:w-auto sm:justify-start sm:pt-0 sm:mt-0 sm:border-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => setBalUser(u)}
                       title="تعديل الرصيد"
