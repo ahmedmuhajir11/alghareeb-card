@@ -7,7 +7,7 @@ import { pool } from "@workspace/db";
 import { requireUser } from "../middleware/requireUser";
 import { objectStorageClient } from "../lib/objectStorage";
 import { sendPushToAdmins } from "./push";
-import { logIpEvent } from "../lib/ipTracking";
+import { logIpEvent, isIpAllowed, getClientIp } from "../lib/ipTracking";
 
 const router: IRouter = Router();
 
@@ -54,6 +54,15 @@ router.post("/deposits", requireUser, upload.single("receipt"), async (req: Requ
     res.status(400).json({ error: "المبلغ غير صالح" });
     return;
   }
+
+  // Banned IPs (scope "all" or "orders") cannot submit deposit requests.
+  const banCheck = await isIpAllowed(getClientIp(req), "orders");
+  if (!banCheck.allowed) {
+    logIpEvent({ req, userId: user.id, eventType: "deposit_request", success: false, metadata: { reason: "ip_banned" } }).catch(() => {});
+    res.status(403).json({ error: banCheck.reason || "غير مسموح بإرسال طلبات إيداع من هذا العنوان" });
+    return;
+  }
+
   try {
     // Block if user already has a pending deposit
     const pendingRes = await pool.query(
