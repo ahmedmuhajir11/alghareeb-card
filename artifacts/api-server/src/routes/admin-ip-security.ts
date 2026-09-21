@@ -57,7 +57,7 @@ router.get("/admin/ip-security/ips", requireAdmin, async (req: Request, res: Res
     let matchingIps: string[] | null = null;
     if (search) {
       // If the search term isn't a plausible IP fragment, treat it as a user search.
-      const looksLikeIp = /[0-9a-fA-F:.]/.test(search) && !search.includes("@") && !/[a-zA-Z]{2,}/.test(search);
+      const looksLikeIp = /^[0-9a-fA-F:.]+$/.test(search) && (search.includes(".") || search.includes(":"));
       if (!looksLikeIp) {
         const userMatch = await pool.query(
           `SELECT DISTINCT ie.ip_address FROM ip_events ie
@@ -73,7 +73,14 @@ router.get("/admin/ip-security/ips", requireAdmin, async (req: Request, res: Res
     const params: any[] = [];
     if (matchingIps) {
       params.push(matchingIps);
-      where.push(`a.ip_address = ANY($${params.length})`);
+      const arrIdx = params.length;
+      if (/^[0-9a-fA-F]+$/.test(search)) {
+        // A short numeric/hex term can be an account number or an IP fragment — match both.
+        params.push(`%${search}%`);
+        where.push(`(a.ip_address = ANY($${arrIdx}) OR a.ip_address ILIKE $${params.length})`);
+      } else {
+        where.push(`a.ip_address = ANY($${arrIdx})`);
+      }
     } else if (search) {
       params.push(`%${search}%`);
       where.push(`a.ip_address ILIKE $${params.length}`);

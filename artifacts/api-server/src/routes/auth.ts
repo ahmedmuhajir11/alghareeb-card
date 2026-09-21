@@ -265,6 +265,13 @@ router.get("/auth/google/callback", async (req: Request, res: Response): Promise
     let userRow: any;
     let isNewUser = false;
     const existing = await pool.query("SELECT * FROM users WHERE google_id=$1 OR email=$2 LIMIT 1", [googleId, email.toLowerCase()]);
+
+    // Respect IP bans on the Google path too (same scopes as the email flow).
+    const googleBanCheck = await isIpAllowed(getClientIp(req), existing.rows.length > 0 ? "login" : "register");
+    if (!googleBanCheck.allowed) {
+      res.redirect(`${FRONTEND_URL}/sign-in?error=ip_blocked`);
+      return;
+    }
     if (existing.rows.length > 0) {
       userRow = existing.rows[0];
 
