@@ -91,11 +91,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oauthToken = params.get("oauth_token");
+    const isNewGoogleUser = params.get("new_user") === "1";
 
     if (oauthToken) {
       params.delete("oauth_token");
+      params.delete("new_user");
       const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
       window.history.replaceState({}, "", newUrl);
+
+      const sendWelcome = () => {
+        if (!isNewGoogleUser) return;
+        setTimeout(() => {
+          fetch(`${API_BASE}/api/push/welcome`, { method: "POST", credentials: "include" }).catch(() => {});
+        }, 4000);
+      };
 
       fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
         .then((r) => r.json())
@@ -103,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (data?.user) {
             setUser(data.user);
             setIsLoaded(true);
+            sendWelcome();
             return;
           }
           return fetch(`${API_BASE}/api/auth/exchange-token`, {
@@ -112,7 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify({ token: oauthToken }),
           })
             .then((r) => r.json())
-            .then((d) => setUser(d?.user ?? null))
+            .then((d) => {
+              setUser(d?.user ?? null);
+              if (d?.user) sendWelcome();
+            })
             .finally(() => setIsLoaded(true));
         })
         .catch(() => {

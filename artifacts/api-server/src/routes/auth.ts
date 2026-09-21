@@ -298,7 +298,7 @@ router.get("/auth/google/callback", async (req: Request, res: Response): Promise
     // Generate short-lived JWT to pass auth cross-domain (Render → Vercel)
     const oauthToken = jwt.sign({ userId: userRow.id }, JWT_SECRET, { expiresIn: "5m" });
     req.session.save(() => {
-      res.redirect(`${FRONTEND_URL}${redirectPath}?oauth_token=${oauthToken}`);
+      res.redirect(`${FRONTEND_URL}${redirectPath}?oauth_token=${oauthToken}${isNewUser ? "&new_user=1" : ""}`);
     });
   } catch (err: any) {
     console.error("Google OAuth error:", err.message);
