@@ -28,6 +28,8 @@ import resellerRouter from "./reseller";
 import webhooksRouter from "./webhooks";
 import devServicesRouter from "./dev-services";
 import orderReceiptRouter from "./order-receipt";
+import adminIpSecurityRouter from "./admin-ip-security";
+import adminIpSecurityDetailRouter from "./admin-ip-security-detail";
 
 const router: IRouter = Router();
 
@@ -60,5 +62,7 @@ router.use(resellerRouter);
 router.use(webhooksRouter);
 router.use(devServicesRouter);
 router.use(orderReceiptRouter);
+router.use(adminIpSecurityRouter);
+router.use(adminIpSecurityDetailRouter);
 
 export default router;
