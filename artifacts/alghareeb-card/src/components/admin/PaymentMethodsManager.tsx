@@ -332,7 +332,7 @@ export default function PaymentMethodsManager() {
                   <div key={i} className="flex gap-2 items-start bg-background/30 p-3 rounded-lg border border-border/30">
                     <div className="flex-1 grid grid-cols-2 gap-2">
                       <Input value={field.label} onChange={e => updateField(i, "label", e.target.value)} placeholder="التسمية (مثال: IBAN)" className="bg-background/50 text-sm h-9" />
-                      <Input value={field.value} onChange={e => updateField(i, "value", e.target.value)} placeholder="القيمة" className="bg-background/50 text-sm h-9" dir="ltr" />
+                      <Input value={field.value} onChange={e => updateField(i, "value", e.target.value)} placeholder="القيمة" className="bg-background/50 text-sm h-9" dir="auto" />
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0 mt-1">
                       <div className="flex items-center gap-1">

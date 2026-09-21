@@ -660,7 +660,7 @@ function MethodDetailView({ method, onBack }: { method: PaymentMethod; onBack: (
               <div key={i} className="bg-background/50 rounded-xl p-2.5 border border-border/50">
                 <p className="text-[11px] text-muted-foreground mb-0.5">{translateFieldLabel(field.label, lang)}</p>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-mono text-sm font-semibold break-all" dir="ltr">{field.value}</p>
+                  <p className="font-mono text-sm font-semibold break-words min-w-0" dir="auto">{field.value}</p>
                   {field.isCopyable && <CopyButton value={field.value} />}
                 </div>
               </div>
