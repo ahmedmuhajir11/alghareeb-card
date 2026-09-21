@@ -84,7 +84,7 @@ router.post("/deposits", requireUser, upload.single("receipt"), async (req: Requ
     // Notify admins (fire-and-forget, never breaks the user response)
     const userLabel = user.name || user.email || `#${user.account_number ?? user.id}`;
     const title = "💰 طلب إيداع جديد";
-    const body = `${userLabel} أرسل طلب إيداع: ${parsedAmount} ${sentCurrency} عبر ${paymentMethodName}`;
+    const body = `العميل: ${userLabel}\nالمبلغ: ${parsedAmount} ${sentCurrency}\nطريقة الدفع: ${paymentMethodName}`;
     sendPushToAdmins(title, body, "/admin").catch(() => {});
   } catch (err: any) {
     res.status(500).json({ error: "خطأ في إرسال الطلب: " + err.message });

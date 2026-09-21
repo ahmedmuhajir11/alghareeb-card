@@ -274,10 +274,10 @@ router.patch("/admin/deposits/:id", requireAdmin, async (req: Request, res: Resp
 
   if (notifyDeposit) {
     const { userId, amount, currency } = notifyDeposit;
-    const title = action === "approve" ? "✅ تم قبول طلب الإيداع" : "❌ تم رفض طلب الإيداع";
+    const title = action === "approve" ? "✅ تمت الموافقة على طلب الإيداع" : "❌ تم رفض طلب الإيداع";
     const defaultBody = action === "approve"
-      ? `تمت إضافة ${amount} ${currency} إلى رصيدك. يمكنك الآن إجراء عمليات الشراء.`
-      : `تم رفض طلب الإيداع.${adminNote ? " السبب: " + adminNote : ""}`;
+      ? `تمت إضافة ${amount} ${currency} إلى محفظتك، ويمكنك الآن إتمام عمليات الشحن.`
+      : `تم رفض طلب الإيداع الخاص بك.${adminNote ? " السبب: " + adminNote : ""}`;
     const body = (customMessage && String(customMessage).trim()) || defaultBody;
     sendPushToUser(userId, title, body, "/wallet").catch(() => {});
   }
@@ -460,12 +460,12 @@ router.patch("/admin/orders/:id", requireAdmin, async (req: Request, res: Respon
   if (notifyOrder) {
     const { userId, itemName, packageName, amount, currency, wasDeducted } = notifyOrder;
     const itemLabel = packageName ? `${itemName} - ${packageName}` : itemName;
-    const title = action === "approve" ? "✅ تم تنفيذ طلب الشحن" : "❌ تم رفض طلب الشحن";
+    const title = action === "approve" ? "✅ تمت عملية الشحن بنجاح" : "❌ تم رفض طلب الشحن";
     const defaultBody = action === "approve"
-      ? `تم تنفيذ طلبك: ${itemLabel}. شكراً لاستخدامك بطاقة الغريب.`
+      ? `تم شحن ${itemLabel} بنجاح. شكراً لثقتك بالغريب كارد.`
       : (wasDeducted
-          ? `تم رفض طلب ${itemLabel} وإرجاع ${amount} ${currency} إلى رصيدك.`
-          : `تم رفض طلب ${itemLabel}. لم يتم خصم أي رصيد من حسابك.`);
+          ? `تم رفض طلبك (${itemLabel}) وإعادة ${amount} ${currency} إلى محفظتك.`
+          : `تم رفض طلبك (${itemLabel}). لم يتم خصم أي مبلغ من رصيدك.`);
     const body = (customMessage && String(customMessage).trim()) || defaultBody;
     sendPushToUser(userId, title, body, "/orders").catch(() => {});
   }
@@ -690,7 +690,7 @@ router.post("/admin/orders/:id/retry-charge", requireAdmin, async (req: Request,
           `UPDATE orders SET status='completed', notes=$1, updated_at=NOW() WHERE id=$2`,
           [`تم الشحن تلقائياً ✅ - معرف العملية: ${txId}`, id]
         );
-        sendPushToUser(order.user_id, "✅ تم الشحن التلقائي", `تم تنفيذ طلبك: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}`, "/orders").catch(() => {});
+        sendPushToUser(order.user_id, "✅ تمت عملية الشحن بنجاح", `تم شحن ${order.item_name}${order.package_name ? " - " + order.package_name : ""} بنجاح. شكراً لثقتك بالغريب كارد.`, "/orders").catch(() => {});
         res.json({ success: true, status: "completed", apiResponse: apiData });
       } else if (yazanWait) {
         const yzOrderId = (apiData?.["data"] as any)?.["order_id"] ?? null;

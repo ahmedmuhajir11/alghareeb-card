@@ -179,14 +179,14 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
 
       sendPushToUser(
         order.user_id,
-        "✅ تم تنفيذ طلب الشحن",
-        `تم شحن ${order.item_name}${order.package_name ? " - " + order.package_name : ""} بنجاح.`,
+        "✅ تمت عملية الشحن بنجاح",
+        `تم شحن ${order.item_name}${order.package_name ? " - " + order.package_name : ""} بنجاح. شكراً لثقتك بالغريب كارد.`,
         "/orders"
       ).catch(() => {});
 
       sendPushToAdmins(
-        "✅ اكتمال شحن تلقائي (Callback)",
-        `تم تأكيد الطلب #${order.id} بنجاح من المزود.`,
+        "✅ اكتمل الشحن التلقائي (إشعار المزود)",
+        `رقم الطلب: #${order.id}\nالتطبيق/المنتج: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}\nمعرّف الحساب (ID): ${order.target_id || "—"}\nالسعر: ${order.amount} ${order.currency}`,
         "/admin"
       ).catch(() => {});
 
@@ -243,14 +243,14 @@ const handleYazanCallback = async (req: Request, res: Response): Promise<void> =
       if (refunded) {
         sendPushToUser(
           order.user_id,
-          "❌ فشل الشحن وتم استرجاع الرصيد",
-          `تعذر تنفيذ طلب ${order.item_name} وتمت إعادة ${cost} ${order.currency} إلى محفظتك تلقائياً.`,
+          "❌ تعذّر تنفيذ طلب الشحن",
+          `تعذّر تنفيذ طلب ${order.item_name}. تمت إعادة ${cost} ${order.currency} إلى محفظتك تلقائياً.`,
           "/orders"
         ).catch(() => {});
 
         sendPushToAdmins(
-          "❌ رفض طلب شحن تلقائياً (Callback)",
-          `تم رفض الطلب #${order.id} من المزود (${reason}) وتم استرجاع ${cost} ${order.currency} للعميل آلياً.`,
+          "❌ فشل شحن تلقائي وتم استرجاع الرصيد (إشعار المزود)",
+          `رقم الطلب: #${order.id}\nالتطبيق/المنتج: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}\nمعرّف الحساب (ID): ${order.target_id || "—"}\nالسبب: ${reason}\nتمت إعادة ${cost} ${order.currency} إلى رصيد العميل تلقائياً.`,
           "/admin"
         ).catch(() => {});
       }

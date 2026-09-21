@@ -155,9 +155,9 @@ router.post("/push/welcome", async (req, res): Promise<void> => {
     const firstName = (name as string).split(" ")[0];
     const hasBalance = parseFloat(balance || "0") > 0;
     const body = hasBalance
-      ? `رصيدك جاهز للشحن! شحّن ألعابك وتطبيقاتك المفضلة الآن 🎮`
-      : `أضف رصيداً الآن وابدأ الشحن الفوري لألعابك وتطبيقاتك 🚀`;
-    await sendPushToUser(userId, `أهلاً بك ${firstName}! 👋`, body, "/payment-methods");
+      ? `رصيدك جاهز للاستخدام. ابدأ بشحن ألعابك وتطبيقاتك المفضلة الآن 🎮`
+      : `أضف رصيداً إلى محفظتك لتبدأ الشحن الفوري لألعابك وتطبيقاتك 🚀`;
+    await sendPushToUser(userId, `أهلاً بك في الغريب كارد، ${firstName} 👋`, body, "/payment-methods");
     res.json({ ok: true });
   } catch (err: any) {
     res.status(500).json({ error: err?.message });

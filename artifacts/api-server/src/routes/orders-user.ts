@@ -428,15 +428,15 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     if (finalStatus === "rejected") {
       sendPushToUser(
         user.id,
-        "❌ فشل الشحن وتم استرجاع الرصيد",
-        `تعذر تنفيذ طلب ${item.name_ar} وتمت إعادة ${cost} ${userCurrency} إلى محفظتك تلقائياً.`,
+        "❌ تعذّر تنفيذ طلب الشحن",
+        `تعذّر تنفيذ طلب ${item.name_ar}. تمت إعادة ${cost} ${userCurrency} إلى محفظتك تلقائياً.`,
         "/orders"
       ).catch(() => {});
     } else if (finalStatus === "completed") {
       sendPushToUser(
         user.id,
-        "✅ تم تنفيذ طلب الشحن بنجاح",
-        `تم شحن ${item.name_ar}${packageName ? " - " + packageName : ""} بنجاح. شكراً لك!`,
+        "✅ تمت عملية الشحن بنجاح",
+        `تم شحن ${item.name_ar}${packageName ? " - " + packageName : ""} بنجاح. شكراً لثقتك بالغريب كارد.`,
         "/orders"
       ).catch(() => {});
     }
@@ -445,11 +445,11 @@ router.post("/orders", requireUser, async (req: Request, res: Response): Promise
     const userLabel = user.name || user.email || `#${user.accountNumber ?? user.id}`;
     const orderLabel = `${item.name_ar}${packageName ? " - " + packageName : ""}`;
     const adminTitle = autoCharged
-      ? "✅ شحن تلقائي ناجح"
+      ? "✅ تم شحن الطلب تلقائياً بنجاح"
       : finalStatus === "rejected"
-      ? "❌ طلب مرفوض (تم استرجاع الرصيد آلياً)"
+      ? "❌ فشل شحن الطلب وتم استرجاع الرصيد"
       : "🛒 طلب شحن جديد";
-    const adminBody = `${userLabel} - ${orderLabel} بقيمة ${cost} ${userCurrency}${targetId ? ` · ID: ${targetId}` : ""}${autoCharged ? " · تم تلقائياً" : ""}`;
+    const adminBody = `التطبيق/المنتج: ${orderLabel}\nمعرّف الحساب (ID): ${targetId || "—"}\nالسعر: ${cost} ${userCurrency}\nاسم العميل: ${userLabel}${autoCharged ? "\nطريقة التنفيذ: تلقائي" : ""}`;
     sendPushToAdmins(adminTitle, adminBody, "/admin").catch(() => {});
 
     const userBalanceAfter = finalStatus === "rejected" ? currentBalance : (currentBalance - cost);

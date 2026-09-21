@@ -82,8 +82,8 @@ router.post("/sections/:sectionId/items", async (req, res): Promise<void> => {
       .returning();
 
     sendPushNotification(
-      "منتج جديد في الغريب كارد 🎮",
-      `تم إضافة "${parsed.data.nameAr}" — تفقده الآن!`,
+      "🎮 منتج جديد في الغريب كارد",
+      `تمت إضافة "${parsed.data.nameAr}" إلى المتجر — تصفّحه الآن!`,
       "/"
     );
 

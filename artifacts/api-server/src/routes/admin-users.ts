@@ -150,10 +150,10 @@ router.put("/admin/users/:id/balance", requireAdmin, async (req: Request, res: R
     // Notify the user
     const absDelta = Math.abs(delta);
     if (absDelta > 0) {
-      const title = delta >= 0 ? "✅ تم إضافة رصيد إلى محفظتك" : "ℹ️ تم خصم رصيد من محفظتك";
+      const title = delta >= 0 ? "✅ تمت إضافة رصيد إلى محفظتك" : "ℹ️ تم خصم مبلغ من محفظتك";
       const body = delta >= 0
-        ? `تمت إضافة ${absDelta.toFixed(2)} ${currency} إلى رصيدك.${note?.trim() ? " (" + note.trim() + ")" : ""} رصيدك الحالي: ${newBalance.toFixed(2)} ${currency}.`
-        : `تم خصم ${absDelta.toFixed(2)} ${currency} من رصيدك.${note?.trim() ? " (" + note.trim() + ")" : ""} رصيدك الحالي: ${newBalance.toFixed(2)} ${currency}.`;
+        ? `تمت إضافة ${absDelta.toFixed(2)} ${currency} إلى محفظتك.${note?.trim() ? " (" + note.trim() + ")" : ""} رصيدك الحالي: ${newBalance.toFixed(2)} ${currency}.`
+        : `تم خصم ${absDelta.toFixed(2)} ${currency} من محفظتك.${note?.trim() ? " (" + note.trim() + ")" : ""} رصيدك الحالي: ${newBalance.toFixed(2)} ${currency}.`;
       sendPushToUser(parseInt(String(id), 10), title, body, "/wallet").catch(() => {});
     }
 
@@ -396,8 +396,8 @@ router.put("/admin/identities/:id/approve", requireAdmin, async (req: Request, r
     // Notify the user the same way order approvals do.
     sendPushToUser(
       iv.rows[0].user_id,
-      "✅ تم قبول طلب توثيق الهوية",
-      (adminNote && String(adminNote).trim()) || "تمت الموافقة على طلب توثيق هويتك. حسابك الآن موثّق.",
+      "✅ تم توثيق حسابك بنجاح",
+      (adminNote && String(adminNote).trim()) || "تمت الموافقة على طلب توثيق الهوية، وأصبح حسابك موثّقاً الآن.",
       "/kyc"
     ).catch(() => {});
     res.json({ success: true });
@@ -422,7 +422,7 @@ router.put("/admin/identities/:id/reject", requireAdmin, async (req: Request, re
     sendPushToUser(
       iv.rows[0].user_id,
       "❌ تم رفض طلب توثيق الهوية",
-      `تم رفض طلب توثيق هويتك.${reasonSuffix} يمكنك إعادة الإرسال بالبيانات الصحيحة.`,
+      `تم رفض طلب توثيق الهوية.${reasonSuffix}\nيمكنك إعادة إرسال الطلب بعد تصحيح البيانات.`,
       "/kyc"
     ).catch(() => {});
     res.json({ success: true });

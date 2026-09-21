@@ -89,6 +89,7 @@ function parseCheckStatus(checkData: any, providerOrderId: string): { status: st
   const note = String(orderInfo.note || orderInfo.msg || orderInfo.message || orderInfo.error || orderInfo.details || "");
   const receiptUrl = orderInfo.receipt || orderInfo.image || orderInfo.img || orderInfo.url || undefined;
   const username = extractProviderUsername(orderInfo);
+  console.log("[DEBUG orderInfo raw]", JSON.stringify(orderInfo));
 
   return { status: rawStatus, note, receiptUrl, username };
 }
@@ -188,8 +189,8 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
 
             sendPushToUser(
               order.user_id,
-              "❌ تم رفض طلب الشحن واسترجاع الرصيد",
-              `تم رفض طلب ${order.item_name} (المعرف غير صحيح) وتمت إعادة ${order.amount} ${order.currency} إلى محفظتك تلقائياً.`,
+              "❌ تعذّر تنفيذ طلب الشحن",
+              `تعذّر تنفيذ طلب ${order.item_name} لأن المعرّف المُدخل غير صحيح. تمت إعادة ${order.amount} ${order.currency} إلى محفظتك تلقائياً.`,
               "/orders"
             ).catch(() => {});
 
@@ -367,13 +368,13 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
           );
           sendPushToUser(
             order.user_id,
-            "✅ تم تنفيذ طلب الشحن",
-            `تم شحن ${order.item_name} بنجاح. شكراً لك!`,
+            "✅ تمت عملية الشحن بنجاح",
+            `تم شحن ${order.item_name}${order.package_name ? " - " + order.package_name : ""} بنجاح. شكراً لثقتك بالغريب كارد.`,
             "/orders"
           ).catch(() => {});
           sendPushToAdmins(
-            "✅ اكتمال شحن تلقائي (Polling)",
-            `تم تأكيد الطلب #${order.id} بنجاح عبر المزامنة الدورية.`,
+            "✅ اكتمل الشحن التلقائي (مزامنة دورية)",
+            `رقم الطلب: #${order.id}\nالتطبيق/المنتج: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}\nمعرّف الحساب (ID): ${order.target_id || "—"}\nالسعر: ${order.amount} ${order.currency}`,
             "/admin"
           ).catch(() => {});
           updatedCount++;
@@ -410,14 +411,14 @@ export async function syncPendingYazanOrders(): Promise<{ checked: number; updat
 
               sendPushToUser(
                 order.user_id,
-                "❌ تم رفض طلب الشحن واسترجاع الرصيد",
-                `تم رفض طلب ${order.item_name} (${reasonText}) وتمت إعادة ${order.amount} ${order.currency} إلى محفظتك تلقائياً.`,
+                "❌ تعذّر تنفيذ طلب الشحن",
+                `تعذّر تنفيذ طلب ${order.item_name}. السبب: ${reasonText}. تمت إعادة ${order.amount} ${order.currency} إلى محفظتك تلقائياً.`,
                 "/orders"
               ).catch(() => {});
 
               sendPushToAdmins(
-                "❌ رفض طلب شحن تلقائياً",
-                `تم رفض الطلب #${order.id} من المزود (${reasonText}) وتم استرجاع الرصيد للعميل آلياً.`,
+                "❌ فشل شحن تلقائي وتم استرجاع الرصيد (مزامنة دورية)",
+                `رقم الطلب: #${order.id}\nالتطبيق/المنتج: ${order.item_name}${order.package_name ? " - " + order.package_name : ""}\nمعرّف الحساب (ID): ${order.target_id || "—"}\nالسبب: ${reasonText}\nتمت إعادة ${order.amount} ${order.currency} إلى رصيد العميل تلقائياً.`,
                 "/admin"
               ).catch(() => {});
 
