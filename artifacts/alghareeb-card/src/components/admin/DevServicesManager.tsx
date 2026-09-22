@@ -63,6 +63,7 @@ interface DevSettings {
   mobileAppsHeroTitle: string;
   mobileAppsHeroDesc: string;
   mobileAppsHeroImage: string;
+  digitalStoreHeroImage: string;
 }
 
 interface DevRequest {
@@ -88,13 +89,14 @@ export default function DevServicesManager() {
     whatsappNumber: "", websitesEnabled: true, mobileAppsEnabled: true,
     websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroDesc: "", websitesHeroImage: "",
     mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc: "", mobileAppsHeroImage: "",
+    digitalStoreHeroImage: "",
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [requests, setRequests] = useState<DevRequest[]>([]);
   const [viewingRequest, setViewingRequest] = useState<DevRequest | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadTarget, setUploadTarget] = useState<"card" | "webHero" | "mobileHero">("card");
+  const [uploadTarget, setUploadTarget] = useState<"card" | "webHero" | "mobileHero" | "digitalStoreHero">("card");
 
   const loadAll = async () => {
     try {
@@ -143,6 +145,8 @@ export default function DevServicesManager() {
           setSettings(prev => ({ ...prev, websitesHeroImage: data.url }));
         } else if (uploadTarget === "mobileHero") {
           setSettings(prev => ({ ...prev, mobileAppsHeroImage: data.url }));
+        } else if (uploadTarget === "digitalStoreHero") {
+          setSettings(prev => ({ ...prev, digitalStoreHeroImage: data.url }));
         }
         toast({ title: "تم رفع الصورة بنجاح" });
       }
@@ -522,6 +526,34 @@ export default function DevServicesManager() {
                     <Upload className="w-4 h-4" />
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>صورة قسم "مشاريع شحن رقمية جاهزة" (الصفحة الرئيسية)</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>صورة البطاقة في الصفحة الرئيسية</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={settings.digitalStoreHeroImage}
+                    onChange={e => setSettings(s => ({ ...s, digitalStoreHeroImage: e.target.value }))}
+                    placeholder="رابط صورة (اتركه فارغًا لعرض أيقونة افتراضية)"
+                    dir="ltr"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => { setUploadTarget("digitalStoreHero"); fileInputRef.current?.click(); }}
+                    disabled={uploadingImage}
+                  >
+                    <Upload className="w-4 h-4" />
+                  </Button>
+                </div>
+                {settings.digitalStoreHeroImage && (
+                  <img src={settings.digitalStoreHeroImage} alt="معاينة" className="mt-2 w-full max-w-xs h-32 object-cover rounded-lg border border-border/40" />
+                )}
               </div>
             </CardContent>
           </Card>

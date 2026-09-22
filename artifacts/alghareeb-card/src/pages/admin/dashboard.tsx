@@ -115,7 +115,7 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="digitalprojects" className={TAB_CLASS}>
               <Store className="w-4 h-4 flex-shrink-0" />
-              مشاريع رقمية
+              طلبات التواصل
             </TabsTrigger>
           </TabsList>
         </div>

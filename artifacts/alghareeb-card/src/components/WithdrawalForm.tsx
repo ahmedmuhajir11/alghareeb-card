@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useGetSettings } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, DollarSign } from "lucide-react";
+import { Send, DollarSign, Loader2, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 const WITHDRAWAL_METHODS = [
   "تحويل بنكي",
@@ -16,7 +17,6 @@ const WITHDRAWAL_METHODS = [
 ];
 
 export default function WithdrawalForm() {
-  const { data: settings } = useGetSettings();
   const { toast } = useToast();
 
   const [appName, setAppName] = useState("");
@@ -25,10 +25,13 @@ export default function WithdrawalForm() {
   const [withdrawalType, setWithdrawalType] = useState("");
   const [withdrawalMethod, setWithdrawalMethod] = useState("");
   const [estimatedSalary, setEstimatedSalary] = useState("");
+  const [phone, setPhone] = useState("");
+  const [sending, setSending] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const selectClass = "w-full h-12 px-4 rounded-md border border-primary/20 bg-background/50 text-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors appearance-none cursor-pointer";
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!appName.trim()) {
       toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال اسم التطبيق" });
       return;
@@ -53,22 +56,42 @@ export default function WithdrawalForm() {
       toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال الراتب التقديري بالدولار" });
       return;
     }
+    if (!phone.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال رقم هاتفك مع مفتاح الدولة ليتم التواصل معك" });
+      return;
+    }
 
-    const rawNumber = settings?.whatsappNumber || "00905378221375";
-    const whatsappNumber = rawNumber.replace(/^\+/, "").replace(/^00/, "");
+    const message = `طلب سحب جديد\n\nاسم التطبيق: ${appName}\nاسم المستخدم: ${username}\nالمعرف (ID): ${userId}\nنوع السحب: ${withdrawalType}\nطريقة السحب داخل التطبيق: ${withdrawalMethod}\nالراتب التقديري: $${estimatedSalary}`;
 
-    const message = `طلب سحب جديد
-
-اسم التطبيق: ${appName}
-اسم المستخدم: ${username}
-المعرف (ID): ${userId}
-نوع السحب: ${withdrawalType}
-طريقة السحب داخل التطبيق: ${withdrawalMethod}
-الراتب التقديري: $${estimatedSalary}`;
-
-    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    setSending(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/service-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceType: "salary_withdrawal", phone: phone.trim(), message }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "تعذر إرسال الطلب");
+      setSubmitted(true);
+      toast({ title: "✅ تم إرسال طلبك", description: "سيتواصل معك فريقنا لإتمام عملية السحب." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ", description: err.message ?? "تعذر إرسال الطلب، حاول مرة أخرى" });
+    } finally {
+      setSending(false);
+    }
   };
+
+  if (submitted) {
+    return (
+      <div className="max-w-md mx-auto flex flex-col items-center gap-4 bg-card/30 p-8 rounded-2xl neon-border text-center">
+        <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
+          <CheckCircle2 className="w-8 h-8 text-primary" />
+        </div>
+        <h2 className="text-xl font-bold">تم إرسال طلبك بنجاح!</h2>
+        <p className="text-muted-foreground text-sm">سيتواصل معك فريقنا على رقم هاتفك لإتمام عملية السحب في أقرب وقت.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -78,7 +101,7 @@ export default function WithdrawalForm() {
         </div>
         <div>
           <h1 className="text-3xl font-bold neon-text mb-2">سحب رواتب المضيفين</h1>
-          <p className="text-muted-foreground">أدخل بياناتك وسيتم إرسال طلب السحب مباشرة عبر واتساب</p>
+          <p className="text-muted-foreground">أدخل بياناتك وسيتواصل معك فريقنا لإتمام عملية السحب</p>
         </div>
       </div>
 
@@ -164,11 +187,24 @@ export default function WithdrawalForm() {
           </div>
         </div>
 
+        <div className="space-y-2">
+          <label className="text-sm font-medium">رقم هاتفك للتواصل (مع مفتاح الدولة)</label>
+          <Input
+            type="tel"
+            placeholder="+963 9xx xxx xxx"
+            className="h-12 text-base bg-background/50 border-primary/20 focus-visible:border-primary"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            dir="ltr"
+          />
+        </div>
+
         <Button
-          className="w-full h-14 text-lg font-bold mt-2 shadow-[0_0_15px_var(--color-primary)] hover:shadow-[0_0_25px_var(--color-primary)] transition-all gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
+          className="w-full h-14 text-lg font-bold mt-2 shadow-[0_0_15px_var(--color-primary)] hover:shadow-[0_0_25px_var(--color-primary)] transition-all gap-2"
           onClick={handleSubmit}
+          disabled={sending}
         >
-          <MessageCircle className="w-6 h-6" />
+          {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           إرسال الطلب
         </Button>
       </div>

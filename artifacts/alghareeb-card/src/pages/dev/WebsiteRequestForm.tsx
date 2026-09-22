@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { StepProgress } from "@/components/dev/StepProgress";
 import { ColorPicker } from "@/components/dev/ColorPicker";
 import { ChevronRight, ChevronLeft, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -23,6 +24,7 @@ interface FormData {
   features: string[];
   budget: string;
   notes: string;
+  phone: string;
   selectedService?: string;
 }
 
@@ -53,16 +55,15 @@ function OptionButton({ label, selected, onClick }: { label: string; selected: b
 export default function WebsiteRequestForm() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>({
-    siteType: "", goal: "", projectName: "", hasLogo: "", colors: [], inspirationUrl: "", features: [], budget: "", notes: "",
+    siteType: "", goal: "", projectName: "", hasLogo: "", colors: [], inspirationUrl: "", features: [], budget: "", notes: "", phone: "",
   });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
-  const [whatsapp, setWhatsapp] = useState("");
   const [dynamicQuestions, setDynamicQuestions] = useState<DynamicQuestion[]>([]);
   const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/dev/settings`).then(r => r.json()).then(d => setWhatsapp(d.whatsappNumber || "")).catch(() => {});
     fetch(`${API_BASE}/api/dev/form-questions?type=websites`).then(r => r.json()).then(d => setDynamicQuestions(Array.isArray(d) ? d : [])).catch(() => {});
     const sp = new URLSearchParams(window.location.search);
     if (sp.get("service")) setForm(f => ({ ...f, selectedService: sp.get("service") || "" }));
@@ -94,11 +95,17 @@ export default function WebsiteRequestForm() {
       form.features.length > 0 ? `الميزات: ${form.features.join("، ")}` : "",
       `الميزانية: ${form.budget}`,
       form.notes ? `ملاحظات: ${form.notes}` : "",
+      `رقم الهاتف للتواصل: ${form.phone}`,
     ].filter(Boolean).join("\n");
     return lines;
   };
 
   const handleSubmit = async () => {
+    if (!form.phone.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال رقم هاتفك مع مفتاح الدولة ليتم التواصل معك" });
+      setStep(4);
+      return;
+    }
     setSending(true);
     try {
       await fetch(`${API_BASE}/api/dev/requests`, {
@@ -107,11 +114,20 @@ export default function WebsiteRequestForm() {
         body: JSON.stringify({ serviceType: "websites", answers: form, selectedServiceCard: form.selectedService }),
       });
     } catch {}
-    const msg = buildWhatsAppMessage();
-    const num = whatsapp.replace(/\D/g, "");
-    if (num) window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
-    setSubmitted(true);
-    setSending(false);
+    try {
+      const res = await fetch(`${API_BASE}/api/service-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceType: "website_dev", phone: form.phone.trim(), message: buildWhatsAppMessage() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "تعذر إرسال الطلب");
+      setSubmitted(true);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ", description: err.message ?? "تعذر إرسال الطلب، حاول مرة أخرى" });
+    } finally {
+      setSending(false);
+    }
   };
 
   if (submitted) {
@@ -244,8 +260,19 @@ export default function WebsiteRequestForm() {
                   </div>
                 ))}
               </div>
+              <div className="space-y-2 pt-2">
+                <label className="text-sm font-medium block">رقم هاتفك للتواصل (مع مفتاح الدولة) <span className="text-destructive">*</span></label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="+963 9xx xxx xxx"
+                  dir="ltr"
+                  className="w-full px-4 py-3 rounded-xl bg-card/60 border border-border/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 text-sm"
+                />
+              </div>
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-muted-foreground">
-                بعد الإرسال ستفتح محادثة WhatsApp مع فريقنا تحتوي على تفاصيل طلبك.
+                سيتواصل معك فريقنا على رقم هاتفك لمناقشة تفاصيل طلبك.
               </div>
             </div>
           )}
@@ -269,7 +296,7 @@ export default function WebsiteRequestForm() {
               className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              إرسال عبر WhatsApp
+              إرسال الطلب
             </button>
           )}
         </div>

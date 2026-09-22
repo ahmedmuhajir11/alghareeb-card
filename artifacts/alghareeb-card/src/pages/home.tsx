@@ -219,6 +219,14 @@ export default function Home() {
   const hasWebDevSection = sections?.some(s => s.nameAr.includes("مواقع") && (s.nameAr.includes("تصميم") || s.nameAr.includes("تطوير") || s.nameAr.includes("برمجة")));
   const hasMobileDevSection = sections?.some(s => !s.nameAr.includes("شحن") && s.nameAr.includes("تطبيقات") && (s.nameAr.includes("تصميم") || s.nameAr.includes("تطوير") || s.nameAr.includes("برمجة")));
 
+  const [digitalStoreHeroImage, setDigitalStoreHeroImage] = useState("");
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL ?? ""}/api/dev/settings`)
+      .then(r => r.json())
+      .then(d => setDigitalStoreHeroImage(d?.digitalStoreHeroImage || ""))
+      .catch(() => {});
+  }, []);
+
   return (
     <div>
       <Helmet>
@@ -361,9 +369,17 @@ export default function Home() {
                 <CardContent className="p-0 h-44 md:h-52 relative flex flex-col">
                   <div
                     className="relative flex-1 overflow-hidden flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, hsl(var(--primary)/0.35), hsl(260 35% 10%) 55%, hsl(var(--gold)/0.2))" }}
+                    style={!digitalStoreHeroImage ? { background: "linear-gradient(135deg, hsl(var(--primary)/0.35), hsl(260 35% 10%) 55%, hsl(var(--gold)/0.2))" } : undefined}
                   >
-                    <ShoppingCart className="w-14 h-14 text-[hsl(var(--gold))] drop-shadow-[0_0_12px_hsl(var(--gold)/0.5)] group-hover:scale-110 transition-transform duration-300" />
+                    {digitalStoreHeroImage ? (
+                      <img
+                        src={digitalStoreHeroImage}
+                        alt={lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : 'مشاريع شحن رقمية جاهزة'}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <ShoppingCart className="w-14 h-14 text-[hsl(var(--gold))] drop-shadow-[0_0_12px_hsl(var(--gold)/0.5)] group-hover:scale-110 transition-transform duration-300" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                     <div className="absolute bottom-0 inset-x-0 p-2 text-center">
                       <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
