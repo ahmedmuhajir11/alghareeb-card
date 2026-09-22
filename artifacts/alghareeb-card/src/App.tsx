@@ -37,6 +37,7 @@ import WebsitesServicePage from "@/pages/dev/WebsitesServicePage";
 import MobileAppsServicePage from "@/pages/dev/MobileAppsServicePage";
 import WebsiteRequestForm from "@/pages/dev/WebsiteRequestForm";
 import MobileAppRequestForm from "@/pages/dev/MobileAppRequestForm";
+import DigitalStoreProjectsPage from "@/pages/DigitalStoreProjectsPage";
 import AppLayout from "@/components/layout/AppLayout";
 import AdminLayout from "@/components/layout/AdminLayout";
 
@@ -97,6 +98,9 @@ function Router() {
       </Route>
       <Route path="/dev/mobile-apps/request">
         <AppLayout><MobileAppRequestForm /></AppLayout>
+      </Route>
+      <Route path="/digital-store-projects">
+        <AppLayout><DigitalStoreProjectsPage /></AppLayout>
       </Route>
 
       <Route path="/section/:id">

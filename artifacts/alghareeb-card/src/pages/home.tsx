@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useEffect, useCallback, useState, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, Zap, Headphones, BadgeCheck, ChevronLeft, Search, X } from "lucide-react";
+import { ShieldCheck, Zap, Headphones, BadgeCheck, ChevronLeft, Search, X, ShoppingCart } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -354,6 +354,32 @@ export default function Home() {
                 </Card>
               </Link>
             )}
+
+            {/* Standalone Card: Ready-made digital top-up store projects */}
+            <Link href="/digital-store-projects">
+              <Card className="neon-border cursor-pointer bg-card/50 hover:border-[hsl(var(--gold)/0.6)] transition-all duration-300 h-full overflow-hidden group">
+                <CardContent className="p-0 h-44 md:h-52 relative flex flex-col">
+                  <div
+                    className="relative flex-1 overflow-hidden flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, hsl(var(--primary)/0.35), hsl(260 35% 10%) 55%, hsl(var(--gold)/0.2))" }}
+                  >
+                    <ShoppingCart className="w-14 h-14 text-[hsl(var(--gold))] drop-shadow-[0_0_12px_hsl(var(--gold)/0.5)] group-hover:scale-110 transition-transform duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
+                    <div className="absolute bottom-0 inset-x-0 p-2 text-center">
+                      <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
+                        {lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : 'مشاريع شحن رقمية جاهزة'}
+                      </h3>
+                    </div>
+                  </div>
+                  <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
+                    <span className="flex items-center gap-1">
+                      <span>{lang === 'en' ? 'Start Your Project' : 'ابدأ مشروعك'}</span>
+                      <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         )}
       </div>

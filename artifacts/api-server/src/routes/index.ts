@@ -30,6 +30,7 @@ import devServicesRouter from "./dev-services";
 import orderReceiptRouter from "./order-receipt";
 import adminIpSecurityRouter from "./admin-ip-security";
 import adminIpSecurityDetailRouter from "./admin-ip-security-detail";
+import digitalStoreProjectsRouter from "./digital-store-projects";
 
 const router: IRouter = Router();
 
@@ -64,5 +65,6 @@ router.use(devServicesRouter);
 router.use(orderReceiptRouter);
 router.use(adminIpSecurityRouter);
 router.use(adminIpSecurityDetailRouter);
+router.use(digitalStoreProjectsRouter);
 
 export default router;

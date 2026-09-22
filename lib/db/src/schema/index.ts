@@ -17,3 +17,4 @@ export * from "./ip-events";
 export * from "./ip-addresses";
 export * from "./ip-bans";
 export * from "./ip-whitelist";
+export * from "./digital-store-project-requests";

@@ -18,8 +18,10 @@ import DevServicesManager from "@/components/admin/DevServicesManager";
 import { Code } from "lucide-react";
 import IpSecurityManager from "@/components/admin/IpSecurityManager";
 import { Shield } from "lucide-react";
+import DigitalStoreProjectsManager from "@/components/admin/DigitalStoreProjectsManager";
+import { Store } from "lucide-react";
 
-const VALID_TABS = ["stats","orders","deposits","users","sections","payments","slider","ticker","notifications","identities","settings","yazancard","devservices","ipsecurity"];
+const VALID_TABS = ["stats","orders","deposits","users","sections","payments","slider","ticker","notifications","identities","settings","yazancard","devservices","ipsecurity","digitalprojects"];
 const TAB_CLASS = "flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-colors";
 
 function getTabFromUrl(): string {
@@ -111,6 +113,10 @@ export default function AdminDashboard() {
               <Shield className="w-4 h-4 flex-shrink-0" />
               مراقبة IP
             </TabsTrigger>
+            <TabsTrigger value="digitalprojects" className={TAB_CLASS}>
+              <Store className="w-4 h-4 flex-shrink-0" />
+              مشاريع رقمية
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -195,6 +201,12 @@ export default function AdminDashboard() {
         <TabsContent value="ipsecurity" className="mt-6">
           <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm">
             <IpSecurityManager />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="digitalprojects" className="mt-6">
+          <div className="bg-card/40 border border-border/40 rounded-2xl p-4 md:p-6 shadow-sm">
+            <DigitalStoreProjectsManager />
           </div>
         </TabsContent>
       </Tabs>
