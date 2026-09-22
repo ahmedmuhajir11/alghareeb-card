@@ -220,10 +220,14 @@ export default function Home() {
   const hasMobileDevSection = sections?.some(s => !s.nameAr.includes("شحن") && s.nameAr.includes("تطبيقات") && (s.nameAr.includes("تصميم") || s.nameAr.includes("تطوير") || s.nameAr.includes("برمجة")));
 
   const [digitalStoreHeroImage, setDigitalStoreHeroImage] = useState("");
+  const [digitalStoreHeroTitle, setDigitalStoreHeroTitle] = useState("مشاريع شحن رقمية جاهزة");
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL ?? ""}/api/dev/settings`)
       .then(r => r.json())
-      .then(d => setDigitalStoreHeroImage(d?.digitalStoreHeroImage || ""))
+      .then(d => {
+        setDigitalStoreHeroImage(d?.digitalStoreHeroImage || "");
+        setDigitalStoreHeroTitle(d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة");
+      })
       .catch(() => {});
   }, []);
 
@@ -374,7 +378,7 @@ export default function Home() {
                     {digitalStoreHeroImage ? (
                       <img
                         src={digitalStoreHeroImage}
-                        alt={lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : 'مشاريع شحن رقمية جاهزة'}
+                        alt={lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : digitalStoreHeroTitle}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
@@ -383,7 +387,7 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                     <div className="absolute bottom-0 inset-x-0 p-2 text-center">
                       <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
-                        {lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : 'مشاريع شحن رقمية جاهزة'}
+                        {lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : digitalStoreHeroTitle}
                       </h3>
                     </div>
                   </div>

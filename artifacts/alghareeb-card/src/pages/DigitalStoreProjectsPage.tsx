@@ -1,10 +1,21 @@
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { ChevronRight, Rocket } from "lucide-react";
 import DigitalStoreProjectsSection from "@/components/DigitalStoreProjectsSection";
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
 export default function DigitalStoreProjectsPage() {
   const [, navigate] = useLocation();
+  const [title, setTitle] = useState("مشاريع شحن رقمية جاهزة");
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/dev/settings`)
+      .then(r => r.json())
+      .then(d => setTitle(d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة"))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -30,7 +41,7 @@ export default function DigitalStoreProjectsPage() {
           <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center">
             <Rocket className="w-5 h-5 text-primary" />
           </div>
-          <span className="text-primary text-sm font-medium">مشاريع شحن رقمية جاهزة</span>
+          <span className="text-primary text-sm font-medium">{title}</span>
         </div>
 
         <DigitalStoreProjectsSection />

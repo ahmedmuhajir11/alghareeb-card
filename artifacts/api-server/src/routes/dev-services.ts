@@ -53,7 +53,7 @@ router.get("/dev/settings", async (_req: Request, res: Response): Promise<void> 
       res.json({ whatsappNumber: "", websitesEnabled: true, mobileAppsEnabled: true,
         websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroDesc: "", websitesHeroImage: "",
         mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc: "", mobileAppsHeroImage: "",
-        digitalStoreHeroImage: "" });
+        digitalStoreHeroImage: "", digitalStoreHeroTitle: "مشاريع شحن رقمية جاهزة" });
       return;
     }
     const r = result.rows[0];
@@ -62,6 +62,7 @@ router.get("/dev/settings", async (_req: Request, res: Response): Promise<void> 
       websitesHeroTitle: r.websites_hero_title || "تطوير وبرمجة المواقع", websitesHeroDesc: r.websites_hero_desc || "", websitesHeroImage: r.websites_hero_image || "",
       mobileAppsHeroTitle: r.mobile_apps_hero_title || "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc: r.mobile_apps_hero_desc || "", mobileAppsHeroImage: r.mobile_apps_hero_image || "",
       digitalStoreHeroImage: r.digital_store_hero_image || "",
+      digitalStoreHeroTitle: r.digital_store_hero_title || "مشاريع شحن رقمية جاهزة",
     });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -183,15 +184,15 @@ router.delete("/admin/dev/form-questions/:id", requireAdmin, async (req: Request
 // ─── ADMIN SETTINGS ───────────────────────────────────────────────────────────
 router.put("/admin/dev/settings", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { whatsappNumber, websitesEnabled, mobileAppsEnabled, websitesHeroTitle, websitesHeroDesc, websitesHeroImage, mobileAppsHeroTitle, mobileAppsHeroDesc, mobileAppsHeroImage, digitalStoreHeroImage } = req.body;
+    const { whatsappNumber, websitesEnabled, mobileAppsEnabled, websitesHeroTitle, websitesHeroDesc, websitesHeroImage, mobileAppsHeroTitle, mobileAppsHeroDesc, mobileAppsHeroImage, digitalStoreHeroImage, digitalStoreHeroTitle } = req.body;
     await pool.query(
-      `INSERT INTO dev_settings (id,whatsapp_number,websites_enabled,mobile_apps_enabled,websites_hero_title,websites_hero_desc,websites_hero_image,mobile_apps_hero_title,mobile_apps_hero_desc,mobile_apps_hero_image,digital_store_hero_image)
-       VALUES (1,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-       ON CONFLICT (id) DO UPDATE SET whatsapp_number=$1,websites_enabled=$2,mobile_apps_enabled=$3,websites_hero_title=$4,websites_hero_desc=$5,websites_hero_image=$6,mobile_apps_hero_title=$7,mobile_apps_hero_desc=$8,mobile_apps_hero_image=$9,digital_store_hero_image=$10`,
+      `INSERT INTO dev_settings (id,whatsapp_number,websites_enabled,mobile_apps_enabled,websites_hero_title,websites_hero_desc,websites_hero_image,mobile_apps_hero_title,mobile_apps_hero_desc,mobile_apps_hero_image,digital_store_hero_image,digital_store_hero_title)
+       VALUES (1,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT (id) DO UPDATE SET whatsapp_number=$1,websites_enabled=$2,mobile_apps_enabled=$3,websites_hero_title=$4,websites_hero_desc=$5,websites_hero_image=$6,mobile_apps_hero_title=$7,mobile_apps_hero_desc=$8,mobile_apps_hero_image=$9,digital_store_hero_image=$10,digital_store_hero_title=$11`,
       [whatsappNumber||"", websitesEnabled!==false, mobileAppsEnabled!==false,
        websitesHeroTitle||"تطوير وبرمجة المواقع", websitesHeroDesc||"", websitesHeroImage||"",
        mobileAppsHeroTitle||"تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc||"", mobileAppsHeroImage||"",
-       digitalStoreHeroImage||""]
+       digitalStoreHeroImage||"", digitalStoreHeroTitle||"مشاريع شحن رقمية جاهزة"]
     );
     res.json({ ok: true });
   } catch (err: any) { console.error("[PUT /admin/dev/settings] ERROR:", err); res.status(500).json({ error: err.message }); }

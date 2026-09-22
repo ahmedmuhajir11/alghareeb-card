@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, Wallet, Cpu, Rocket, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +27,15 @@ export default function DigitalStoreProjectsSection() {
   const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [title, setTitle] = useState("مشاريع شحن رقمية جاهزة");
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/dev/settings`)
+      .then(r => r.json())
+      .then(d => setTitle(d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة"))
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,7 +88,7 @@ export default function DigitalStoreProjectsSection() {
         <div className="text-center max-w-2xl mx-auto mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--gold)/0.12)] border border-[hsl(var(--gold)/0.4)] text-[hsl(var(--gold))] text-xs font-bold mb-4">
             <Rocket className="w-3.5 h-3.5" />
-            مشاريع شحن رقمية جاهزة
+            {title}
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-gradient-gold mb-3 leading-tight">
             هل تريد دخول عالم التجارة الإلكترونية والاستفادة من سوق شحن الألعاب والتطبيقات؟

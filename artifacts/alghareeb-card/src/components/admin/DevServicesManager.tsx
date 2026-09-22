@@ -64,6 +64,7 @@ interface DevSettings {
   mobileAppsHeroDesc: string;
   mobileAppsHeroImage: string;
   digitalStoreHeroImage: string;
+  digitalStoreHeroTitle: string;
 }
 
 interface DevRequest {
@@ -90,6 +91,7 @@ export default function DevServicesManager() {
     websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroDesc: "", websitesHeroImage: "",
     mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc: "", mobileAppsHeroImage: "",
     digitalStoreHeroImage: "",
+    digitalStoreHeroTitle: "مشاريع شحن رقمية جاهزة",
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [requests, setRequests] = useState<DevRequest[]>([]);
@@ -531,8 +533,16 @@ export default function DevServicesManager() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>صورة قسم "مشاريع شحن رقمية جاهزة" (الصفحة الرئيسية)</CardTitle></CardHeader>
+            <CardHeader><CardTitle>قسم "مشاريع شحن رقمية جاهزة" (الصفحة الرئيسية)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>اسم القسم</Label>
+                <Input
+                  value={settings.digitalStoreHeroTitle}
+                  onChange={e => setSettings(s => ({ ...s, digitalStoreHeroTitle: e.target.value }))}
+                  placeholder="مشاريع شحن رقمية جاهزة"
+                />
+              </div>
               <div className="space-y-2">
                 <Label>صورة البطاقة في الصفحة الرئيسية</Label>
                 <div className="flex gap-2">
