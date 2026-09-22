@@ -3,17 +3,25 @@ import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { ChevronRight, Rocket } from "lucide-react";
 import DigitalStoreProjectsSection from "@/components/DigitalStoreProjectsSection";
+import { useI18n } from "@/lib/i18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export default function DigitalStoreProjectsPage() {
   const [, navigate] = useLocation();
-  const [title, setTitle] = useState("مشاريع شحن رقمية جاهزة");
+  const { lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const [titles, setTitles] = useState({ ar: "مشاريع شحن رقمية جاهزة", en: "Ready-Made Digital Top-Up Projects", tr: "" });
+  const title = isRtlLang ? titles.ar : (lang === 'tr' ? (titles.tr || titles.en || titles.ar) : (titles.en || titles.ar));
 
   useEffect(() => {
     fetch(`${API_BASE}/api/dev/settings`)
       .then(r => r.json())
-      .then(d => setTitle(d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة"))
+      .then(d => setTitles({
+        ar: d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة",
+        en: d?.digitalStoreHeroTitleEn || "Ready-Made Digital Top-Up Projects",
+        tr: d?.digitalStoreHeroTitleTr || "",
+      }))
       .catch(() => {});
   }, []);
 

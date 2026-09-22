@@ -58,13 +58,19 @@ interface DevSettings {
   websitesEnabled: boolean;
   mobileAppsEnabled: boolean;
   websitesHeroTitle: string;
+  websitesHeroTitleEn: string;
+  websitesHeroTitleTr: string;
   websitesHeroDesc: string;
   websitesHeroImage: string;
   mobileAppsHeroTitle: string;
+  mobileAppsHeroTitleEn: string;
+  mobileAppsHeroTitleTr: string;
   mobileAppsHeroDesc: string;
   mobileAppsHeroImage: string;
   digitalStoreHeroImage: string;
   digitalStoreHeroTitle: string;
+  digitalStoreHeroTitleEn: string;
+  digitalStoreHeroTitleTr: string;
 }
 
 interface DevRequest {
@@ -88,10 +94,12 @@ export default function DevServicesManager() {
   const [newOption, setNewOption] = useState("");
   const [settings, setSettings] = useState<DevSettings>({
     whatsappNumber: "", websitesEnabled: true, mobileAppsEnabled: true,
-    websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroDesc: "", websitesHeroImage: "",
-    mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc: "", mobileAppsHeroImage: "",
+    websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroTitleEn: "Websites Development", websitesHeroTitleTr: "", websitesHeroDesc: "", websitesHeroImage: "",
+    mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroTitleEn: "Mobile Apps Development", mobileAppsHeroTitleTr: "", mobileAppsHeroDesc: "", mobileAppsHeroImage: "",
     digitalStoreHeroImage: "",
     digitalStoreHeroTitle: "مشاريع شحن رقمية جاهزة",
+    digitalStoreHeroTitleEn: "Ready-Made Digital Top-Up Projects",
+    digitalStoreHeroTitleTr: "",
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [requests, setRequests] = useState<DevRequest[]>([]);
@@ -456,10 +464,26 @@ export default function DevServicesManager() {
             <CardHeader><CardTitle>تخصيص Hero صفحة المواقع (/dev/websites)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>العنوان الرئيسي</Label>
+                <Label>العنوان الرئيسي (عربي)</Label>
                 <Input
                   value={settings.websitesHeroTitle}
                   onChange={e => setSettings(s => ({ ...s, websitesHeroTitle: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>العنوان بالإنجليزية</Label>
+                <Input
+                  value={settings.websitesHeroTitleEn}
+                  onChange={e => setSettings(s => ({ ...s, websitesHeroTitleEn: e.target.value }))}
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>العنوان بالتركية (اختياري)</Label>
+                <Input
+                  value={settings.websitesHeroTitleTr}
+                  onChange={e => setSettings(s => ({ ...s, websitesHeroTitleTr: e.target.value }))}
+                  placeholder="يُستخدم الإنجليزي إذا تُرك فارغًا"
                 />
               </div>
               <div className="space-y-2">
@@ -496,10 +520,26 @@ export default function DevServicesManager() {
             <CardHeader><CardTitle>تخصيص Hero صفحة التطبيقات (/dev/mobile-apps)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>العنوان الرئيسي</Label>
+                <Label>العنوان الرئيسي (عربي)</Label>
                 <Input
                   value={settings.mobileAppsHeroTitle}
                   onChange={e => setSettings(s => ({ ...s, mobileAppsHeroTitle: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>العنوان بالإنجليزية</Label>
+                <Input
+                  value={settings.mobileAppsHeroTitleEn}
+                  onChange={e => setSettings(s => ({ ...s, mobileAppsHeroTitleEn: e.target.value }))}
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>العنوان بالتركية (اختياري)</Label>
+                <Input
+                  value={settings.mobileAppsHeroTitleTr}
+                  onChange={e => setSettings(s => ({ ...s, mobileAppsHeroTitleTr: e.target.value }))}
+                  placeholder="يُستخدم الإنجليزي إذا تُرك فارغًا"
                 />
               </div>
               <div className="space-y-2">
@@ -536,11 +576,27 @@ export default function DevServicesManager() {
             <CardHeader><CardTitle>قسم "مشاريع شحن رقمية جاهزة" (الصفحة الرئيسية)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>اسم القسم</Label>
+                <Label>اسم القسم (عربي)</Label>
                 <Input
                   value={settings.digitalStoreHeroTitle}
                   onChange={e => setSettings(s => ({ ...s, digitalStoreHeroTitle: e.target.value }))}
                   placeholder="مشاريع شحن رقمية جاهزة"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>اسم القسم بالإنجليزية</Label>
+                <Input
+                  value={settings.digitalStoreHeroTitleEn}
+                  onChange={e => setSettings(s => ({ ...s, digitalStoreHeroTitleEn: e.target.value }))}
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>اسم القسم بالتركية (اختياري)</Label>
+                <Input
+                  value={settings.digitalStoreHeroTitleTr}
+                  onChange={e => setSettings(s => ({ ...s, digitalStoreHeroTitleTr: e.target.value }))}
+                  placeholder="يُستخدم الإنجليزي إذا تُرك فارغًا"
                 />
               </div>
               <div className="space-y-2">

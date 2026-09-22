@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ShoppingCart, Wallet, Cpu, Rocket, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/lib/i18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -27,13 +28,20 @@ export default function DigitalStoreProjectsSection() {
   const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [title, setTitle] = useState("مشاريع شحن رقمية جاهزة");
+  const [titles, setTitles] = useState({ ar: "مشاريع شحن رقمية جاهزة", en: "Ready-Made Digital Top-Up Projects", tr: "" });
   const { toast } = useToast();
+  const { lang } = useI18n();
+  const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
+  const title = isRtlLang ? titles.ar : (lang === 'tr' ? (titles.tr || titles.en || titles.ar) : (titles.en || titles.ar));
 
   useEffect(() => {
     fetch(`${API_BASE}/api/dev/settings`)
       .then(r => r.json())
-      .then(d => setTitle(d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة"))
+      .then(d => setTitles({
+        ar: d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة",
+        en: d?.digitalStoreHeroTitleEn || "Ready-Made Digital Top-Up Projects",
+        tr: d?.digitalStoreHeroTitleTr || "",
+      }))
       .catch(() => {});
   }, []);
 

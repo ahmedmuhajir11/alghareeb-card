@@ -219,17 +219,25 @@ export default function Home() {
   const hasWebDevSection = sections?.some(s => s.nameAr.includes("مواقع") && (s.nameAr.includes("تصميم") || s.nameAr.includes("تطوير") || s.nameAr.includes("برمجة")));
   const hasMobileDevSection = sections?.some(s => !s.nameAr.includes("شحن") && s.nameAr.includes("تطبيقات") && (s.nameAr.includes("تصميم") || s.nameAr.includes("تطوير") || s.nameAr.includes("برمجة")));
 
-  const [digitalStoreHeroImage, setDigitalStoreHeroImage] = useState("");
-  const [digitalStoreHeroTitle, setDigitalStoreHeroTitle] = useState("مشاريع شحن رقمية جاهزة");
+  const [devSettings, setDevSettings] = useState<{
+    websitesHeroTitle: string; websitesHeroTitleEn: string; websitesHeroTitleTr: string;
+    mobileAppsHeroTitle: string; mobileAppsHeroTitleEn: string; mobileAppsHeroTitleTr: string;
+    digitalStoreHeroImage: string; digitalStoreHeroTitle: string; digitalStoreHeroTitleEn: string; digitalStoreHeroTitleTr: string;
+  }>({
+    websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroTitleEn: "Websites Development", websitesHeroTitleTr: "",
+    mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroTitleEn: "Mobile Apps Development", mobileAppsHeroTitleTr: "",
+    digitalStoreHeroImage: "", digitalStoreHeroTitle: "مشاريع شحن رقمية جاهزة", digitalStoreHeroTitleEn: "Ready-Made Digital Top-Up Projects", digitalStoreHeroTitleTr: "",
+  });
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL ?? ""}/api/dev/settings`)
       .then(r => r.json())
-      .then(d => {
-        setDigitalStoreHeroImage(d?.digitalStoreHeroImage || "");
-        setDigitalStoreHeroTitle(d?.digitalStoreHeroTitle || "مشاريع شحن رقمية جاهزة");
-      })
+      .then(d => d && setDevSettings(prev => ({ ...prev, ...d })))
       .catch(() => {});
   }, []);
+  // Same ar/en/tr picking logic used for regular sections (sectionName above),
+  // applied to the standalone dev-service cards' admin-editable titles.
+  const devCardTitle = (ar: string, en: string, tr: string) =>
+    isRtlLang ? ar : (lang === 'tr' ? (tr || en || ar) : (en || ar));
 
   return (
     <div>
@@ -317,19 +325,19 @@ export default function Home() {
                     <div className="relative flex-1 overflow-hidden">
                       <img
                         src="/dev-web-hero.jpg"
-                        alt={lang === 'en' ? 'Websites Development' : 'تطوير وبرمجة المواقع'}
+                        alt={devCardTitle(devSettings.websitesHeroTitle, devSettings.websitesHeroTitleEn, devSettings.websitesHeroTitleTr)}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                       <div className="absolute bottom-0 inset-x-0 p-2 text-center">
                         <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
-                          {lang === 'en' ? 'Websites Development' : 'تطوير وبرمجة المواقع'}
+                          {devCardTitle(devSettings.websitesHeroTitle, devSettings.websitesHeroTitleEn, devSettings.websitesHeroTitleTr)}
                         </h3>
                       </div>
                     </div>
                     <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
                       <span className="flex items-center gap-1">
-                        <span>{lang === 'en' ? 'Order Service' : 'طلب خدمة'}</span>
+                        <span>{isRtlLang ? 'طلب خدمة' : (lang === 'tr' ? 'Hizmet Talep Et' : 'Order Service')}</span>
                         <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
                       </span>
                     </div>
@@ -346,19 +354,19 @@ export default function Home() {
                     <div className="relative flex-1 overflow-hidden">
                       <img
                         src="/dev-mobile-hero.jpg"
-                        alt={lang === 'en' ? 'Mobile Apps Development' : 'تطوير وتطبيقات الجوال'}
+                        alt={devCardTitle(devSettings.mobileAppsHeroTitle, devSettings.mobileAppsHeroTitleEn, devSettings.mobileAppsHeroTitleTr)}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                       <div className="absolute bottom-0 inset-x-0 p-2 text-center">
                         <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
-                          {lang === 'en' ? 'Mobile Apps Development' : 'تطوير وتطبيقات الجوال'}
+                          {devCardTitle(devSettings.mobileAppsHeroTitle, devSettings.mobileAppsHeroTitleEn, devSettings.mobileAppsHeroTitleTr)}
                         </h3>
                       </div>
                     </div>
                     <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
                       <span className="flex items-center gap-1">
-                        <span>{lang === 'en' ? 'Order Service' : 'طلب خدمة'}</span>
+                        <span>{isRtlLang ? 'طلب خدمة' : (lang === 'tr' ? 'Hizmet Talep Et' : 'Order Service')}</span>
                         <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
                       </span>
                     </div>
@@ -373,12 +381,12 @@ export default function Home() {
                 <CardContent className="p-0 h-44 md:h-52 relative flex flex-col">
                   <div
                     className="relative flex-1 overflow-hidden flex items-center justify-center"
-                    style={!digitalStoreHeroImage ? { background: "linear-gradient(135deg, hsl(var(--primary)/0.35), hsl(260 35% 10%) 55%, hsl(var(--gold)/0.2))" } : undefined}
+                    style={!devSettings.digitalStoreHeroImage ? { background: "linear-gradient(135deg, hsl(var(--primary)/0.35), hsl(260 35% 10%) 55%, hsl(var(--gold)/0.2))" } : undefined}
                   >
-                    {digitalStoreHeroImage ? (
+                    {devSettings.digitalStoreHeroImage ? (
                       <img
-                        src={digitalStoreHeroImage}
-                        alt={lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : digitalStoreHeroTitle}
+                        src={devSettings.digitalStoreHeroImage}
+                        alt={devCardTitle(devSettings.digitalStoreHeroTitle, devSettings.digitalStoreHeroTitleEn, devSettings.digitalStoreHeroTitleTr)}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
@@ -387,13 +395,13 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                     <div className="absolute bottom-0 inset-x-0 p-2 text-center">
                       <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
-                        {lang === 'en' ? 'Ready-Made Digital Top-Up Projects' : digitalStoreHeroTitle}
+                        {devCardTitle(devSettings.digitalStoreHeroTitle, devSettings.digitalStoreHeroTitleEn, devSettings.digitalStoreHeroTitleTr)}
                       </h3>
                     </div>
                   </div>
                   <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
                     <span className="flex items-center gap-1">
-                      <span>{lang === 'en' ? 'Start Your Project' : 'ابدأ مشروعك'}</span>
+                      <span>{isRtlLang ? 'ابدأ مشروعك' : (lang === 'tr' ? 'Projene Başla' : 'Start Your Project')}</span>
                       <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
                     </span>
                   </div>
