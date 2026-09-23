@@ -41,10 +41,10 @@ export default function WelcomeModal() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-[#0e0e1f] shadow-[0_0_40px_hsl(40_80%_50%/0.15)] p-6" dir={isRtlLang ? "rtl" : "ltr"}>
+      <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-card shadow-[0_0_40px_hsl(40_80%_50%/0.15)] p-6" dir={isRtlLang ? "rtl" : "ltr"}>
         <button
           onClick={handleClose}
-          className="absolute top-3 start-3 p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          className="absolute top-3 start-3 p-1.5 rounded-full hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition-colors"
           aria-label={t('welcome.understood')}
         >
           <X className="w-4 h-4" />
@@ -52,15 +52,15 @@ export default function WelcomeModal() {
 
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/15 border border-amber-500/40 flex items-center justify-center">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <h2 className="font-black text-lg text-amber-300 leading-tight">{t('welcome.title')}</h2>
-            <p className="text-xs text-white/60 mt-0.5">{t('welcome.subtitle')}</p>
+            <h2 className="font-black text-lg text-amber-600 leading-tight">{t('welcome.title')}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('welcome.subtitle')}</p>
           </div>
         </div>
 
-        <p className="text-sm text-white leading-relaxed whitespace-pre-wrap bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
           {message}
         </p>
 
