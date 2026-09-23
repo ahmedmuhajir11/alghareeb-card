@@ -7,6 +7,7 @@ export const sliderImagesTable = pgTable("slider_images", {
   imageUrl: text("image_url").notNull(),
   title: text("title"),
   linkUrl: text("link_url"),
+  sliderType: text("slider_type").notNull().default("regular"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

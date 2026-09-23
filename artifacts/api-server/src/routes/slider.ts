@@ -4,6 +4,7 @@ import { db, sliderImagesTable } from "@workspace/db";
 import {
   ListSliderImagesResponse,
   CreateSliderImageBody,
+  UpdateSliderImageBody,
   DeleteSliderImageParams,
   DeleteSliderImageResponse,
 } from "@workspace/api-zod";
@@ -30,6 +31,27 @@ router.post("/slider", requireAdmin, async (req, res): Promise<void> => {
 
   const [image] = await db.insert(sliderImagesTable).values(parsed.data).returning();
   res.status(201).json(serializeRow(image));
+});
+
+router.patch("/slider/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const parsed = UpdateSliderImageBody.safeParse(req.body);
+  if (!Number.isInteger(id) || id <= 0 || !parsed.success) {
+    res.status(400).json({ error: parsed.success ? "Invalid slider id" : parsed.error.message });
+    return;
+  }
+
+  const [image] = await db
+    .update(sliderImagesTable)
+    .set(parsed.data)
+    .where(eq(sliderImagesTable.id, id))
+    .returning();
+
+  if (!image) {
+    res.status(404).json({ error: "Image not found" });
+    return;
+  }
+  res.json(serializeRow(image));
 });
 
 router.delete("/slider/:id", requireAdmin, async (req, res): Promise<void> => {

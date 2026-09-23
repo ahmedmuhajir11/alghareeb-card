@@ -1,16 +1,17 @@
-import { useListSliderImages, useCreateSliderImage, useDeleteSliderImage, useUploadImage, getListSliderImagesQueryKey } from "@workspace/api-client-react";
+import { useListSliderImages, useCreateSliderImage, useDeleteSliderImage, useUpdateSliderImage, useUploadImage, getListSliderImagesQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload, ImagePlus, Link, Images, MessageCircle, Save } from "lucide-react";
-import { useState, useRef } from "react";
+import { Trash2, Upload, ImagePlus, Link, Images, MessageCircle, Save, Smartphone } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function SliderManager() {
   const { data: images, isLoading } = useListSliderImages();
   const createImg = useCreateSliderImage();
   const deleteImg = useDeleteSliderImage();
+  const updateImg = useUpdateSliderImage();
   const uploadImg = useUploadImage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -30,7 +31,23 @@ export default function SliderManager() {
   const [waUploading, setWaUploading] = useState(false);
   const [waSaving, setWaSaving] = useState(false);
 
+  // --- App download slider form state ---
+  const appFileRef = useRef<HTMLInputElement>(null);
+  const [appTitle, setAppTitle] = useState("");
+  const [appImageUrl, setAppImageUrl] = useState("/slider-1-final.png");
+  const [appLinkUrl, setAppLinkUrl] = useState("");
+  const [appUploading, setAppUploading] = useState(false);
+  const [appSaving, setAppSaving] = useState(false);
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListSliderImagesQueryKey() });
+  const appImage = images?.find(img => img.sliderType === "app");
+
+  useEffect(() => {
+    if (!appImage) return;
+    setAppTitle(appImage.title || "");
+    setAppImageUrl(appImage.imageUrl);
+    setAppLinkUrl(appImage.linkUrl || "");
+  }, [appImage?.id, appImage?.imageUrl, appImage?.linkUrl, appImage?.title]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("هل أنت متأكد من حذف هذه الصورة؟")) return;
@@ -100,7 +117,7 @@ export default function SliderManager() {
     if (!waLinkUrl.trim()) { toast({ variant: "destructive", title: "أدخل رابط الضغط أولاً" }); return; }
     setWaSaving(true);
     try {
-      await createImg.mutateAsync({ data: { imageUrl: waImageUrl.trim(), title: waTitle || undefined, linkUrl: waLinkUrl.trim(), sortOrder: (images?.length || 0) + 1 } });
+      await createImg.mutateAsync({ data: { imageUrl: waImageUrl.trim(), title: waTitle || undefined, linkUrl: waLinkUrl.trim(), sliderType: "whatsapp", sortOrder: (images?.length || 0) + 1 } });
       toast({ title: "✅ تمت إضافة الصورة القابلة للضغط" });
       setWaTitle(""); setWaImageUrl("");
       invalidate();
@@ -109,17 +126,62 @@ export default function SliderManager() {
     } finally { setWaSaving(false); }
   };
 
-  const regularImages = images?.filter(img => !img.linkUrl) ?? [];
-  const clickableImages = images?.filter(img => !!img.linkUrl) ?? [];
+  const handleAppFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAppUploading(true);
+    try {
+      const res = await uploadImg.mutateAsync({ data: { file } });
+      if (res.url) {
+        setAppImageUrl(res.url);
+        toast({ title: "✅ تم رفع صورة التطبيق — اضغط «حفظ التغييرات»" });
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ", description: err.message || "فشل الرفع" });
+    } finally {
+      setAppUploading(false);
+      if (appFileRef.current) appFileRef.current.value = "";
+    }
+  };
 
-  const ImageCard = ({ img, isClickable }: { img: NonNullable<typeof images>[number]; isClickable?: boolean }) => (
+  const handleAppSave = async () => {
+    if (!appImageUrl.trim()) {
+      toast({ variant: "destructive", title: "أدخل رابط الصورة أولاً" });
+      return;
+    }
+    setAppSaving(true);
+    try {
+      const data = {
+        imageUrl: appImageUrl.trim(),
+        title: appTitle.trim(),
+        linkUrl: appLinkUrl.trim(),
+        sliderType: "app",
+      };
+      if (appImage) {
+        await updateImg.mutateAsync({ id: appImage.id, data });
+      } else {
+        await createImg.mutateAsync({ data: { ...data, sortOrder: (images?.length || 0) + 1 } });
+      }
+      invalidate();
+      toast({ title: "✅ تم حفظ سلايدر تحميل التطبيق" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ", description: err.message || "فشل حفظ السلايدر" });
+    } finally {
+      setAppSaving(false);
+    }
+  };
+
+  const regularImages = images?.filter(img => img.sliderType !== "app" && !img.linkUrl) ?? [];
+  const clickableImages = images?.filter(img => img.sliderType !== "app" && !!img.linkUrl) ?? [];
+
+  const ImageCard = ({ img, isClickable }: { img: typeof images[0]; isClickable?: boolean }) => (
     <Card className={`overflow-hidden bg-card/50 ${isClickable ? "border-2 border-green-500/50 shadow-[0_0_14px_rgba(34,197,94,0.15)]" : "border border-border/50"}`}>
       <div className="aspect-[21/9] relative">
         <img src={img.imageUrl} alt={img.title || "صورة"} className="w-full h-full object-cover" />
         {isClickable && (
           <div className="absolute top-2 right-2">
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500 text-white text-xs font-bold shadow-lg">
-              <MessageCircle className="w-3 h-3" /> واتساب
+              {img.sliderType === "whatsapp" ? <><MessageCircle className="w-3 h-3" /> واتساب</> : <><Link className="w-3 h-3" /> رابط</>}
             </span>
           </div>
         )}
@@ -318,6 +380,91 @@ export default function SliderManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {clickableImages.map(img => <ImageCard key={img.id} img={img} isClickable />)}
           </div>
+        )}
+      </div>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* SECTION 3 — App Download Slider             */}
+      {/* ═══════════════════════════════════════════ */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-8 rounded-full bg-sky-500" />
+          <div>
+            <h2 className="text-lg font-black flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-sky-400" />
+              <span className="text-sky-300">سلايدر تحميل التطبيق</span>
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">صورة مستقلة قابلة للضغط — ضع رابط Google Play عند توفره</p>
+          </div>
+        </div>
+
+        <Card className="border-2 border-sky-500/40 bg-card/50 shadow-[0_0_20px_rgba(14,165,233,0.08)]">
+          <CardContent className="p-5 space-y-4">
+            <h3 className="text-sm font-bold flex items-center gap-2 text-sky-400">
+              <ImagePlus className="w-4 h-4" /> إعداد صورة تحميل التطبيق
+            </h3>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">عنوان الصورة (اختياري)</label>
+              <Input value={appTitle} onChange={e => setAppTitle(e.target.value)} placeholder="اتركه فارغاً لإخفاء العنوان" className="bg-background/50" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1">
+                <Link className="w-4 h-4 text-sky-400" /> رابط Google Play (اختياري)
+              </label>
+              <Input
+                value={appLinkUrl}
+                onChange={e => setAppLinkUrl(e.target.value)}
+                placeholder="ضع الرابط هنا لاحقاً"
+                className="bg-background/50 text-left border-sky-500/30 focus-visible:ring-sky-500/50"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">اتركه فارغاً الآن، ويمكن تغييره في أي وقت من لوحة التحكم.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1">
+                <Images className="w-4 h-4 text-sky-400" /> رابط الصورة
+              </label>
+              <Input
+                value={appImageUrl}
+                onChange={e => setAppImageUrl(e.target.value)}
+                placeholder="/slider-1-final.png"
+                className="bg-background/50 text-left"
+                dir="ltr"
+              />
+              {appImageUrl && (
+                <div className="rounded-lg overflow-hidden border border-sky-500/20 aspect-[21/9] bg-background/30">
+                  <img src={appImageUrl} alt="معاينة صورة التطبيق" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = "none")} />
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={handleAppSave}
+              disabled={appSaving || appUploading || !appImageUrl.trim()}
+              className="w-full gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold"
+            >
+              {appSaving
+                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> جاري الحفظ...</>
+                : <><Save className="w-4 h-4" /> حفظ التغييرات</>
+              }
+            </Button>
+
+            <div className="border-t border-sky-500/20 pt-3">
+              <label className="text-sm font-medium block mb-2">أو ارفع صورة جديدة من الهاتف</label>
+              <input type="file" ref={appFileRef} className="hidden" accept="image/*" onChange={handleAppFileChange} />
+              <Button onClick={() => appFileRef.current?.click()} disabled={appUploading} variant="outline" className="w-full gap-2 border-sky-500/30 hover:bg-sky-500/10 hover:text-sky-300">
+                {appUploading ? <div className="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" /> : <Upload className="w-4 h-4" />}
+                {appUploading ? "جاري الرفع..." : "رفع صورة من الهاتف"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {appImage && (
+          <ImageCard img={appImage} isClickable />
         )}
       </div>
 

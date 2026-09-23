@@ -32,6 +32,7 @@ import type {
   Section,
   Settings,
   SliderImage,
+  SliderImageUpdate,
   UpdateItemBody,
   UpdatePackageBody,
   UpdateSectionBody,
@@ -1626,6 +1627,93 @@ export const useCreateSliderImage = <
   TContext
 > => {
   return useMutation(getCreateSliderImageMutationOptions(options));
+};
+
+/**
+ * @summary Update slider image (admin only)
+ */
+export const getUpdateSliderImageUrl = (id: number) => {
+  return `/api/slider/${id}`;
+};
+
+export const updateSliderImage = async (
+  id: number,
+  sliderImageUpdate: SliderImageUpdate,
+  options?: RequestInit,
+): Promise<SliderImage> => {
+  return customFetch<SliderImage>(getUpdateSliderImageUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(sliderImageUpdate),
+  });
+};
+
+export const getUpdateSliderImageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSliderImage>>,
+    TError,
+    { id: number; data: BodyType<SliderImageUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSliderImage>>,
+  TError,
+  { id: number; data: BodyType<SliderImageUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateSliderImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSliderImage>>,
+    { id: number; data: BodyType<SliderImageUpdate> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateSliderImage(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSliderImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSliderImage>>
+>;
+export type UpdateSliderImageMutationBody = BodyType<SliderImageUpdate>;
+export type UpdateSliderImageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update slider image (admin only)
+ */
+export const useUpdateSliderImage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSliderImage>>,
+    TError,
+    { id: number; data: BodyType<SliderImageUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSliderImage>>,
+  TError,
+  { id: number; data: BodyType<SliderImageUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateSliderImageMutationOptions(options));
 };
 
 /**
