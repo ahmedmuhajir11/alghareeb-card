@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { ServiceCard } from "@/components/dev/ServiceCard";
 import { ChevronRight, Smartphone, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDevLang } from "@/lib/devI18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -19,13 +20,16 @@ interface ServiceCardData {
 
 interface DevSettings {
   mobileAppsHeroTitle: string;
+  mobileAppsHeroTitleEn?: string;
+  mobileAppsHeroTitleTr?: string;
   mobileAppsHeroDesc: string;
   mobileAppsHeroImage: string;
 }
 
 export default function MobileAppsServicePage() {
+  const { dir, pick } = useDevLang();
   const [cards, setCards] = useState<ServiceCardData[]>([]);
-  const [settings, setSettings] = useState<DevSettings>({ mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroDesc: "", mobileAppsHeroImage: "" });
+  const [settings, setSettings] = useState<DevSettings>({ mobileAppsHeroTitle: "تطوير وبرمجة تطبيقات الجوال", mobileAppsHeroTitleEn: "Mobile Apps Development", mobileAppsHeroTitleTr: "", mobileAppsHeroDesc: "", mobileAppsHeroImage: "" });
   const [loading, setLoading] = useState(true);
   const [, navigate] = useLocation();
 
@@ -41,11 +45,19 @@ export default function MobileAppsServicePage() {
   }, []);
 
   const heroImage = settings.mobileAppsHeroImage || "/dev-mobile-hero.jpg";
-  const heroTitle = settings.mobileAppsHeroTitle || "تطوير وبرمجة تطبيقات الجوال";
-  const heroDesc = settings.mobileAppsHeroDesc || "نطور تطبيقات iOS و Android عصرية وسريعة بأعلى معايير الجودة وتجربة مستخدم استثنائية.";
+  const heroTitle = pick(
+    settings.mobileAppsHeroTitle || "تطوير وبرمجة تطبيقات الجوال",
+    settings.mobileAppsHeroTitleEn || "Mobile Apps Development",
+    settings.mobileAppsHeroTitleTr
+  );
+  const heroDesc = settings.mobileAppsHeroDesc || pick(
+    "نطور تطبيقات iOS و Android عصرية وسريعة بأعلى معايير الجودة وتجربة مستخدم استثنائية.",
+    "We develop modern, fast iOS and Android apps with the highest quality standards and an exceptional user experience.",
+    "En yüksek kalite standartlarında ve olağanüstü kullanıcı deneyimiyle modern, hızlı iOS ve Android uygulamaları geliştiriyoruz."
+  );
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background" dir={dir}>
       <Helmet>
         <title>تطوير وبرمجة تطبيقات الجوال | الغريب كارد</title>
         <meta name="description" content="خدمات تصميم وبرمجة وتطوير تطبيقات الهواتف الذكية iOS و Android باحترافية." />
@@ -75,7 +87,7 @@ export default function MobileAppsServicePage() {
               <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center">
                 <Smartphone className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-primary text-sm font-medium">خدمات التطوير</span>
+              <span className="text-primary text-sm font-medium">{pick("خدمات التطوير", "Development Services", "Geliştirme Hizmetleri")}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-foreground mb-4 leading-tight">{heroTitle}</h1>
             <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-xl mb-8">{heroDesc}</p>
@@ -85,14 +97,14 @@ export default function MobileAppsServicePage() {
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold transition-all duration-200 shadow-[0_0_24px_rgba(139,92,246,0.4)] hover:shadow-[0_0_32px_rgba(139,92,246,0.6)]"
               >
                 <Smartphone className="w-4 h-4" />
-                ابدأ مشروع تطبيقك
+                {pick("ابدأ مشروع تطبيقك", "Start Your App Project", "Uygulama Projenize Başlayın")}
               </button>
               <button
                 onClick={() => navigate("/")}
                 className="flex items-center gap-2 px-5 py-3 rounded-xl bg-card/60 hover:bg-card border border-border/40 hover:border-primary/30 text-foreground font-medium transition-all duration-200"
               >
                 <ChevronRight className="w-4 h-4" />
-                العودة للرئيسية
+                {pick("العودة للرئيسية", "Back to Home", "Ana Sayfaya Dön")}
               </button>
             </div>
           </div>
@@ -111,8 +123,8 @@ export default function MobileAppsServicePage() {
         ) : cards.length > 0 ? (
           <div>
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">خدماتنا في تطبيقات الجوال</h2>
-              <span className="text-sm text-muted-foreground">{cards.length} خدمة متاحة</span>
+              <h2 className="text-xl font-bold text-foreground">{pick("خدماتنا في تطبيقات الجوال", "Our Mobile App Development Services", "Mobil Uygulama Geliştirme Hizmetlerimiz")}</h2>
+              <span className="text-sm text-muted-foreground">{cards.length} {pick("خدمة متاحة", "services available", "hizmet mevcut")}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {cards.map(card => (
@@ -134,13 +146,13 @@ export default function MobileAppsServicePage() {
             <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
               <Smartphone className="w-10 h-10 text-primary/60" />
             </div>
-            <p className="text-muted-foreground text-lg">الخدمات قيد الإعداد</p>
-            <p className="text-sm text-muted-foreground">يمكنك تقديم فكرة تطبيقك مباشرة وسنتواصل معك</p>
+            <p className="text-muted-foreground text-lg">{pick("الخدمات قيد الإعداد", "Services are being prepared", "Hizmetler hazırlanıyor")}</p>
+            <p className="text-sm text-muted-foreground">{pick("يمكنك تقديم فكرة تطبيقك مباشرة وسنتواصل معك", "You can submit your app idea directly and we'll contact you", "Uygulama fikrinizi doğrudan gönderebilirsiniz, sizinle iletişime geçeceğiz")}</p>
             <button
               onClick={() => navigate("/dev/mobile-apps/request")}
               className="mt-4 flex items-center gap-2 mx-auto px-6 py-3 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary font-bold transition-colors"
             >
-              ابدأ طلب تطبيقك
+              {pick("ابدأ طلب تطبيقك", "Start Your App Request", "Uygulama Talebinizi Başlatın")}
               <ArrowLeft className="w-4 h-4" />
             </button>
           </div>
@@ -149,14 +161,14 @@ export default function MobileAppsServicePage() {
         {/* CTA */}
         {cards.length > 0 && (
           <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-l from-primary/10 via-primary/5 to-transparent border border-primary/20">
-            <h3 className="text-xl font-bold mb-2">فكرة تطبيق مخصصة أو فريدة؟</h3>
-            <p className="text-muted-foreground mb-5 text-sm">نحن جاهزون لتحويل أي فكرة إلى تطبيق متكامل ومميز على المتاجر</p>
+            <h3 className="text-xl font-bold mb-2">{pick("فكرة تطبيق مخصصة أو فريدة؟", "A custom or unique app idea?", "Özel veya benzersiz bir uygulama fikri mi?")}</h3>
+            <p className="text-muted-foreground mb-5 text-sm">{pick("نحن جاهزون لتحويل أي فكرة إلى تطبيق متكامل ومميز على المتاجر", "We're ready to turn any idea into a complete, standout app on the stores", "Her fikri mağazalarda öne çıkan, eksiksiz bir uygulamaya dönüştürmeye hazırız")}</p>
             <button
               onClick={() => navigate("/dev/mobile-apps/request")}
               className="flex items-center gap-2 mx-auto px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold transition-colors shadow-[0_0_20px_rgba(139,92,246,0.3)]"
             >
               <Smartphone className="w-4 h-4" />
-              اطلب تطبيق مخصص
+              {pick("اطلب تطبيق مخصص", "Request a Custom App", "Özel Uygulama İste")}
             </button>
           </div>
         )}

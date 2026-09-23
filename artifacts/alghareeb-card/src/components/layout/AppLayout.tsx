@@ -6,6 +6,7 @@ import { Wallet, Menu, X, Home, Info, MessageCircle, Send, LogIn, LogOut, User, 
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import WelcomeModal from "@/components/WelcomeModal";
+import { useDevLang } from "@/lib/devI18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -13,6 +14,7 @@ function ThemeToggleButton() {
   // Light mode is the opt-in state (dark is the site's default look).
   // Toggling adds/removes the "light" class on <html>, which is the
   // class the CSS light-theme palette in index.css is scoped under.
+  const { dir, pick } = useDevLang();
   const [isLight, setIsLight] = useState(() => {
     if (typeof document !== "undefined") {
       return document.documentElement.classList.contains("light");
@@ -54,19 +56,19 @@ function ThemeToggleButton() {
     <button
       id="ag-tb"
       onClick={toggleTheme}
-      dir="rtl"
+      dir={dir}
       type="button"
       className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl bg-[#7c3aed] text-white shadow-md shadow-purple-900/30 hover:bg-[#6d28d9] active:scale-[0.98] transition-all duration-200 cursor-pointer"
     >
-      <div className="text-right leading-tight">
+      <div className="text-start leading-tight">
         <span className="block text-white text-xs font-bold">
-          {isLight ? "الثيم: فاتح" : "الثيم: داكن"}
+          {isLight ? pick("الثيم: فاتح", "Theme: Light", "Tema: Açık") : pick("الثيم: داكن", "Theme: Dark", "Tema: Koyu")}
         </span>
         <span className="block text-white/70 text-[10px]">
-          {isLight ? "اضغط للتحويل إلى داكن" : "اضغط للتحويل إلى فاتح"}
+          {isLight ? pick("اضغط للتحويل إلى داكن", "Tap to switch to dark", "Koyu moda geçmek için dokunun") : pick("اضغط للتحويل إلى فاتح", "Tap to switch to light", "Açık moda geçmek için dokunun")}
         </span>
       </div>
-      <span className="flex-shrink-0 mr-2 flex items-center justify-center">
+      <span className="flex-shrink-0 mx-2 flex items-center justify-center">
         {isLight ? <Sun className="w-4 h-4 text-white" /> : <Moon className="w-4 h-4 text-white" />}
       </span>
     </button>

@@ -4,12 +4,14 @@ import { useLocation } from "wouter";
 import { ChevronRight, Rocket } from "lucide-react";
 import DigitalStoreProjectsSection from "@/components/DigitalStoreProjectsSection";
 import { useI18n } from "@/lib/i18n";
+import { useDevLang } from "@/lib/devI18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export default function DigitalStoreProjectsPage() {
   const [, navigate] = useLocation();
   const { lang } = useI18n();
+  const { dir, pick } = useDevLang();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const [titles, setTitles] = useState({ ar: "مشاريع شحن رقمية جاهزة", en: "Ready-Made Digital Top-Up Projects", tr: "" });
   const title = isRtlLang ? titles.ar : (lang === 'tr' ? (titles.tr || titles.en || titles.ar) : (titles.en || titles.ar));
@@ -26,7 +28,7 @@ export default function DigitalStoreProjectsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background" dir={dir}>
       <Helmet>
         <title>مشاريع شحن رقمية جاهزة | الغريب كارد</title>
         <meta name="description" content="متجر إلكتروني جاهز لشحن الألعاب والتطبيقات والخدمات الرقمية، بدون خبرة برمجية وبأسعار جملة تناسب مشروعك." />
@@ -59,7 +61,7 @@ export default function DigitalStoreProjectsPage() {
           className="flex items-center gap-2 px-5 py-3 rounded-xl bg-card/60 hover:bg-card border border-border/40 hover:border-primary/30 text-foreground font-medium transition-all duration-200"
         >
           <ChevronRight className="w-4 h-4" />
-          العودة للرئيسية
+          {pick("العودة للرئيسية", "Back to Home", "Ana Sayfaya Dön")}
         </button>
       </div>
     </div>

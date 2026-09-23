@@ -1,4 +1,5 @@
 ﻿import React from "react";
+import { useDevLang } from "@/lib/devI18n";
 
 interface StepProgressProps {
   steps: string[];
@@ -6,8 +7,9 @@ interface StepProgressProps {
 }
 
 export function StepProgress({ steps, currentStep }: StepProgressProps) {
+  const { dir, pick } = useDevLang();
   return (
-    <div className="w-full mb-8" dir="rtl">
+    <div className="w-full mb-8" dir={dir}>
       <div className="flex items-center justify-between relative">
         <div className="absolute top-4 right-0 left-0 h-0.5 bg-border/40 z-0" />
         <div
@@ -35,7 +37,7 @@ export function StepProgress({ steps, currentStep }: StepProgressProps) {
       </div>
       <div className="mt-3 text-center">
         <span className="text-xs text-muted-foreground">
-          الخطوة <span className="text-primary font-bold">{currentStep + 1}</span> من {steps.length}
+          {pick("الخطوة", "Step", "Adım")} <span className="text-primary font-bold">{currentStep + 1}</span> {pick("من", "of", "/")} {steps.length}
         </span>
       </div>
     </div>

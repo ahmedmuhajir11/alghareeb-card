@@ -3,24 +3,37 @@ import { ShoppingCart, Wallet, Cpu, Rocket, Send, Loader2, CheckCircle2 } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
+import { useDevLang } from "@/lib/devI18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 const FEATURES = [
   {
     icon: ShoppingCart,
-    title: "متجر إلكتروني جاهز",
-    desc: "متجر احترافي وسريع ومنظم لشحن الألعاب والتطبيقات والخدمات الرقمية، بتجربة مشابهة لمنصة الغريب كارد.",
+    title: { ar: "متجر إلكتروني جاهز", en: "Ready-Made Online Store", tr: "Hazır E-Ticaret Mağazası" },
+    desc: {
+      ar: "متجر احترافي وسريع ومنظم لشحن الألعاب والتطبيقات والخدمات الرقمية، بتجربة مشابهة لمنصة الغريب كارد.",
+      en: "A professional, fast, well-organized store for topping up games, apps and digital services, with an experience similar to AlGhareeb Card.",
+      tr: "Oyun, uygulama ve dijital hizmet yüklemeleri için AlGhareeb Card'a benzer bir deneyim sunan profesyonel, hızlı ve düzenli bir mağaza.",
+    },
   },
   {
     icon: Wallet,
-    title: "أسعار جملة وفرصة لتحقيق الأرباح",
-    desc: "يمكنك الاستفادة من أسعار الجملة وتحديد أسعار البيع الخاصة بك بما يناسب مشروعك.",
+    title: { ar: "أسعار جملة وفرصة لتحقيق الأرباح", en: "Wholesale Prices & Profit Opportunity", tr: "Toptan Fiyatlar ve Kâr Fırsatı" },
+    desc: {
+      ar: "يمكنك الاستفادة من أسعار الجملة وتحديد أسعار البيع الخاصة بك بما يناسب مشروعك.",
+      en: "You can take advantage of wholesale prices and set your own selling prices to suit your project.",
+      tr: "Toptan fiyatlardan yararlanabilir ve projenize uygun kendi satış fiyatlarınızı belirleyebilirsiniz.",
+    },
   },
   {
     icon: Cpu,
-    title: "بدون خبرة برمجية",
-    desc: "لا تحتاج إلى معرفة بالبرمجة أو التعامل مع الأكواد. نحن نتولى الجانب التقني وتجهيز المشروع لك.",
+    title: { ar: "بدون خبرة برمجية", en: "No Coding Experience Needed", tr: "Kodlama Deneyimi Gerektirmez" },
+    desc: {
+      ar: "لا تحتاج إلى معرفة بالبرمجة أو التعامل مع الأكواد. نحن نتولى الجانب التقني وتجهيز المشروع لك.",
+      en: "You don't need any programming knowledge or to deal with code. We handle the technical side and set the project up for you.",
+      tr: "Programlama bilgisine veya kodlarla uğraşmaya ihtiyacınız yok. Teknik kısmı ve proje kurulumunu biz hallederiz.",
+    },
   },
 ];
 
@@ -31,6 +44,7 @@ export default function DigitalStoreProjectsSection() {
   const [titles, setTitles] = useState({ ar: "مشاريع شحن رقمية جاهزة", en: "Ready-Made Digital Top-Up Projects", tr: "" });
   const { toast } = useToast();
   const { lang } = useI18n();
+  const { dir, pick } = useDevLang();
   const isRtlLang = ['ar', 'fa', 'ku'].includes(lang);
   const title = isRtlLang ? titles.ar : (lang === 'tr' ? (titles.tr || titles.en || titles.ar) : (titles.en || titles.ar));
 
@@ -49,7 +63,7 @@ export default function DigitalStoreProjectsSection() {
     e.preventDefault();
     const value = phone.trim();
     if (!value) {
-      toast({ title: "خطأ", description: "يرجى إدخال رقم الهاتف مع مفتاح الدولة", variant: "destructive" });
+      toast({ title: pick("خطأ", "Error", "Hata"), description: pick("يرجى إدخال رقم الهاتف مع مفتاح الدولة", "Please enter your phone number with the country code", "Lütfen ülke koduyla birlikte telefon numaranızı girin"), variant: "destructive" });
       return;
     }
     setSending(true);
@@ -60,12 +74,12 @@ export default function DigitalStoreProjectsSection() {
         body: JSON.stringify({ phone: value }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "تعذر إرسال الطلب");
+      if (!res.ok) throw new Error(data?.error || pick("تعذر إرسال الطلب", "Couldn't send the request", "Talep gönderilemedi"));
       setSent(true);
       setPhone("");
-      toast({ title: "✅ تم إرسال طلبك", description: "سيتواصل معك فريقنا في أقرب وقت." });
+      toast({ title: pick("✅ تم إرسال طلبك", "✅ Your request has been sent", "✅ Talebiniz gönderildi"), description: pick("سيتواصل معك فريقنا في أقرب وقت.", "Our team will contact you soon.", "Ekibimiz en kısa sürede sizinle iletişime geçecek.") });
     } catch (err: any) {
-      toast({ title: "خطأ", description: err.message ?? "تعذر إرسال الطلب، حاول مرة أخرى", variant: "destructive" });
+      toast({ title: pick("خطأ", "Error", "Hata"), description: err.message ?? pick("تعذر إرسال الطلب، حاول مرة أخرى", "Couldn't send the request, please try again", "Talep gönderilemedi, lütfen tekrar deneyin"), variant: "destructive" });
     } finally {
       setSending(false);
     }
@@ -73,7 +87,7 @@ export default function DigitalStoreProjectsSection() {
 
   return (
     <section
-      dir="rtl"
+      dir={dir}
       className="relative overflow-hidden mb-8 mt-4 rounded-2xl border border-[hsl(var(--gold)/0.25)] shadow-[0_0_40px_hsl(var(--gold)/0.08)]"
       style={{ background: "linear-gradient(160deg, hsl(var(--card)) 0%, hsl(var(--background)) 60%, hsl(var(--card)) 100%)" }}
     >
@@ -99,11 +113,18 @@ export default function DigitalStoreProjectsSection() {
             {title}
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-gradient-gold mb-3 leading-tight">
-            هل تريد دخول عالم التجارة الإلكترونية والاستفادة من سوق شحن الألعاب والتطبيقات؟
+            {pick(
+              "هل تريد دخول عالم التجارة الإلكترونية والاستفادة من سوق شحن الألعاب والتطبيقات؟",
+              "Want to enter the world of e-commerce and tap into the game & app top-up market?",
+              "E-ticaret dünyasına girmek ve oyun & uygulama yükleme pazarından faydalanmak ister misiniz?"
+            )}
           </h2>
           <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-            نحن نختصر عليك الطريق بالكامل. لا تحتاج إلى خبرة برمجية، ولا تحتاج إلى البحث عن الموردين أو بناء المشروع من الصفر.
-            نحضّر لك متجرًا إلكترونيًا متكاملًا وجاهزًا للعمل، لتبدأ مشروعك الخاص في مجال شحن الألعاب والتطبيقات والخدمات الرقمية.
+            {pick(
+              "نحن نختصر عليك الطريق بالكامل. لا تحتاج إلى خبرة برمجية، ولا تحتاج إلى البحث عن الموردين أو بناء المشروع من الصفر. نحضّر لك متجرًا إلكترونيًا متكاملًا وجاهزًا للعمل، لتبدأ مشروعك الخاص في مجال شحن الألعاب والتطبيقات والخدمات الرقمية.",
+              "We shorten the whole path for you. No programming experience needed, no searching for suppliers, no building from scratch. We prepare a complete, ready-to-run online store for you, so you can start your own business in game, app and digital service top-ups.",
+              "Tüm süreci sizin için kısaltıyoruz. Programlama deneyimine, tedarikçi aramaya veya sıfırdan kurmaya gerek yok. Oyun, uygulama ve dijital hizmet yükleme alanında kendi işinizi kurmanız için eksiksiz, çalışmaya hazır bir e-ticaret mağazası hazırlıyoruz."
+            )}
           </p>
         </div>
 
@@ -119,8 +140,8 @@ export default function DigitalStoreProjectsSection() {
                 <div className="w-12 h-12 rounded-full bg-[hsl(var(--gold)/0.12)] border border-[hsl(var(--gold)/0.4)] flex items-center justify-center text-[hsl(var(--gold))] gold-glow">
                   <Icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-foreground text-base">{f.title}</h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">{f.desc}</p>
+                <h3 className="font-bold text-foreground text-base">{pick(f.title.ar, f.title.en, f.title.tr)}</h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">{pick(f.desc.ar, f.desc.en, f.desc.tr)}</p>
               </div>
             );
           })}
@@ -129,16 +150,20 @@ export default function DigitalStoreProjectsSection() {
         {/* Form */}
         <div className="max-w-md mx-auto">
           <div className="neon-border rounded-2xl bg-card/70 p-5 md:p-7 text-center">
-            <h3 className="text-lg md:text-xl font-black text-foreground mb-2">ابدأ مشروعك الآن</h3>
+            <h3 className="text-lg md:text-xl font-black text-foreground mb-2">{pick("ابدأ مشروعك الآن", "Start Your Project Now", "Projenize Şimdi Başlayın")}</h3>
             <p className="text-muted-foreground text-xs md:text-sm mb-5 leading-relaxed">
-              اترك رقم هاتفك مع مفتاح الدولة، وسيتواصل معك فريقنا لشرح التفاصيل والإجابة عن استفساراتك.
+              {pick(
+                "اترك رقم هاتفك مع مفتاح الدولة، وسيتواصل معك فريقنا لشرح التفاصيل والإجابة عن استفساراتك.",
+                "Leave your phone number with the country code, and our team will contact you to explain the details and answer your questions.",
+                "Ülke koduyla birlikte telefon numaranızı bırakın, ekibimiz detayları açıklamak ve sorularınızı yanıtlamak için sizinle iletişime geçecek."
+              )}
             </p>
 
             {sent ? (
               <div className="flex flex-col items-center gap-2 py-4 text-[hsl(var(--gold))]">
                 <CheckCircle2 className="w-10 h-10" />
-                <p className="font-bold text-foreground">تم استلام طلبك بنجاح</p>
-                <p className="text-muted-foreground text-xs">سيتواصل معك فريقنا قريبًا.</p>
+                <p className="font-bold text-foreground">{pick("تم استلام طلبك بنجاح", "Your request has been received", "Talebiniz başarıyla alındı")}</p>
+                <p className="text-muted-foreground text-xs">{pick("سيتواصل معك فريقنا قريبًا.", "Our team will contact you soon.", "Ekibimiz yakında sizinle iletişime geçecek.")}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-3" dir="ltr">
@@ -157,7 +182,7 @@ export default function DigitalStoreProjectsSection() {
                   style={{ background: "linear-gradient(135deg, hsl(var(--gold-dark)), hsl(var(--gold)))" }}
                 >
                   {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  إرسال الطلب
+                  {pick("إرسال الطلب", "Send Request", "Talebi Gönder")}
                 </button>
               </form>
             )}

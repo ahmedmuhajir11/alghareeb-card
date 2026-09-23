@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { ServiceCard } from "@/components/dev/ServiceCard";
 import { ChevronRight, Code2, Globe, ArrowLeft, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDevLang } from "@/lib/devI18n";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -19,13 +20,16 @@ interface ServiceCardData {
 
 interface DevSettings {
   websitesHeroTitle: string;
+  websitesHeroTitleEn?: string;
+  websitesHeroTitleTr?: string;
   websitesHeroDesc: string;
   websitesHeroImage: string;
 }
 
 export default function WebsitesServicePage() {
+  const { dir, pick } = useDevLang();
   const [cards, setCards] = useState<ServiceCardData[]>([]);
-  const [settings, setSettings] = useState<DevSettings>({ websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroDesc: "", websitesHeroImage: "" });
+  const [settings, setSettings] = useState<DevSettings>({ websitesHeroTitle: "تطوير وبرمجة المواقع", websitesHeroTitleEn: "Websites Development", websitesHeroTitleTr: "", websitesHeroDesc: "", websitesHeroImage: "" });
   const [loading, setLoading] = useState(true);
   const [, navigate] = useLocation();
 
@@ -41,11 +45,19 @@ export default function WebsitesServicePage() {
   }, []);
 
   const heroImage = settings.websitesHeroImage || "/dev-web-hero.jpg";
-  const heroTitle = settings.websitesHeroTitle || "تطوير وبرمجة المواقع";
-  const heroDesc = settings.websitesHeroDesc || "نبني مواقع احترافية وأنظمة ويب متكاملة تعكس هوية مشروعك وتحقق أهدافك التجارية بأحدث التقنيات.";
+  const heroTitle = pick(
+    settings.websitesHeroTitle || "تطوير وبرمجة المواقع",
+    settings.websitesHeroTitleEn || "Websites Development",
+    settings.websitesHeroTitleTr
+  );
+  const heroDesc = settings.websitesHeroDesc || pick(
+    "نبني مواقع احترافية وأنظمة ويب متكاملة تعكس هوية مشروعك وتحقق أهدافك التجارية بأحدث التقنيات.",
+    "We build professional websites and complete web systems that reflect your brand and achieve your business goals using the latest technologies.",
+    "Markanızı yansıtan ve iş hedeflerinize ulaşmanızı sağlayan profesyonel web siteleri ve web sistemleri geliştiriyoruz."
+  );
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background" dir={dir}>
       <Helmet>
         <title>تطوير وبرمجة المواقع | الغريب كارد</title>
         <meta name="description" content="خدمات تطوير وبرمجة المواقع الاحترافية — متاجر إلكترونية، مواقع شركات، منصات ويب مخصصة." />
@@ -75,7 +87,7 @@ export default function WebsitesServicePage() {
               <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center">
                 <Globe className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-primary text-sm font-medium">خدمات التطوير</span>
+              <span className="text-primary text-sm font-medium">{pick("خدمات التطوير", "Development Services", "Geliştirme Hizmetleri")}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-foreground mb-4 leading-tight">{heroTitle}</h1>
             <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-xl mb-8">{heroDesc}</p>
@@ -85,14 +97,14 @@ export default function WebsitesServicePage() {
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold transition-all duration-200 shadow-[0_0_24px_rgba(139,92,246,0.4)] hover:shadow-[0_0_32px_rgba(139,92,246,0.6)]"
               >
                 <Code2 className="w-4 h-4" />
-                ابدأ مشروعك
+                {pick("ابدأ مشروعك", "Start Your Project", "Projene Başla")}
               </button>
               <button
                 onClick={() => navigate("/")}
                 className="flex items-center gap-2 px-5 py-3 rounded-xl bg-card/60 hover:bg-card border border-border/40 hover:border-primary/30 text-foreground font-medium transition-all duration-200"
               >
                 <ChevronRight className="w-4 h-4" />
-                العودة للرئيسية
+                {pick("العودة للرئيسية", "Back to Home", "Ana Sayfaya Dön")}
               </button>
             </div>
           </div>
@@ -111,8 +123,8 @@ export default function WebsitesServicePage() {
         ) : cards.length > 0 ? (
           <div>
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">خدماتنا في تطوير المواقع</h2>
-              <span className="text-sm text-muted-foreground">{cards.length} خدمة متاحة</span>
+              <h2 className="text-xl font-bold text-foreground">{pick("خدماتنا في تطوير المواقع", "Our Website Development Services", "Web Sitesi Geliştirme Hizmetlerimiz")}</h2>
+              <span className="text-sm text-muted-foreground">{cards.length} {pick("خدمة متاحة", "services available", "hizmet mevcut")}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {cards.map(card => (
@@ -134,13 +146,13 @@ export default function WebsitesServicePage() {
             <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
               <Globe className="w-10 h-10 text-primary/60" />
             </div>
-            <p className="text-muted-foreground text-lg">الخدمات قيد الإعداد</p>
-            <p className="text-sm text-muted-foreground">يمكنك تقديم طلبك مباشرة وسنتواصل معك</p>
+            <p className="text-muted-foreground text-lg">{pick("الخدمات قيد الإعداد", "Services are being prepared", "Hizmetler hazırlanıyor")}</p>
+            <p className="text-sm text-muted-foreground">{pick("يمكنك تقديم طلبك مباشرة وسنتواصل معك", "You can submit your request directly and we'll contact you", "Talebinizi doğrudan gönderebilirsiniz, sizinle iletişime geçeceğiz")}</p>
             <button
               onClick={() => navigate("/dev/websites/request")}
               className="mt-4 flex items-center gap-2 mx-auto px-6 py-3 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary font-bold transition-colors"
             >
-              ابدأ طلبك
+              {pick("ابدأ طلبك", "Start Your Request", "Talebinizi Başlatın")}
               <ArrowLeft className="w-4 h-4" />
             </button>
           </div>
@@ -149,14 +161,14 @@ export default function WebsitesServicePage() {
         {/* CTA */}
         {cards.length > 0 && (
           <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-l from-primary/10 via-primary/5 to-transparent border border-primary/20">
-            <h3 className="text-xl font-bold mb-2">لم تجد ما تبحث عنه؟</h3>
-            <p className="text-muted-foreground mb-5 text-sm">نقوم ببناء أي نوع من المواقع والأنظمة حسب متطلباتك</p>
+            <h3 className="text-xl font-bold mb-2">{pick("لم تجد ما تبحث عنه؟", "Didn't find what you're looking for?", "Aradığınızı bulamadınız mı?")}</h3>
+            <p className="text-muted-foreground mb-5 text-sm">{pick("نقوم ببناء أي نوع من المواقع والأنظمة حسب متطلباتك", "We build any type of website or system tailored to your requirements", "İhtiyaçlarınıza uygun her türlü web sitesi ve sistemi geliştiriyoruz")}</p>
             <button
               onClick={() => navigate("/dev/websites/request")}
               className="flex items-center gap-2 mx-auto px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold transition-colors shadow-[0_0_20px_rgba(139,92,246,0.3)]"
             >
               <Code2 className="w-4 h-4" />
-              اطلب خدمة مخصصة
+              {pick("اطلب خدمة مخصصة", "Request a Custom Service", "Özel Hizmet İste")}
             </button>
           </div>
         )}

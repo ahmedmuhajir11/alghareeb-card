@@ -183,7 +183,7 @@ function getSectionLabel(nameAr: string, t: (k: string) => string): string {
   if (nameAr.includes("حوالة") || nameAr.includes("حوالات")) return t('home.sendTransfer');
   if (nameAr.includes("راتب") || nameAr.includes("رواتب")) return t('home.requestSalary');
   if (nameAr.includes("إيداع") || nameAr.includes("ايداع") || nameAr.includes("الدفع")) return t('home.chargeBalance');
-  if (!nameAr.includes("شحن") && (nameAr.includes("تصميم") || nameAr.includes("برمجة") || nameAr.includes("تطوير"))) return "طلب خدمة";
+  if (!nameAr.includes("شحن") && (nameAr.includes("تصميم") || nameAr.includes("برمجة") || nameAr.includes("تطوير"))) return t('home.requestService');
   return t('home.shopNow');
 }
 
