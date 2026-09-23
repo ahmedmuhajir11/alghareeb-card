@@ -44,7 +44,7 @@ export default function WelcomeModal() {
       <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-[#0e0e1f] shadow-[0_0_40px_hsl(40_80%_50%/0.15)] p-6" dir={isRtlLang ? "rtl" : "ltr"}>
         <button
           onClick={handleClose}
-          className="absolute top-3 start-3 p-1.5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+          className="absolute top-3 start-3 p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
           aria-label={t('welcome.understood')}
         >
           <X className="w-4 h-4" />
@@ -56,11 +56,11 @@ export default function WelcomeModal() {
           </div>
           <div>
             <h2 className="font-black text-lg text-amber-300 leading-tight">{t('welcome.title')}</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{t('welcome.subtitle')}</p>
+            <p className="text-xs text-white/60 mt-0.5">{t('welcome.subtitle')}</p>
           </div>
         </div>
 
-        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+        <p className="text-sm text-white leading-relaxed whitespace-pre-wrap bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
           {message}
         </p>
 
