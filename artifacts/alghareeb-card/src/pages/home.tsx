@@ -157,11 +157,10 @@ function Slider() {
         {slides.map((img) => {
           const inner = (
             <div className="flex-[0_0_100%] min-w-0 relative aspect-[21/9] md:aspect-[3/1]">
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
               <img src={img.imageUrl} alt={img.title || 'Slide'} className="w-full h-full object-cover" />
               {img.title && (
                 <div className="absolute bottom-0 end-0 p-6 z-20">
-                  <h2 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg neon-text">{img.title}</h2>
+                  <h2 className="text-2xl md:text-4xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] neon-text">{img.title}</h2>
                 </div>
               )}
             </div>
