@@ -178,14 +178,6 @@ function Slider() {
   );
 }
 
-function getSectionLabel(nameAr: string, t: (k: string) => string): string {
-  if (nameAr.includes("حوالة") || nameAr.includes("حوالات")) return t('home.sendTransfer');
-  if (nameAr.includes("راتب") || nameAr.includes("رواتب")) return t('home.requestSalary');
-  if (nameAr.includes("إيداع") || nameAr.includes("ايداع") || nameAr.includes("الدفع")) return t('home.chargeBalance');
-  if (!nameAr.includes("شحن") && (nameAr.includes("تصميم") || nameAr.includes("برمجة") || nameAr.includes("تطوير"))) return t('home.requestService');
-  return t('home.shopNow');
-}
-
 function getSectionHref(section: { id: number; nameAr: string }): string {
   // Never redirect app top-up or any recharge section!
   if (section.id === 2 || section.nameAr.includes("شحن")) {
@@ -299,16 +291,9 @@ export default function Home() {
                             <span className="text-4xl font-bold text-primary group-hover:scale-110 transition-transform duration-300 inline-block">{section.nameAr.charAt(0)}</span>
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-                        <div className="absolute bottom-0 inset-x-0 p-2 text-center">
-                          <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">{sectionName(section)}</h3>
-                        </div>
                       </div>
-                      <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
-                        <span className="flex items-center gap-1">
-                          <span>{getSectionLabel(section.nameAr, t)}</span>
-                          <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
-                        </span>
+                      <div className="h-11 shrink-0 px-2 bg-[hsl(260_35%_9%)] border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-center text-center">
+                        <span className="text-xs font-bold text-gradient-gold leading-tight line-clamp-2">{sectionName(section)}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -327,17 +312,10 @@ export default function Home() {
                         alt={devCardTitle(devSettings.websitesHeroTitle, devSettings.websitesHeroTitleEn, devSettings.websitesHeroTitleTr)}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-                      <div className="absolute bottom-0 inset-x-0 p-2 text-center">
-                        <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
-                          {devCardTitle(devSettings.websitesHeroTitle, devSettings.websitesHeroTitleEn, devSettings.websitesHeroTitleTr)}
-                        </h3>
-                      </div>
                     </div>
-                    <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
-                      <span className="flex items-center gap-1">
-                        <span>{isRtlLang ? 'طلب خدمة' : (lang === 'tr' ? 'Hizmet Talep Et' : 'Order Service')}</span>
-                        <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
+                    <div className="h-11 shrink-0 px-2 bg-[hsl(260_35%_9%)] border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-center text-center">
+                      <span className="text-xs font-bold text-gradient-gold leading-tight line-clamp-2">
+                        {devCardTitle(devSettings.websitesHeroTitle, devSettings.websitesHeroTitleEn, devSettings.websitesHeroTitleTr)}
                       </span>
                     </div>
                   </CardContent>
@@ -356,17 +334,10 @@ export default function Home() {
                         alt={devCardTitle(devSettings.mobileAppsHeroTitle, devSettings.mobileAppsHeroTitleEn, devSettings.mobileAppsHeroTitleTr)}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-                      <div className="absolute bottom-0 inset-x-0 p-2 text-center">
-                        <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
-                          {devCardTitle(devSettings.mobileAppsHeroTitle, devSettings.mobileAppsHeroTitleEn, devSettings.mobileAppsHeroTitleTr)}
-                        </h3>
-                      </div>
                     </div>
-                    <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
-                      <span className="flex items-center gap-1">
-                        <span>{isRtlLang ? 'طلب خدمة' : (lang === 'tr' ? 'Hizmet Talep Et' : 'Order Service')}</span>
-                        <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
+                    <div className="h-11 shrink-0 px-2 bg-[hsl(260_35%_9%)] border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-center text-center">
+                      <span className="text-xs font-bold text-gradient-gold leading-tight line-clamp-2">
+                        {devCardTitle(devSettings.mobileAppsHeroTitle, devSettings.mobileAppsHeroTitleEn, devSettings.mobileAppsHeroTitleTr)}
                       </span>
                     </div>
                   </CardContent>
@@ -391,17 +362,10 @@ export default function Home() {
                     ) : (
                       <ShoppingCart className="w-14 h-14 text-[hsl(var(--gold))] drop-shadow-[0_0_12px_hsl(var(--gold)/0.5)] group-hover:scale-110 transition-transform duration-300" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-                    <div className="absolute bottom-0 inset-x-0 p-2 text-center">
-                      <h3 className="font-black text-white text-base leading-tight drop-shadow-lg">
-                        {devCardTitle(devSettings.digitalStoreHeroTitle, devSettings.digitalStoreHeroTitleEn, devSettings.digitalStoreHeroTitleTr)}
-                      </h3>
-                    </div>
                   </div>
-                  <div dir="ltr" className="px-3 py-2 bg-gradient-to-l from-[hsl(var(--gold-dark)/0.2)] via-[hsl(var(--gold)/0.15)] to-transparent border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-start text-xs font-bold text-gradient-gold">
-                    <span className="flex items-center gap-1">
-                      <span>{isRtlLang ? 'ابدأ مشروعك' : (lang === 'tr' ? 'Projene Başla' : 'Start Your Project')}</span>
-                      <ChevronLeft className="w-3.5 h-3.5 text-[hsl(var(--gold))]" />
+                  <div className="h-11 shrink-0 px-2 bg-[hsl(260_35%_9%)] border-t border-[hsl(var(--gold)/0.3)] flex items-center justify-center text-center">
+                    <span className="text-xs font-bold text-gradient-gold leading-tight line-clamp-2">
+                      {devCardTitle(devSettings.digitalStoreHeroTitle, devSettings.digitalStoreHeroTitleEn, devSettings.digitalStoreHeroTitleTr)}
                     </span>
                   </div>
                 </CardContent>

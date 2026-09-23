@@ -132,7 +132,7 @@ router.get("/admin/service-requests", requireAdmin, async (req: Request, res: Re
 
 // ─── ADMIN: update request status (e.g. mark as contacted) ─────────────────
 router.patch("/admin/service-requests/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   const { status } = req.body ?? {};
   if (!id || !["new", "contacted"].includes(status)) {
     res.status(400).json({ error: "بيانات غير صالحة" });
