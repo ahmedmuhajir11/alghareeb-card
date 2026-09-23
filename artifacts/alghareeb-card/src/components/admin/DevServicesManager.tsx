@@ -512,6 +512,9 @@ export default function DevServicesManager() {
                     <Upload className="w-4 h-4" />
                   </Button>
                 </div>
+                {settings.websitesHeroImage && (
+                  <img src={settings.websitesHeroImage} alt="معاينة" className="mt-2 w-full max-w-xs h-32 object-cover rounded-lg border border-border/40" />
+                )}
               </div>
             </CardContent>
           </Card>
@@ -568,6 +571,9 @@ export default function DevServicesManager() {
                     <Upload className="w-4 h-4" />
                   </Button>
                 </div>
+                {settings.mobileAppsHeroImage && (
+                  <img src={settings.mobileAppsHeroImage} alt="معاينة" className="mt-2 w-full max-w-xs h-32 object-cover rounded-lg border border-border/40" />
+                )}
               </div>
             </CardContent>
           </Card>
